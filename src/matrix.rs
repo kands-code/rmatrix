@@ -45,14 +45,20 @@ impl Matrix {
         }
     }
 
-    pub fn matrix_get_element(&self, position_row: usize, position_col: usize) -> f64 {
-        *self
-            .data
+    pub fn matrix_get_element(&self, position_row: usize, position_col: usize) -> Option<&f64> {
+        self.data
             .get(self.size.into_vec_size(position_row, position_col))
-            .unwrap()
     }
 
-    pub fn matrix_time<'a>(self, m: Matrix) -> Option<Matrix> {
+    pub fn matrix_add(self, m: Matrix) -> Option<Matrix> {
+        if self.size != m.size {
+            None
+        } else {
+            None
+        }
+    }
+
+    pub fn matrix_time(self, m: Matrix) -> Option<Matrix> {
         if self.size.col != m.size.row {
             None
         } else {
@@ -66,9 +72,13 @@ impl std::fmt::Display for Matrix {
         for r in 1..=self.size.row {
             write!(f, "[")?;
             for c in 1..=(self.size.col - 1) {
-                write!(f, "{}, ", self.matrix_get_element(r, c))?;
+                write!(f, "{}, ", self.matrix_get_element(r, c).unwrap())?;
             }
-            write!(f, "{}]\n", self.matrix_get_element(r, self.size.col))?;
+            write!(
+                f,
+                "{}]\n",
+                self.matrix_get_element(r, self.size.col).unwrap()
+            )?;
         }
         Ok(())
     }
