@@ -1,5 +1,6 @@
 use crate::matrix_size::MatrixSize;
-use base64::{engine::general_purpose, Engine as _};
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
 /// normal matrix with data and size
@@ -110,13 +111,7 @@ impl Default for Matrix {
         //! by default:
         //! - the matrix data is empty
         //! - the matrix size is `MatrixSize::default()`
-        //! - the matrix name is get from system time
-        //!
-        //! the base64 encode of time is normally
-        //!
-        //! `AAAAAAAAAAAAAAGKUdRxFA==`
-        //!
-        //! so the name is the range `14..21`, means`"GKUdRxF"`
+        //! - the matrix name is random string with length `7`
         //!
         //! # Examples
         //!
@@ -124,20 +119,17 @@ impl Default for Matrix {
         //! # use rmatrix::matrix::Matrix;
         //! let _ = Matrix::default();
         //! ```
-        let mut rand_id = general_purpose::STANDARD.encode(
-            (std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap())
-            .as_millis()
-            .to_be_bytes(),
-        );
-        if rand_id.len() > 7 {
-            rand_id = rand_id[14..21].to_owned();
+        fn random_string(n: usize) -> String {
+            thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(n)
+                .map(char::from)
+                .collect()
         }
         Matrix {
             data: Vec::new(),
             size: MatrixSize::default(),
-            name: format!("{}", rand_id),
+            name: format!("{}", random_string(7)),
         }
     }
 }
