@@ -64,3 +64,9 @@ impl MatrixSize {
         }
     }
 }
+
+impl Default for MatrixSize {
+    fn default() -> Self {
+        Self { row: 1, col: 1 }
+    }
+}

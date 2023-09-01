@@ -12,3 +12,4 @@ crate-type = ["staticlib", "rlib"]
 
 [dependencies]
 rand = "^0.8.5"
+base64 = "^0.21.3"
