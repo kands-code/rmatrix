@@ -1,3 +1,6 @@
+use rmatrix::matrix::Matrix;
+
 fn main() {
-    println!("Hello, world!");
+    let m = Matrix::zeros(2, 2);
+    println!("{}", m);
 }
