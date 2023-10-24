@@ -34,7 +34,7 @@ impl MatrixSize {
         MatrixSize { row, col }
     }
 
-    pub fn into_vec_size(&self, position_row: usize, position_col: usize) -> usize {
+    fn into_vec_size(&self, position_row: usize, position_col: usize) -> usize {
         //! transform matrix position to vector postion
         //!
         //! # Examples
