@@ -1,4 +1,4 @@
-use rmatrix::core::Matrix;
+use rmatrix::matrix::Matrix;
 
 fn main() {
     let mut v = Vec::new();

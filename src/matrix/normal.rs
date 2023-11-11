@@ -1,5 +1,5 @@
-use crate::core::matrix_shape::MatrixShape;
-use crate::core::Matrix;
+use crate::matrix::shape::MatrixShape;
+use crate::matrix::Matrix;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::io::Write;
 

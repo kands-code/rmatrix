@@ -1,4 +1,4 @@
-use crate::core::Matrix;
+use crate::matrix::Matrix;
 use std::io::Write;
 
 impl Matrix {

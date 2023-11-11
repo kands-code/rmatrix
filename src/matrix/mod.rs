@@ -1,9 +1,9 @@
-pub mod matrix_base;
-pub mod matrix_fn;
-pub mod matrix_ops;
-mod matrix_shape;
+pub mod attr;
+pub mod base;
+pub mod normal;
+mod shape;
 
-use crate::core::matrix_shape::MatrixShape;
+use crate::matrix::shape::MatrixShape;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,4 +1,4 @@
-use crate::core::Matrix;
+use crate::matrix::Matrix;
 
 impl Matrix {
     pub fn add(&self, rhs: &Self) -> Result<Self, String> {
