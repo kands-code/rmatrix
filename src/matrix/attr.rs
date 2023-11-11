@@ -39,6 +39,14 @@ impl Matrix {
         Ok(())
     }
 
+    pub fn trace(&self) -> Result<f64, String> {
+        let mut t = 0.0;
+        for i in 1..=self.shape.row.min(self.shape.col) {
+            t += self.get(i, i)?;
+        }
+        Ok(t)
+    }
+
     pub fn save<P: AsRef<std::path::Path>>(
         &self,
         path: P,

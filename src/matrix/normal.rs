@@ -85,8 +85,8 @@ impl Matrix {
         //! - the data are separated by spaces or newlines
         //! - can not use comma or other separator with data
         //!
-        //! ```rust
-        //! #use rmatrix::matrix::Matrix;
+        //! ```rust,no_run
+        //! # use rmatrix::matrix::Matrix;
         //! let m = Matrix::from_stdin().unwrap();
         //! println!("{}", m);
         //!
