@@ -1,6 +1,14 @@
 use rmatrix::matrix::Matrix;
 
 fn main() {
-    let m = Matrix::from_stdin().unwrap();
-    println!("{}", m);
+    let mut v = Vec::new();
+    for _ in 0..10 {
+        v.push(Matrix::rand(3, 3, -std::f64::consts::PI, std::f64::consts::PI).unwrap());
+    }
+    Matrix::to_json(&v, "data/mats.json").unwrap();
+
+    let json_v = Matrix::from_json("data/mats.json").unwrap();
+    for m in json_v {
+        println!("{}", m);
+    }
 }

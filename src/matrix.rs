@@ -1,12 +1,11 @@
-use std::io::Write;
-use std::iter::zip;
-
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+use serde::{Deserialize, Serialize};
+use std::io::Write;
 
 // Matrix
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 /// normal matrix with data and size
 pub struct Matrix {
     /// data for matrix
@@ -18,7 +17,7 @@ pub struct Matrix {
 }
 
 impl Matrix {
-    pub fn zeros(row: usize, col: usize) -> Result<Self, String> {
+    pub fn zeros(r: usize, c: usize) -> Result<Self, String> {
         //! return a zero matrix with specific size
         //!
         //! # Examples
@@ -38,8 +37,8 @@ impl Matrix {
         }
 
         Ok(Matrix {
-            shape: MatrixShape::new(row, col)?,
-            data: vec![0.0; row * col],
+            shape: MatrixShape::new(r, c)?,
+            data: vec![0.0; r * c],
             tag: random_string(8),
         })
     }
@@ -48,6 +47,19 @@ impl Matrix {
         let mut m = Self::zeros(r, c)?;
         for i in 1..=r.min(c) {
             m.set(1.0, i, i)?;
+        }
+        Ok(m)
+    }
+
+    pub fn rand(
+        r: usize,
+        c: usize,
+        lb: f64,
+        ub: f64,
+    ) -> Result<Matrix, Box<dyn std::error::Error>> {
+        let mut m = Self::zeros(r, c)?;
+        for i in 0..m.data.len() {
+            m.data[i] = thread_rng().gen_range(lb.min(ub)..ub.max(lb));
         }
         Ok(m)
     }
@@ -102,7 +114,7 @@ impl Matrix {
         //! ```
 
         print!("matrix shape (r, c): ");
-        std::io::stdout().flush().expect("failed to flush stdout");
+        std::io::Write::flush(&mut std::io::stdout()).expect("failed to flush stdout");
         let mut rb: String = String::new();
         let mut shape_info: Vec<usize>;
         loop {
@@ -132,7 +144,7 @@ impl Matrix {
             } else {
                 eprintln!("failed to get matrix shape info, please re-input!");
                 print!("matrix shape (r, c): ");
-                std::io::stdout().flush().expect("failed to flush stdout");
+                std::io::Write::flush(&mut std::io::stdout()).expect("failed to flush stdout");
             }
         }
         let mut m = Self::zeros(shape_info[0], shape_info[1])?;
@@ -165,6 +177,26 @@ impl Matrix {
             }
         }
         Ok(m)
+    }
+
+    pub fn from_json<P: AsRef<std::path::Path>>(
+        path: P,
+    ) -> Result<Vec<Self>, Box<dyn std::error::Error>> {
+        Ok(serde_json::from_reader(std::io::BufReader::new(
+            std::fs::File::open(path)?,
+        ))?)
+    }
+
+    pub fn to_json<P: AsRef<std::path::Path>>(
+        data: &Vec<Self>,
+        path: P,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write!(
+            std::fs::File::create(path)?,
+            "{}",
+            serde_json::to_string(data)?
+        )?;
+        Ok(())
     }
 
     pub fn p_change(n: usize, i: usize, j: usize) -> Result<Matrix, String> {
@@ -202,7 +234,7 @@ impl Matrix {
 
     pub fn inner(v1: Vec<f64>, v2: Vec<f64>) -> Result<f64, String> {
         if v1.len() == v2.len() {
-            Ok(zip(v1, v2).map(|(e1, e2)| e1 * e2).sum())
+            Ok(std::iter::zip(v1, v2).map(|(e1, e2)| e1 * e2).sum())
         } else {
             Err(format!("vectors must have same length"))
         }
@@ -252,6 +284,18 @@ impl Matrix {
 
     pub fn set(&mut self, elem: f64, prow: usize, pcol: usize) -> Result<(), String> {
         self.data[self.shape.vpos(prow, pcol)?] = elem;
+        Ok(())
+    }
+
+    pub fn save<P: AsRef<std::path::Path>>(
+        &self,
+        path: P,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        write!(
+            std::fs::File::create(path)?,
+            "{}",
+            serde_json::to_string(&vec![self])?
+        )?;
         Ok(())
     }
 
@@ -320,7 +364,7 @@ impl PartialEq for Matrix {
 
 // MatrixSize
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 /// size of a matrix
 struct MatrixShape {
     /// row size
