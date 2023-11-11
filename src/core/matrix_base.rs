@@ -1,20 +1,7 @@
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
-use serde::{Deserialize, Serialize};
+use crate::core::matrix_shape::MatrixShape;
+use crate::core::Matrix;
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use std::io::Write;
-
-// Matrix
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-/// normal matrix with data and size
-pub struct Matrix {
-    /// data for matrix
-    data: Vec<f64>,
-    /// size for matrix
-    shape: MatrixShape,
-    /// tag for matrix
-    pub tag: String,
-}
 
 impl Matrix {
     pub fn zeros(r: usize, c: usize) -> Result<Self, String> {
@@ -249,93 +236,6 @@ impl Matrix {
         }
         Ok(m)
     }
-
-    pub fn size(&self) -> (usize, usize) {
-        (self.shape.row, self.shape.col)
-    }
-
-    pub fn get(&self, prow: usize, pcol: usize) -> Result<f64, String> {
-        Ok(self.data[self.shape.vpos(prow, pcol)?].to_owned())
-    }
-
-    pub fn get_row(&self, r: usize) -> Result<Vec<f64>, String> {
-        if r > self.shape.row || r == 0 {
-            Err(format!("the row {} is out of boundary", r))
-        } else {
-            let mut mrow = Vec::new();
-            for c in 1..=self.shape.col {
-                mrow.push(self.get(r, c)?);
-            }
-            Ok(mrow)
-        }
-    }
-
-    pub fn get_col(&self, c: usize) -> Result<Vec<f64>, String> {
-        if c > self.shape.col || c == 0 {
-            Err(format!("the column {} is out of boundary", c))
-        } else {
-            let mut mcol = Vec::new();
-            for r in 1..=self.shape.row {
-                mcol.push(self.get(r, c)?);
-            }
-            Ok(mcol)
-        }
-    }
-
-    pub fn set(&mut self, elem: f64, prow: usize, pcol: usize) -> Result<(), String> {
-        self.data[self.shape.vpos(prow, pcol)?] = elem;
-        Ok(())
-    }
-
-    pub fn save<P: AsRef<std::path::Path>>(
-        &self,
-        path: P,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        write!(
-            std::fs::File::create(path)?,
-            "{}",
-            serde_json::to_string(&vec![self])?
-        )?;
-        Ok(())
-    }
-
-    pub fn add(&self, rhs: &Self) -> Result<Self, String> {
-        if self.shape != rhs.shape {
-            Err(format!(
-                "size {} is not compatible with size {}",
-                rhs.shape, self.shape
-            ))
-        } else {
-            let mut m = Self::zeros(self.shape.row, rhs.shape.col)?;
-            for i in 0..self.shape.row * rhs.shape.col {
-                m.data[i] = self.data[i] + rhs.data[i];
-            }
-            Ok(m)
-        }
-    }
-
-    pub fn mul(&self, rhs: &Self) -> Result<Self, String> {
-        if self.shape.col != rhs.shape.row {
-            Err(format!(
-                "size {} is not compatible with size {}",
-                rhs.shape, self.shape
-            ))
-        } else {
-            let mut m = Self::zeros(self.shape.row, rhs.shape.col)?;
-            for i in 1..=self.shape.col {
-                m = m.add(&Self::outter(self.get_col(i)?, rhs.get_row(i)?)?)?;
-            }
-            Ok(m)
-        }
-    }
-
-    pub fn smul(&self, k: f64) -> Result<Self, String> {
-        let mut m = Self::zeros(self.shape.row, self.shape.col)?;
-        for i in 0..self.data.len() {
-            m.data[i] = self.data[i] * k;
-        }
-        Ok(m)
-    }
 }
 
 impl std::fmt::Display for Matrix {
@@ -359,46 +259,5 @@ impl std::fmt::Display for Matrix {
 impl PartialEq for Matrix {
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data && self.shape == other.shape
-    }
-}
-
-// MatrixSize
-
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
-/// size of a matrix
-struct MatrixShape {
-    /// row size
-    pub row: usize,
-    /// column size
-    pub col: usize,
-}
-
-impl MatrixShape {
-    pub fn new(row: usize, col: usize) -> Result<Self, String> {
-        if row == 0 || col == 0 {
-            Err(format!("size must greater than 0"))
-        } else {
-            Ok(Self { row, col })
-        }
-    }
-
-    pub fn vpos(&self, prow: usize, pcol: usize) -> Result<usize, String> {
-        if prow > self.row || pcol > self.col {
-            Err(format!("({}, {}) out of boundary!", prow, pcol))
-        } else {
-            Ok((prow - 1) * self.col + pcol - 1)
-        }
-    }
-}
-
-impl std::fmt::Display for MatrixShape {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {})", self.row, self.col)
-    }
-}
-
-impl Default for MatrixShape {
-    fn default() -> Self {
-        Self { row: 2, col: 2 }
     }
 }

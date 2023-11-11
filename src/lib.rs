@@ -1,1 +1,1 @@
-pub mod matrix;
+pub mod core;
