@@ -1,4 +1,5 @@
 use crate::matrix::Matrix;
+#[cfg(feature = "serialize")]
 use std::io::Write;
 
 impl Matrix {
@@ -47,6 +48,7 @@ impl Matrix {
         Ok(t)
     }
 
+    #[cfg(feature = "serialize")]
     pub fn save<P: AsRef<std::path::Path>>(
         &self,
         path: P,

@@ -1,6 +1,7 @@
 use crate::matrix::shape::MatrixShape;
 use crate::matrix::Matrix;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
+#[cfg(feature = "serialize")]
 use std::io::Write;
 
 impl Matrix {
@@ -166,6 +167,7 @@ impl Matrix {
         Ok(m)
     }
 
+    #[cfg(feature = "serialize")]
     pub fn from_json<P: AsRef<std::path::Path>>(
         path: P,
     ) -> Result<Vec<Self>, Box<dyn std::error::Error>> {
@@ -174,6 +176,7 @@ impl Matrix {
         ))?)
     }
 
+    #[cfg(feature = "serialize")]
     pub fn to_json<P: AsRef<std::path::Path>>(
         data: &Vec<Self>,
         path: P,

@@ -5,9 +5,11 @@ pub mod normal;
 mod shape;
 
 use crate::matrix::shape::MatrixShape;
+#[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 /// normal matrix with data and size
 pub struct Matrix {
     /// data for matrix
