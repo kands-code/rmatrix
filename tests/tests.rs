@@ -3,7 +3,7 @@ mod common;
 use std::f64::consts::PI;
 
 use rand::{thread_rng, Rng};
-use rmatrix::{f64_is_zero, matrix::Matrix};
+use rmatrix::{matrix::Matrix, number::Number};
 
 #[test]
 fn tr_ab_equals_tr_ba() {
@@ -12,8 +12,7 @@ fn tr_ab_equals_tr_ba() {
     for _ in 0..times {
         let a = Matrix::<f64>::rand(n, n, -PI, PI).unwrap();
         let b = Matrix::<f64>::rand(n, n, -PI, PI).unwrap();
-        assert!(f64_is_zero(
-            a.times(&b).unwrap().tr().unwrap() - b.times(&a).unwrap().tr().unwrap()
-        ))
+        let r = a.times(&b).unwrap().tr().unwrap() - b.times(&a).unwrap().tr().unwrap();
+        assert!(r.is_zero(), "{}?", r)
     }
 }

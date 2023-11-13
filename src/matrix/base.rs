@@ -1,4 +1,4 @@
-use crate::{error::RMatrixError, matrix::Matrix, types::Number};
+use crate::{error::RMatrixError, matrix::Matrix, number::Number};
 
 impl<N: Number> Matrix<N> {
     pub fn transpose(&self) -> Result<Self, RMatrixError> {

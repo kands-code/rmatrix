@@ -1,6 +1,6 @@
 //! attribute of a matrix
 
-use crate::{error::RMatrixError, matrix::Matrix, types::Number};
+use crate::{error::RMatrixError, matrix::Matrix, number::Number};
 
 impl<N: Number> Matrix<N> {
     /// shape of a matrix
@@ -9,8 +9,13 @@ impl<N: Number> Matrix<N> {
     ///
     /// ```
     /// # use rmatrix::matrix::Matrix;
-    /// let m = Matrix::zeros(2, 2);
+    /// # use rmatrix::complex::Complex;
+    /// # use rmatrix::error::RMatrixError;
+    /// # fn main() -> Result<(), RMatrixError> {
+    /// let m = Matrix::<Complex>::zeros(2, 2)?;
     /// assert_eq!(m.dimensions(), (2, 2));
+    /// #     Ok(())
+    /// # }
     /// ```
     pub fn dimensions(&self) -> (usize, usize) {
         (self.shape.row, self.shape.col)

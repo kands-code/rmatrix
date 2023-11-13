@@ -1,8 +1,6 @@
-use serde::{Deserialize, Serialize};
-
 use crate::error::RMatrixError;
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 /// size of a matrix
 pub struct MatrixShape {
     /// row size

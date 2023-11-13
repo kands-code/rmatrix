@@ -1,7 +1,7 @@
 use crate::{
     error::RMatrixError,
     matrix::{shape::MatrixShape, Matrix, TAG_LEANGTH},
-    types::Number,
+    number::Number,
 };
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
@@ -12,8 +12,12 @@ impl<N: Number> Matrix<N> {
     ///
     /// ```
     /// # use rmatrix::matrix::Matrix;
+    /// # use rmatrix::error::RMatrixError;
     /// // get a 3x3 zero matrix
-    /// let zero_matrix = Matrix::zeros(3, 3);
+    /// # fn main() -> Result<(), RMatrixError> {
+    /// let zero_matrix = Matrix::<f64>::zeros(3, 3)?;
+    /// #     Ok(())  
+    /// # }
     /// ```
     pub fn zeros(r: usize, c: usize) -> Result<Self, RMatrixError> {
         fn random_tag(n: usize) -> String {
@@ -102,6 +106,7 @@ impl<N: Number> Matrix<N> {
         //!
         //! ```no_run
         //! # use rmatrix::matrix::Matrix;
+        //! # use rmatrix::complex::Complex;
         //! let m = Matrix::<Complex>::from_stdin().unwrap();
         //! println!("{}", m);
         //!
@@ -199,9 +204,9 @@ impl<N: Number> Matrix<N> {
         //!
         //! ```rust
         //! # use rmatrix::matrix::Matrix;
-        //! let a = Matrix::eyes(2, 2).unwrap();
+        //! let a = Matrix::<f64>::eyes(2, 2).unwrap();
         //! // add 2.0 times row 2 to row 1
-        //! let pa = a.mul(&Matrix::p_add(2, 2.0, 2, 1).unwrap()).unwrap();
+        //! let pa = a.times(&Matrix::<f64>::p_add(2, 2.0, 2, 1).unwrap()).unwrap();
         //! assert_eq!(pa, Matrix::from_vec(2, 2, vec![1.0, 2.0, 0.0, 1.0]).unwrap());
         //! ```
 

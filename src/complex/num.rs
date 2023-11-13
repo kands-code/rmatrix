@@ -1,4 +1,6 @@
-use crate::{complex::Complex, error::RMatrixError};
+//! implementation of Number for Complex
+
+use crate::{complex::Complex, error::RMatrixError, number::Number};
 
 impl std::ops::Add for Complex {
     type Output = Self;

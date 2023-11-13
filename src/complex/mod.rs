@@ -1,3 +1,5 @@
+//! type of complex number
+
 pub mod base;
 pub mod num;
 pub mod utils;
