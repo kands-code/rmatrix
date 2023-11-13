@@ -1,3 +1,3 @@
 # RMatrix
 
-Matrix in Rust
+matrix and some algebra in Rust
