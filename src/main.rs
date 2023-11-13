@@ -1,4 +1,4 @@
-use rmatrix::{complex::Complex, matrix::Matrix};
+use rmatrix_ks::{complex::Complex, matrix::Matrix};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let m = Matrix::<Complex>::from_stdin()?;

@@ -3,7 +3,7 @@ mod common;
 use std::f64::consts::PI;
 
 use rand::{thread_rng, Rng};
-use rmatrix::{matrix::Matrix, number::Number};
+use rmatrix_ks::{matrix::Matrix, number::Number};
 
 #[test]
 fn tr_ab_equals_tr_ba() {

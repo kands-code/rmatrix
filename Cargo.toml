@@ -1,5 +1,5 @@
 [package]
-name = "rmatrix"
+name = "rmatrix_ks"
 authors = ["Kevin Stephen <kizunaaisesu@gmail.com>"]
 version = "0.2.0"
 edition = "2021"
@@ -10,7 +10,7 @@ repository = "https://github.com/kands-code/rmatrix"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "rmatrix"
+name = "rmatrix_ks"
 path = "src/lib.rs"
 crate-type = ["staticlib", "rlib"]
 
