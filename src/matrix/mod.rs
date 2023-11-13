@@ -1,21 +1,22 @@
 pub mod attr;
 pub mod base;
+// pub mod json;
 pub mod math;
-pub mod normal;
 mod shape;
+pub mod utils;
 
 use crate::matrix::shape::MatrixShape;
-#[cfg(feature = "serialize")]
-use serde::{Deserialize, Serialize};
+
+/// length of matrix tag
+const TAG_LEANGTH: usize = 8;
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
-/// normal matrix with data and size
-pub struct Matrix {
-    /// data for matrix
-    data: Vec<f64>,
-    /// size for matrix
+/// numeric matrix
+pub struct Matrix<N> {
+    /// matrix data
+    data: Vec<N>,
+    /// matrix shape
     shape: MatrixShape,
-    /// tag for matrix
+    /// matrix tag
     pub tag: String,
 }

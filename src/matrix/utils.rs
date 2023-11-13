@@ -1,22 +1,22 @@
-use crate::matrix::shape::MatrixShape;
-use crate::matrix::Matrix;
+use crate::{
+    error::RMatrixError,
+    matrix::{shape::MatrixShape, Matrix, TAG_LEANGTH},
+    types::Number,
+};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
-#[cfg(feature = "serialize")]
-use std::io::Write;
 
-impl Matrix {
-    pub fn zeros(r: usize, c: usize) -> Result<Self, String> {
-        //! return a zero matrix with specific size
-        //!
-        //! # Examples
-        //!
-        //! ```rust
-        //! # use rmatrix::matrix::Matrix;
-        //! // get a 3x3 zero matrix
-        //! let zero_matrix = Matrix::zeros(3, 3);
-        //! ```
-
-        fn random_string(n: usize) -> String {
+impl<N: Number> Matrix<N> {
+    /// return a zero matrix with specific size
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use rmatrix::matrix::Matrix;
+    /// // get a 3x3 zero matrix
+    /// let zero_matrix = Matrix::zeros(3, 3);
+    /// ```
+    pub fn zeros(r: usize, c: usize) -> Result<Self, RMatrixError> {
+        fn random_tag(n: usize) -> String {
             thread_rng()
                 .sample_iter(&Alphanumeric)
                 .take(n)
@@ -26,33 +26,20 @@ impl Matrix {
 
         Ok(Matrix {
             shape: MatrixShape::new(r, c)?,
-            data: vec![0.0; r * c],
-            tag: random_string(8),
+            data: vec![Default::default(); r * c],
+            tag: random_tag(TAG_LEANGTH),
         })
     }
 
-    pub fn eyes(r: usize, c: usize) -> Result<Matrix, String> {
+    pub fn eyes(r: usize, c: usize) -> Result<Matrix<N>, RMatrixError> {
         let mut m = Self::zeros(r, c)?;
         for i in 1..=r.min(c) {
-            m.set(1.0, i, i)?;
+            m.set(N::one(), i, i)?;
         }
         Ok(m)
     }
 
-    pub fn rand(
-        r: usize,
-        c: usize,
-        lb: f64,
-        ub: f64,
-    ) -> Result<Matrix, Box<dyn std::error::Error>> {
-        let mut m = Self::zeros(r, c)?;
-        for i in 0..m.data.len() {
-            m.data[i] = thread_rng().gen_range(lb.min(ub)..ub.max(lb));
-        }
-        Ok(m)
-    }
-
-    pub fn from_vec(row: usize, col: usize, data: Vec<f64>) -> Result<Self, String> {
+    pub fn from_vec(row: usize, col: usize, data: Vec<N>) -> Result<Self, RMatrixError> {
         //! init a matrix from a vector
         //!
         //! vector will fill the matrix by row
@@ -74,7 +61,7 @@ impl Matrix {
         Ok(m)
     }
 
-    pub fn from_stdin() -> Result<Self, String> {
+    pub fn from_stdin() -> Result<Self, RMatrixError> {
         //! read a matrix from stdin
         //!
         //! # Examples
@@ -86,9 +73,9 @@ impl Matrix {
         //! - the data are separated by spaces or newlines
         //! - can not use comma or other separator with data
         //!
-        //! ```rust,no_run
+        //! ```no_run
         //! # use rmatrix::matrix::Matrix;
-        //! let m = Matrix::from_stdin().unwrap();
+        //! let m = Matrix::<f64>::from_stdin().unwrap();
         //! println!("{}", m);
         //!
         //! // matrix shape (r, c): 2, 2    
@@ -100,6 +87,33 @@ impl Matrix {
         //! // [ 3.000,  4.150]
         //! // <mat[c2i8szSj] 2x2>
         //! ```
+        //!
+        //! # Warning
+        //!
+        //! for complex number of other type
+        //!
+        //! `from_stdin()` method is using whitespace to split data,
+        //! be sure to avoid whitespace when entering
+        //!
+        //! if the complex number has only an `Im`, the `Re` should be replaced by 0,
+        //! but there must be a `Re`.
+        //!
+        //! ## Examples
+        //!
+        //! ```no_run
+        //! # use rmatrix::matrix::Matrix;
+        //! let m = Matrix::<Complex>::from_stdin().unwrap();
+        //! println!("{}", m);
+        //!
+        //! // matrix shape (r, c): 2 2
+        //! // matrix data:
+        //! // 1+2I -3-3.14I
+        //! // 0-4I -3.14+2I
+        //! //
+        //! // [1.000+2.000I, -3.000-3.140I]
+        //! // [0.000-4.000I, -3.140+2.000I]
+        //! // <mat[nhQSomO8] 2x2>
+        //! ```
 
         print!("matrix shape (r, c): ");
         std::io::Write::flush(&mut std::io::stdout()).expect("failed to flush stdout");
@@ -109,7 +123,7 @@ impl Matrix {
             rb.clear();
             if std::io::stdin().read_line(&mut rb).is_ok() {
                 shape_info = rb
-                    .split(|c: char| c.is_whitespace() || c.is_ascii_punctuation())
+                    .split(|c: char| c.is_whitespace() || c == ',')
                     .filter(|s| !s.is_empty())
                     .map(|s| s.parse::<usize>().unwrap_or_default())
                     .collect::<Vec<_>>();
@@ -118,7 +132,7 @@ impl Matrix {
                     eprintln!("failed to get matrix shape info, please re-input!");
                     if let Ok(_) = std::io::stdin().read_line(&mut rb) {
                         shape_info = rb
-                            .split(|c: char| c.is_whitespace() || c.is_ascii_punctuation())
+                            .split(|c: char| c.is_whitespace() || c == ',')
                             .filter(|s| !s.is_empty())
                             .map(|s| s.parse::<usize>().unwrap_or_default())
                             .collect::<Vec<_>>();
@@ -145,7 +159,7 @@ impl Matrix {
                 mdata = rb
                     .split(|c: char| c.is_whitespace())
                     .filter(|s| !s.is_empty())
-                    .map(|s| s.trim().parse::<f64>())
+                    .map(|s| s.trim().parse::<N>())
                     .collect();
                 mdata
                     .iter()
@@ -154,8 +168,10 @@ impl Matrix {
             } {
                 mdata.iter().for_each(|v| {
                     if dcnt < m.data.len() {
-                        m.data[dcnt] = v.clone().unwrap();
-                        dcnt += 1;
+                        if let Ok(v) = v {
+                            m.data[dcnt] = v.clone();
+                            dcnt += 1;
+                        }
                     }
                 });
             } else {
@@ -167,38 +183,16 @@ impl Matrix {
         Ok(m)
     }
 
-    #[cfg(feature = "serialize")]
-    pub fn from_json<P: AsRef<std::path::Path>>(
-        path: P,
-    ) -> Result<Vec<Self>, Box<dyn std::error::Error>> {
-        Ok(serde_json::from_reader(std::io::BufReader::new(
-            std::fs::File::open(path)?,
-        ))?)
-    }
-
-    #[cfg(feature = "serialize")]
-    pub fn to_json<P: AsRef<std::path::Path>>(
-        data: &Vec<Self>,
-        path: P,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        write!(
-            std::fs::File::create(path)?,
-            "{}",
-            serde_json::to_string(data)?
-        )?;
-        Ok(())
-    }
-
-    pub fn p_change(n: usize, i: usize, j: usize) -> Result<Matrix, String> {
+    pub fn p_change(n: usize, i: usize, j: usize) -> Result<Matrix<N>, RMatrixError> {
         let mut m = Self::eyes(n, n)?;
-        m.set(0.0, i, i)?;
-        m.set(0.0, j, j)?;
-        m.set(1.0, i, j)?;
-        m.set(1.0, j, i)?;
+        m.set(N::default(), i, i)?;
+        m.set(N::default(), j, j)?;
+        m.set(N::one(), i, j)?;
+        m.set(N::one(), j, i)?;
         Ok(m)
     }
 
-    pub fn p_add(n: usize, k: f64, i: usize, j: usize) -> Result<Self, String> {
+    pub fn p_add(n: usize, k: N, i: usize, j: usize) -> Result<Self, RMatrixError> {
         //! add `k` times row/column `i` to row/column `i`
         //!
         //! # Examples
@@ -216,21 +210,21 @@ impl Matrix {
         Ok(m)
     }
 
-    pub fn p_smul(n: usize, k: f64, i: usize) -> Result<Self, String> {
+    pub fn p_smul(n: usize, k: N, i: usize) -> Result<Self, RMatrixError> {
         let mut m = Self::eyes(n, n)?;
         m.set(k, i, i)?;
         Ok(m)
     }
 
-    pub fn inner(v1: Vec<f64>, v2: Vec<f64>) -> Result<f64, String> {
+    pub fn dot(v1: Vec<N>, v2: Vec<N>) -> Result<N, RMatrixError> {
         if v1.len() == v2.len() {
             Ok(std::iter::zip(v1, v2).map(|(e1, e2)| e1 * e2).sum())
         } else {
-            Err(format!("vectors must have same length"))
+            Err(RMatrixError::LengthInconsistent(v1.len(), v2.len()))
         }
     }
 
-    pub fn outter(v1: Vec<f64>, v2: Vec<f64>) -> Result<Self, String> {
+    pub fn outer(v1: Vec<N>, v2: Vec<N>) -> Result<Self, RMatrixError> {
         let mut m = Self::zeros(v1.len(), v2.len())?;
         for i in 0..v1.len() {
             for j in 0..v2.len() {
@@ -241,7 +235,22 @@ impl Matrix {
     }
 }
 
-impl std::fmt::Display for Matrix {
+impl Matrix<f64> {
+    pub fn rand(
+        r: usize,
+        c: usize,
+        lb: f64,
+        ub: f64,
+    ) -> Result<Matrix<f64>, Box<dyn std::error::Error>> {
+        let mut m = Self::zeros(r, c)?;
+        for i in 0..m.data.len() {
+            m.data[i] = thread_rng().gen_range(lb.min(ub)..ub.max(lb));
+        }
+        Ok(m)
+    }
+}
+
+impl<N: Number> std::fmt::Display for Matrix<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "")?;
         for r in 1..=self.shape.row {
@@ -259,7 +268,7 @@ impl std::fmt::Display for Matrix {
     }
 }
 
-impl PartialEq for Matrix {
+impl<N: Number> PartialEq for Matrix<N> {
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data && self.shape == other.shape
     }

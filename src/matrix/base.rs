@@ -1,11 +1,21 @@
-use crate::matrix::Matrix;
+use crate::{error::RMatrixError, matrix::Matrix, types::Number};
 
-impl Matrix {
-    pub fn add(&self, rhs: &Self) -> Result<Self, String> {
+impl<N: Number> Matrix<N> {
+    pub fn transpose(&self) -> Result<Self, RMatrixError> {
+        let mut m = Matrix::zeros(self.shape.col, self.shape.row)?;
+        for i in 1..=self.shape.row {
+            for j in 1..=self.shape.col {
+                m.set(self.get(i, j)?, j, i)?;
+            }
+        }
+        Ok(m)
+    }
+
+    pub fn plus(&self, rhs: &Self) -> Result<Self, RMatrixError> {
         if self.shape != rhs.shape {
-            Err(format!(
-                "size {} is not compatible with size {}",
-                rhs.shape, self.shape
+            Err(RMatrixError::ShapeInconsistent(
+                rhs.dimensions(),
+                self.dimensions(),
             ))
         } else {
             let mut m = Self::zeros(self.shape.row, rhs.shape.col)?;
@@ -16,22 +26,22 @@ impl Matrix {
         }
     }
 
-    pub fn mul(&self, rhs: &Self) -> Result<Self, String> {
+    pub fn times(&self, rhs: &Self) -> Result<Self, RMatrixError> {
         if self.shape.col != rhs.shape.row {
-            Err(format!(
-                "size {} is not compatible with size {}",
-                rhs.shape, self.shape
+            Err(RMatrixError::ShapeInconsistent(
+                rhs.dimensions(),
+                self.dimensions(),
             ))
         } else {
             let mut m = Self::zeros(self.shape.row, rhs.shape.col)?;
             for i in 1..=self.shape.col {
-                m = m.add(&Self::outter(self.get_col(i)?, rhs.get_row(i)?)?)?;
+                m = m.plus(&Self::outer(self.get_col(i)?, rhs.get_row(i)?)?)?;
             }
             Ok(m)
         }
     }
 
-    pub fn smul(&self, k: f64) -> Result<Self, String> {
+    pub fn smul(&self, k: N) -> Result<Self, RMatrixError> {
         let mut m = Self::zeros(self.shape.row, self.shape.col)?;
         for i in 0..self.data.len() {
             m.data[i] = self.data[i] * k;
@@ -39,11 +49,11 @@ impl Matrix {
         Ok(m)
     }
 
-    pub fn sub(&self, rhs: &Self) -> Result<Self, String> {
+    pub fn subtract(&self, rhs: &Self) -> Result<Self, RMatrixError> {
         if self.shape != rhs.shape {
-            Err(format!(
-                "size {} is not compatible with size {}",
-                rhs.shape, self.shape
+            Err(RMatrixError::ShapeInconsistent(
+                self.dimensions(),
+                rhs.dimensions(),
             ))
         } else {
             let mut m = Self::zeros(self.shape.row, rhs.shape.col)?;

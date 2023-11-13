@@ -1,8 +1,8 @@
-#[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+use crate::error::RMatrixError;
+
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 /// size of a matrix
 pub struct MatrixShape {
     /// row size
@@ -12,17 +12,17 @@ pub struct MatrixShape {
 }
 
 impl MatrixShape {
-    pub fn new(row: usize, col: usize) -> Result<Self, String> {
+    pub fn new(row: usize, col: usize) -> Result<Self, RMatrixError> {
         if row == 0 || col == 0 {
-            Err(format!("size must greater than 0"))
+            Err(RMatrixError::ShapeUnreasonable)
         } else {
             Ok(Self { row, col })
         }
     }
 
-    pub fn vpos(&self, prow: usize, pcol: usize) -> Result<usize, String> {
+    pub fn vpos(&self, prow: usize, pcol: usize) -> Result<usize, RMatrixError> {
         if prow > self.row || pcol > self.col {
-            Err(format!("({}, {}) out of boundary!", prow, pcol))
+            Err(RMatrixError::OutOfBoundary(prow, pcol))
         } else {
             Ok((prow - 1) * self.col + pcol - 1)
         }
