@@ -1,6 +1,6 @@
 //! implementation of Number for Complex
 
-use crate::{complex::Complex, error::RMatrixError, number::Number};
+use crate::complex::Complex;
 
 impl std::ops::Add for Complex {
     type Output = Self;
@@ -30,15 +30,10 @@ impl std::ops::Mul for Complex {
 }
 
 impl std::ops::Div for Complex {
-    type Output = Result<Self, RMatrixError>;
+    type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
-        if rhs.is_zero() {
-            Err(RMatrixError::DivideByZero)
-        } else {
-            let rhs_norm = rhs.norm();
-            Ok(Complex::new(self.re() / rhs_norm, self.im() / rhs_norm))
-        }
+        Complex::new(self.re() / rhs.norm(), self.im() / rhs.norm())
     }
 }
 

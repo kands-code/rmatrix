@@ -2,7 +2,7 @@ use crate::{complex::Complex, error::RMatrixError};
 
 impl Default for Complex {
     fn default() -> Self {
-        Complex::new(Default::default(), Default::default())
+        Complex::new(f64::default(), f64::default())
     }
 }
 
@@ -41,7 +41,7 @@ impl std::str::FromStr for Complex {
                     .collect::<String>()
                     .parse()?,
                 if im.is_empty() {
-                    Default::default()
+                    f64::default()
                 } else {
                     im[..im.len() - 1]
                         .iter()
@@ -57,7 +57,7 @@ impl std::str::FromStr for Complex {
 
 impl std::iter::Sum for Complex {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        let mut n = Default::default();
+        let mut n = Complex::default();
         for i in iter {
             n = n + i;
         }

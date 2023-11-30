@@ -1,4 +1,4 @@
-//! attribute of a matrix
+//! attribute of matrices
 
 use crate::{error::RMatrixError, matrix::Matrix, number::Number};
 
@@ -55,7 +55,7 @@ impl<N: Number> Matrix<N> {
     }
 
     pub fn tr(&self) -> Result<N, RMatrixError> {
-        let mut t = Default::default();
+        let mut t = N::default();
         for i in 1..=self.shape.row.min(self.shape.col) {
             t = t + self.get(i, i)?;
         }

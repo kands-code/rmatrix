@@ -4,7 +4,7 @@ pub trait Number:
     std::ops::Add<Output = Self>
     + std::ops::Sub<Output = Self>
     + std::ops::Mul<Output = Self>
-    + std::ops::Div
+    + std::ops::Div<Output = Self>
     + std::ops::Neg<Output = Self>
     + PartialEq
     + Default
@@ -16,12 +16,17 @@ pub trait Number:
     + std::iter::Sum
 {
     fn one() -> Self;
+    fn neg_one() -> Self;
     fn is_zero(&self) -> bool;
 }
 
 impl Number for f64 {
     fn one() -> Self {
         1.0f64
+    }
+
+    fn neg_one() -> Self {
+        -1.0f64
     }
 
     fn is_zero(&self) -> bool {
@@ -33,6 +38,11 @@ impl Number for i32 {
     fn one() -> Self {
         1i32
     }
+
+    fn neg_one() -> Self {
+        -1i32
+    }
+
     fn is_zero(&self) -> bool {
         self == &0i32
     }
@@ -40,8 +50,13 @@ impl Number for i32 {
 
 impl Number for Complex {
     fn one() -> Self {
-        Complex::new(f64::one(), Default::default())
+        Complex::new(f64::one(), f64::default())
     }
+
+    fn neg_one() -> Self {
+        Complex::new(f64::neg_one(), f64::default())
+    }
+
     fn is_zero(&self) -> bool {
         self.norm().is_zero()
     }

@@ -11,8 +11,8 @@ impl<N: Number> Matrix<N> {
     /// # Examples
     ///
     /// ```
-    /// # use rmatrix::matrix::Matrix;
-    /// # use rmatrix::error::RMatrixError;
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::RMatrixError;
     /// // get a 3x3 zero matrix
     /// # fn main() -> Result<(), RMatrixError> {
     /// let zero_matrix = Matrix::<f64>::zeros(3, 3)?;
@@ -30,7 +30,7 @@ impl<N: Number> Matrix<N> {
 
         Ok(Matrix {
             shape: MatrixShape::new(r, c)?,
-            data: vec![Default::default(); r * c],
+            data: vec![N::default(); r * c],
             tag: random_tag(TAG_LEANGTH),
         })
     }
@@ -51,7 +51,7 @@ impl<N: Number> Matrix<N> {
         //! # Examples
         //!
         //! ```rust
-        //! # use rmatrix::matrix::Matrix;
+        //! # use rmatrix_ks::matrix::Matrix;
         //! let m = Matrix::from_vec(2, 2, vec![1.0, 2.0, 3.0, 4.0]).unwrap();
         //! println!("{}", m);
         //! // will show like this:
@@ -60,9 +60,13 @@ impl<N: Number> Matrix<N> {
         //! // <mat[f8YWn3K7] 2x2>
         //! ```
 
-        let mut m = Self::zeros(row, col)?;
-        m.data = data;
-        Ok(m)
+        if data.len() > row * col {
+            Err(RMatrixError::ShapeUnreasonable)
+        } else {
+            let mut m = Self::zeros(row, col)?;
+            m.data = data;
+            Ok(m)
+        }
     }
 
     pub fn from_stdin() -> Result<Self, RMatrixError> {
@@ -78,7 +82,7 @@ impl<N: Number> Matrix<N> {
         //! - can not use comma or other separator with data
         //!
         //! ```no_run
-        //! # use rmatrix::matrix::Matrix;
+        //! # use rmatrix_ks::matrix::Matrix;
         //! let m = Matrix::<f64>::from_stdin().unwrap();
         //! println!("{}", m);
         //!
@@ -203,10 +207,10 @@ impl<N: Number> Matrix<N> {
         //! # Examples
         //!
         //! ```rust
-        //! # use rmatrix::matrix::Matrix;
+        //! # use rmatrix_ks::matrix::Matrix;
         //! let a = Matrix::<f64>::eyes(2, 2).unwrap();
         //! // add 2.0 times row 2 to row 1
-        //! let pa = a.times(&Matrix::<f64>::p_add(2, 2.0, 2, 1).unwrap()).unwrap();
+        //! let pa = Matrix::<f64>::p_add(2, 2.0, 2, 1).unwrap().times(&a).unwrap();
         //! assert_eq!(pa, Matrix::from_vec(2, 2, vec![1.0, 2.0, 0.0, 1.0]).unwrap());
         //! ```
 

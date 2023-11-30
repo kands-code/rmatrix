@@ -1,7 +1,9 @@
+//! matrix shape type
+
 use crate::error::RMatrixError;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-/// size of a matrix
+/// shape of a matrix
 pub struct MatrixShape {
     /// row size
     pub row: usize,

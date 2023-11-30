@@ -2,7 +2,6 @@
 pub enum RMatrixError {
     ShapeUnreasonable,
     ParseFailed(String),
-    DivideByZero,
     OutOfBoundary(usize, usize),
     OutOfRowBoundary(usize),
     OutOfColumnBoundary(usize),
@@ -15,7 +14,6 @@ impl std::fmt::Display for RMatrixError {
         match self {
             RMatrixError::ShapeUnreasonable => write!(f, "shape should be at least (1, 1)"),
             RMatrixError::ParseFailed(s) => write!(f, "parse failed with {}", s),
-            RMatrixError::DivideByZero => write!(f, "divide by zero"),
             RMatrixError::OutOfBoundary(r, c) => {
                 write!(f, "position ({}, {}) out of boundary!", r, c)
             }

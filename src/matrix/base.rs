@@ -1,3 +1,5 @@
+//! basic operations of matrices
+
 use crate::{error::RMatrixError, matrix::Matrix, number::Number};
 
 impl<N: Number> Matrix<N> {

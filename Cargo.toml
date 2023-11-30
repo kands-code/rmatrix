@@ -1,12 +1,13 @@
 [package]
 name = "rmatrix_ks"
-authors = ["Kevin Stephen <kizunaaisesu@gmail.com>"]
+authors = ["Kevin Stephen <qarks@icloud.com>"]
 version = "0.2.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 description = "matrix and some algebra in Rust"
 readme = "README.md"
 repository = "https://github.com/kands-code/rmatrix"
+documentation = "https://docs.rs/rmatrix_ks"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
