@@ -44,22 +44,23 @@ impl<N: Number> Matrix<N> {
         Ok((m, np, factor))
     }
 
-    pub fn row_reduce(&self) -> Result<Self, RMatrixError> {
-        let (mut m, _, _) = self.row_eliminate()?;
+    pub fn row_reduce(&self) -> Result<(Self, Self), RMatrixError> {
+        let (mut m, mut np, _) = self.row_eliminate()?;
         let mut bias = 0;
         let size = m.shape.row.min(m.shape.col);
         let mut i = 1;
-        while i <= size {
+        while i <= size && i + bias <= m.shape.col {
             if !m.get(i, i + bias)?.is_zero() {
                 let p = m.get(i, i + bias)?;
-                for j in 1..=m.shape.col {
-                    m.set(m.get(i, j)? / p, i, j)?;
-                }
+                let p_smul = Matrix::p_smul(m.shape.row, N::one() / p, i)?;
+                np = p_smul.times(&np)?;
+                m = p_smul.times(&m)?;
                 for j in 1..i {
-                    println!("i = {}, j = {}", i, j);
                     if !m.get(j, i + bias)?.is_zero() {
                         let p = m.get(j, i + bias)? / m.get(i, i + bias)?;
-                        m = Matrix::p_add(m.shape.row, -p, i, j)?.times(&m)?;
+                        let p_add = Matrix::p_add(m.shape.row, -p, i, j)?;
+                        np = p_add.times(&np)?;
+                        m = p_add.times(&m)?;
                     }
                 }
                 i += 1;
@@ -67,10 +68,19 @@ impl<N: Number> Matrix<N> {
                 bias += 1;
             }
         }
-        Ok(m)
+        Ok((m, np))
     }
 
-    pub fn det(&self) -> N {
-        unimplemented!()
+    pub fn det(&self) -> Result<N, RMatrixError> {
+        if self.shape.row != self.shape.col {
+            Err(RMatrixError::MatrixNotSquare)
+        } else {
+            let (m, _, a) = self.row_eliminate()?;
+            let mut res = N::one();
+            for i in 1..=m.shape.row {
+                res = res * m.get(i, i)?;
+            }
+            Ok(res * a)
+        }
     }
 }

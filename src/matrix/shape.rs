@@ -21,7 +21,7 @@ impl MatrixShape {
     }
 
     pub fn vpos(&self, prow: usize, pcol: usize) -> Result<usize, RMatrixError> {
-        if prow > self.row || pcol > self.col {
+        if prow > self.row || pcol > self.col || prow < 1 || pcol < 1 {
             Err(RMatrixError::OutOfBoundary(prow, pcol))
         } else {
             Ok((prow - 1) * self.col + pcol - 1)

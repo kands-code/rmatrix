@@ -8,9 +8,9 @@ impl<N: Number> Matrix<N> {
     /// # Examples
     ///
     /// ```
-    /// # use rmatrix::matrix::Matrix;
-    /// # use rmatrix::complex::Complex;
-    /// # use rmatrix::error::RMatrixError;
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::complex::Complex;
+    /// # use rmatrix_ks::error::RMatrixError;
     /// # fn main() -> Result<(), RMatrixError> {
     /// let m = Matrix::<Complex>::zeros(2, 2)?;
     /// assert_eq!(m.dimensions(), (2, 2));
@@ -60,5 +60,22 @@ impl<N: Number> Matrix<N> {
             t = t + self.get(i, i)?;
         }
         Ok(t)
+    }
+
+    pub fn inverse(&self) -> Result<Self, RMatrixError> {
+        if self.shape.row != self.shape.col {
+            Err(RMatrixError::MatrixNotSquare)
+        } else {
+            Ok(self.row_reduce()?.1)
+        }
+    }
+
+    pub fn rank(&self) -> Result<usize, RMatrixError> {
+        let (m, _, _) = self.row_eliminate()?;
+        Ok((1..=m.shape.row)
+            .map(|i| m.get_row(i).unwrap())
+            .map(|r| r.iter().any(|v| !v.is_zero()))
+            .filter(|&v| v)
+            .count())
     }
 }

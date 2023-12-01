@@ -30,21 +30,7 @@ impl Number for f64 {
     }
 
     fn is_zero(&self) -> bool {
-        ((self.abs() * (10.0f64).powi(8)).trunc() as i32).is_zero()
-    }
-}
-
-impl Number for i32 {
-    fn one() -> Self {
-        1i32
-    }
-
-    fn neg_one() -> Self {
-        -1i32
-    }
-
-    fn is_zero(&self) -> bool {
-        self == &0i32
+        ((self.abs() * (10.0f64).powi(8)).trunc() as i32) == 0i32
     }
 }
 

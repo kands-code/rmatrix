@@ -37,7 +37,7 @@ impl<N: Number> Matrix<N> {
         } else {
             let mut m = Self::zeros(self.shape.row, rhs.shape.col)?;
             for i in 1..=self.shape.col {
-                m = m.plus(&Self::outer(self.get_col(i)?, rhs.get_row(i)?)?)?;
+                m = m.plus(&Self::outer(&self.get_col(i)?, &rhs.get_row(i)?)?)?;
             }
             Ok(m)
         }

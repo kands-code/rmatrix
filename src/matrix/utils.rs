@@ -109,8 +109,8 @@ impl<N: Number> Matrix<N> {
         //! ## Examples
         //!
         //! ```no_run
-        //! # use rmatrix::matrix::Matrix;
-        //! # use rmatrix::complex::Complex;
+        //! # use rmatrix_ks::matrix::Matrix;
+        //! # use rmatrix_ks::complex::Complex;
         //! let m = Matrix::<Complex>::from_stdin().unwrap();
         //! println!("{}", m);
         //!
@@ -225,15 +225,55 @@ impl<N: Number> Matrix<N> {
         Ok(m)
     }
 
-    pub fn dot(v1: Vec<N>, v2: Vec<N>) -> Result<N, RMatrixError> {
+    pub fn hcat(m1: &Matrix<N>, m2: &Matrix<N>) -> Result<Self, RMatrixError> {
+        if m1.shape.row != m2.shape.row {
+            Err(RMatrixError::ShapeInconsistent(
+                m1.dimensions(),
+                m2.dimensions(),
+            ))
+        } else {
+            let mut m = Matrix::zeros(m1.shape.row, m1.shape.col + m2.shape.col)?;
+            for i in 1..=m1.shape.row {
+                for j in 1..=m1.shape.col {
+                    m.set(m1.get(i, j)?, i, j)?;
+                }
+                for j in 1..=m2.shape.col {
+                    m.set(m2.get(i, j)?, i, j + m1.shape.col)?;
+                }
+            }
+            Ok(m)
+        }
+    }
+
+    pub fn vcat(m1: &Matrix<N>, m2: &Matrix<N>) -> Result<Self, RMatrixError> {
+        if m1.shape.col != m2.shape.col {
+            Err(RMatrixError::ShapeInconsistent(
+                m1.dimensions(),
+                m2.dimensions(),
+            ))
+        } else {
+            let mut m = Matrix::zeros(m1.shape.row + m2.shape.row, m1.shape.col)?;
+            for i in 1..=m1.shape.col {
+                for j in 1..=m1.shape.row {
+                    m.set(m1.get(j, i)?, j, i)?;
+                }
+                for j in 1..=m2.shape.row {
+                    m.set(m2.get(j, i)?, j + m1.shape.row, i)?;
+                }
+            }
+            Ok(m)
+        }
+    }
+
+    pub fn dot(v1: &Vec<N>, v2: &Vec<N>) -> Result<N, RMatrixError> {
         if v1.len() == v2.len() {
-            Ok(std::iter::zip(v1, v2).map(|(e1, e2)| e1 * e2).sum())
+            Ok(std::iter::zip(v1, v2).map(|(&e1, &e2)| e1 * e2).sum())
         } else {
             Err(RMatrixError::LengthInconsistent(v1.len(), v2.len()))
         }
     }
 
-    pub fn outer(v1: Vec<N>, v2: Vec<N>) -> Result<Self, RMatrixError> {
+    pub fn outer(v1: &Vec<N>, v2: &Vec<N>) -> Result<Self, RMatrixError> {
         let mut m = Self::zeros(v1.len(), v2.len())?;
         for i in 0..v1.len() {
             for j in 0..v2.len() {
@@ -241,6 +281,81 @@ impl<N: Number> Matrix<N> {
             }
         }
         Ok(m)
+    }
+
+    pub fn solve_linear_equations(a: &Matrix<N>, b: &Matrix<N>) -> Result<(), RMatrixError> {
+        fn format_vec_n<N: Number>(v: Vec<N>) -> String {
+            if v.len() == 0 {
+                "[]".to_owned()
+            } else {
+                let mut s = String::from("[");
+                for i in 0..(v.len() - 1) {
+                    s.push_str(&format!("{}, ", v[i]));
+                }
+                s.push_str(&format!("{}]", v[v.len() - 1]));
+                s
+            }
+        }
+
+        if a.shape.row > a.shape.col {
+            Err(RMatrixError::LinearEquationsNoSolution(a.dimensions()))
+        } else if a.shape.row != b.shape.row {
+            Err(RMatrixError::ShapeInconsistent(
+                a.dimensions(),
+                b.dimensions(),
+            ))
+        } else {
+            let (m, pn) = a.row_reduce()?;
+            let mb = pn.times(&b)?;
+            let (r, c) = m.dimensions();
+
+            let mut bias = 0;
+            let mut has_soluion: Vec<bool> = Vec::with_capacity(c);
+            for _ in 0..c {
+                has_soluion.push(false);
+            }
+            let mut i = 1;
+            while i <= r && i + bias <= c {
+                if !m.get(i, i + bias)?.is_zero() {
+                    has_soluion[i + bias - 1] = true;
+                    i += 1;
+                } else {
+                    bias += 1;
+                };
+            }
+            let mut ans: Vec<String> = Vec::with_capacity(c);
+            bias = 0;
+            i = 0;
+            while i < r {
+                if has_soluion[i + bias] {
+                    ans.push(format_vec_n(mb.get_row(i + 1)?));
+                    for j in (i + bias)..c {
+                        if !has_soluion[j] {
+                            let v = m.get(i + 1, j + 1)?;
+                            ans[i + bias].push_str(&format!(
+                                " {} x{}",
+                                if (v - N::one()).is_zero() {
+                                    "-".to_owned()
+                                } else if (v + N::one()).is_zero() {
+                                    "+".to_owned()
+                                } else {
+                                    format!("{:+}", -v)
+                                },
+                                j + 1
+                            ))
+                        }
+                    }
+                    i += 1;
+                } else {
+                    ans.push(format!("x{}", i + bias + 1));
+                    bias += 1;
+                }
+            }
+            ans.iter().enumerate().for_each(|(i, v)| {
+                println!("x{} = {}", i + 1, v);
+            });
+            Ok(())
+        }
     }
 }
 
