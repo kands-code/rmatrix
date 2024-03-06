@@ -1,15 +1,11 @@
-use rmatrix_ks::matrix::Matrix;
+use rmatrix_ks::{complex::Complex, file::IFile, Matrix};
+use std::{fs::File, io::read_to_string};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // let m = Matrix::<f64>::from_stdin()?;
-    // let a = Matrix::from_vec(
-    //     3,
-    //     4,
-    //     vec![1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 2.0, 6.0, 1.0, 2.0, 5.0, 2.0],
-    // )?;
-    // let b = Matrix::from_vec(3, 1, vec![5.0, 10.0, 7.0])?;
-    // Matrix::solve_linear_equations(&a, &b)?;
-    let a = Matrix::from_vec(3, 3, vec![1.0, 7.0, 3.0, 4.0, 5.0, 9.0, 7.0, 8.0, 9.0])?;
-    println!("{}", a.det()?);
-    Ok(())
+fn main() {
+    let m = Matrix::<_, 3, 3>::diag(&vec![Complex(2, 3), Complex(4, 2), Complex(5, 1)]);
+    println!("{}", m);
+    Matrix::write_to("data/test.json", &vec![m]);
+    let file = File::open("data/test.json").unwrap();
+    let vm: Vec<Matrix<Complex<i32>, 3, 3>> = Matrix::read_from(&read_to_string(file).unwrap());
+    println!("{}", vm[0]);
 }

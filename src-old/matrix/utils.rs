@@ -10,7 +10,7 @@ impl<N: Number> Matrix<N> {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::RMatrixError;
     /// // get a 3x3 zero matrix
@@ -290,9 +290,9 @@ impl<N: Number> Matrix<N> {
             } else {
                 let mut s = String::from("[");
                 for i in 0..(v.len() - 1) {
-                    s.push_str(&format!("{}, ", v[i]));
+                    s.push_str(&format!("{:.3}, ", v[i]));
                 }
-                s.push_str(&format!("{}]", v[v.len() - 1]));
+                s.push_str(&format!("{:.3}]", v[v.len() - 1]));
                 s
             }
         }

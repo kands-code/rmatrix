@@ -13,7 +13,7 @@ impl Complex {
         self.0
     }
 
-    /// get the imagine part of a complex number
+    /// get the imaginary part of a complex number
     pub fn im(&self) -> f64 {
         self.1
     }
