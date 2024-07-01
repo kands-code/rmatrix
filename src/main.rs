@@ -1,11 +1,10 @@
-use rmatrix_ks::{complex::Complex, file::IFile, Matrix};
-use std::{fs::File, io::read_to_string};
+use rmatrix_ks::error::MatrixError;
+use rmatrix_ks::matrix::Matrix;
 
-fn main() {
-    let m = Matrix::<_, 3, 3>::diag(&vec![Complex(2, 3), Complex(4, 2), Complex(5, 1)]);
-    println!("{}", m);
-    Matrix::write_to("data/test.json", &vec![m]);
-    let file = File::open("data/test.json").unwrap();
-    let vm: Vec<Matrix<Complex<i32>, 3, 3>> = Matrix::read_from(&read_to_string(file).unwrap());
-    println!("{}", vm[0]);
+fn main() -> Result<(), MatrixError> {
+    let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+    println!("{}", mat);
+    let diag = mat.get_diag()?;
+    println!("{}", diag);
+    Ok(())
 }

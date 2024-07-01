@@ -1,82 +1,34 @@
-//! vector operations
+//! # Vector
 //!
-//! a matrix is said to be a vector,
-//! if the number of columns of the matrix is 0
-//!
-//! the default vector is the column vector,
-//! and the row vector is the transpose of the column vector
+//! vector manipulations
 
-use crate::{number::INum, Matrix};
+use crate::error::MatrixError;
+use crate::matrix::Matrix;
 
-pub type Vector<N, const R: usize> = Matrix<N, R, 1>;
+/// vector is a one-dimensional matrix
+///
+/// by default, the vector is a column vector
+pub type VectorC<T, const ROW: usize> = Matrix<T, ROW, 1>;
 
-pub trait IVec {
-    /// vector element type
-    type Val;
+/// the row vector
+pub type VectorR<T, const COL: usize> = Matrix<T, 1, COL>;
 
-    fn euclidean_norm(&self) -> f64;
-
-    fn unit(&self) -> Self;
-
-    fn inner_product(&self, rhs: &Self) -> Self::Val;
-
-    fn outer_product(&self, rhs: &Self) -> Self;
-
-    fn project(&self, rhs: &Self) -> Self;
-}
-
-impl<'de, N: INum<'de>, const R: usize> IVec for Vector<N, R> {
-    type Val = N;
-
-    fn euclidean_norm(&self) -> f64 {
-        let mut result = N::default();
-        for i in 1..=R {
-            result = result + self.get(i, 1).clone() * self.get(i, 1).clone();
+pub fn times_v<T, const ROW: usize, const COL: usize>(
+    vector_c: VectorC<T, ROW>,
+    vector_r: VectorR<T, COL>,
+) -> Result<Matrix<T, ROW, COL>, MatrixError>
+where
+    T: Clone + Default + std::ops::Mul<Output = T>,
+{
+    let mut mat = Matrix::<T, ROW, COL>::create(vec![T::default(); ROW * COL])?;
+    for r in 1..=ROW {
+        for c in 1..=COL {
+            mat.set_element(
+                r,
+                c,
+                vector_c.get_element(r, 1)?.to_owned() * vector_r.get_element(1, c)?.to_owned(),
+            )?;
         }
-        let result: f64 = result.into();
-        result.sqrt()
     }
-
-    fn unit(&self) -> Self {
-        assert!(!self.is_zero());
-        let u = self.clone();
-        u.smul(N::one() / N::from_f64(u.euclidean_norm()))
-    }
-
-    fn inner_product(&self, rhs: &Self) -> Self::Val {
-        let mut s = N::default();
-        for i in 1..=R {
-            s = s + self.get(i, 1).clone() * rhs.get(i, 1).clone();
-        }
-        s
-    }
-
-    fn outer_product(&self, rhs: &Self) -> Self {
-        assert!(3 == R);
-        let mut z = Matrix::zeros();
-        z.set(
-            1,
-            1,
-            self.get(2, 1).clone() * rhs.get(3, 1).clone()
-                - self.get(3, 1).clone() * rhs.get(2, 1).clone(),
-        );
-        z.set(
-            2,
-            1,
-            self.get(3, 1).clone() * rhs.get(1, 1).clone()
-                - self.get(1, 1).clone() * rhs.get(3, 1).clone(),
-        );
-        z.set(
-            3,
-            1,
-            self.get(1, 1).clone() * rhs.get(2, 1).clone()
-                - self.get(2, 1).clone() * rhs.get(1, 1).clone(),
-        );
-        z
-    }
-
-    fn project(&self, rhs: &Self) -> Self {
-        let rhs_length = rhs.euclidean_norm();
-        rhs.smul(self.inner_product(rhs) / N::from_f64(rhs_length.clone() * rhs_length))
-    }
+    Ok(mat)
 }
