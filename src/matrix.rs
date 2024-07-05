@@ -53,11 +53,11 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn zeros() -> Result<Matrix<T, ROW, COL>, MatrixError>
+    pub fn zeros() -> Result<Self, MatrixError>
     where
         T: Clone + Default,
     {
-        Matrix::<T, ROW, COL>::create(vec![T::default(); ROW * COL])
+        Self::create(vec![T::default(); ROW * COL])
     }
 
     /// get the shape of the matrix
@@ -144,7 +144,7 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
             for c in 1..=COL {
                 nth_row.push(self.get_element(row, c)?);
             }
-            Matrix::create(nth_row)
+            VectorR::<&T, COL>::create(nth_row)
         }
     }
 
@@ -169,7 +169,7 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
             for r in 1..=ROW {
                 nth_col.push(self.get_element(r, col)?);
             }
-            Matrix::create(nth_col)
+            VectorC::<&T, ROW>::create(nth_col)
         }
     }
 
@@ -258,7 +258,7 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
             .iter()
             .map(|e| f(e.to_owned()))
             .collect::<Vec<_>>();
-        Matrix::create(mapped)
+        Matrix::<N, ROW, COL>::create(mapped)
     }
 }
 
