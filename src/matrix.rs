@@ -239,6 +239,8 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
         Matrix::<T, COL, ROW>::create(transposed)
     }
 
+    /// map a function to a matrix
+    ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
@@ -259,6 +261,66 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
             .map(|e| f(e.to_owned()))
             .collect::<Vec<_>>();
         Matrix::<N, ROW, COL>::create(mapped)
+    }
+
+    /// concatenate two matrices horizontally
+    ///
+    /// **note: this will consume the original matrix**
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let mat1: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+    /// let mat2: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+    /// assert_eq!(Matrix::create(vec![1, 2, 3, 1, 2, 3, 4, 5, 6, 4, 5, 6])?,
+    ///     mat1.horizontal_concat(mat2)?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn horizontal_concat<const RCOL: usize>(
+        self,
+        rhs: Matrix<T, ROW, RCOL>,
+    ) -> Result<Matrix<T, ROW, { COL + RCOL }>, MatrixError>
+    where
+        T: Clone + Default,
+    {
+        let mut hmat = Matrix::zeros()?;
+        for r in 1..=ROW {
+            for c1 in 1..=COL {
+                hmat.set_element(r, c1, self.get_element(r, c1)?.to_owned())?;
+            }
+
+            for c2 in 1..=RCOL {
+                hmat.set_element(r, COL + c2, rhs.get_element(r, c2)?.to_owned())?;
+            }
+        }
+        Ok(hmat)
+    }
+
+    /// concatenate two matrices vertically
+    ///
+    /// **note: this will consume the original matrix**
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let mat1: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+    /// let mat2: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+    /// assert_eq!(Matrix::create(vec![1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6])?,
+    ///     mat1.vertical_concat(mat2)?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn vertical_concat<const RROW: usize>(
+        self,
+        rhs: Matrix<T, RROW, COL>,
+    ) -> Result<Matrix<T, { ROW + RROW }, COL>, MatrixError>
+    where
+        T: Clone + Default,
+    {
+        Matrix::create([&self.inner[..], &rhs.inner[..]].concat())
     }
 }
 

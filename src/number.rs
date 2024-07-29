@@ -300,7 +300,7 @@ mod inner_test {
     use rand::Rng;
 
     #[test]
-    fn test_f64_is_zero() {
+    fn test_f64_is_zero_or_one() {
         assert!((0.0f64).is_zero());
         let mut rng = ThreadRng::default();
         for _ in 0..1024 {
