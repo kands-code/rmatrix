@@ -17,4 +17,5 @@
 pub mod error;
 pub mod matrix;
 pub mod number;
+pub mod utils;
 pub mod vector;

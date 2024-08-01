@@ -7,8 +7,17 @@
 //! *does not have any optimization*
 
 use crate::error::MatrixError;
+use crate::number::Number;
+use crate::utils::is_upper_triangle_matrix;
+use crate::vector::times_v;
 use crate::vector::VectorC;
 use crate::vector::VectorR;
+
+#[cfg(feature = "rand_mat")]
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
 
 /// matrix type
 #[derive(Debug, Clone)]
@@ -16,6 +25,7 @@ pub struct Matrix<T, const ROW: usize, const COL: usize> {
     pub(crate) inner: Vec<T>,
 }
 
+/// default implementations
 impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// create a matrix with size row by col
     ///
@@ -262,45 +272,137 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
             .collect::<Vec<_>>();
         Matrix::<N, ROW, COL>::create(mapped)
     }
+}
 
-    /// concatenate two matrices horizontally
-    ///
-    /// **note: this will consume the original matrix**
+/// implementation for matrix which element type is a Number
+impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL>
+where
+    T: Number,
+{
+    /// create an identity matrix with size row by col
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// let mat1: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// let mat2: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// assert_eq!(Matrix::create(vec![1, 2, 3, 1, 2, 3, 4, 5, 6, 4, 5, 6])?,
-    ///     mat1.horizontal_concat(mat2)?);
+    /// // [[1i8, 0i8], [0i8, 1i8]]
+    /// let _: Matrix<i8, 2, 2> = Matrix::eyes()?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn horizontal_concat<const RCOL: usize>(
-        self,
-        rhs: Matrix<T, ROW, RCOL>,
-    ) -> Result<Matrix<T, ROW, { COL + RCOL }>, MatrixError>
-    where
-        T: Clone + Default,
-    {
-        let mut hmat = Matrix::zeros()?;
-        for r in 1..=ROW {
-            for c1 in 1..=COL {
-                hmat.set_element(r, c1, self.get_element(r, c1)?.to_owned())?;
-            }
-
-            for c2 in 1..=RCOL {
-                hmat.set_element(r, COL + c2, rhs.get_element(r, c2)?.to_owned())?;
-            }
+    pub fn eyes() -> Result<Self, MatrixError> {
+        let mut mat = Self::zeros()?;
+        for i in 1..=Self::get_edge() {
+            mat.set_element(i, i, T::one())?;
         }
-        Ok(hmat)
+        Ok(mat)
     }
 
-    /// concatenate two matrices vertically
+    #[cfg(feature = "rand_mat")]
+    /// create a random matrix with size row by col
     ///
-    /// **note: this will consume the original matrix**
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// // need "rand_mat" feature
+    /// let _: Matrix<i8, 2, 2> = Matrix::rand()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rand() -> Result<Self, MatrixError>
+    where
+        T: Number,
+        Standard: Distribution<T>,
+    {
+        let mut mat = Self::zeros()?;
+        let mut rng = rand::rngs::ThreadRng::default();
+        mat.inner = mat.inner.iter().map(|_| rng.gen()).collect();
+        Ok(mat)
+    }
+
+    /// exchange i row with j row
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// // [[1i8, 0i8], [0i8, 1i8]]
+    /// let m = Matrix::<i8, 2, 2>::create(vec![1, 2, 3, 4])?;
+    /// let p = Matrix::<i8, 2, 2>::p_change(1, 2)?;
+    /// assert_eq!(
+    ///     Matrix::<i8, 2, 2>::create(vec![3, 4, 1, 2])?,
+    ///     p.to_owned().times(m.to_owned())?
+    /// );
+    /// assert_eq!(
+    ///     Matrix::<i8, 2, 2>::create(vec![2, 1, 4, 3])?,
+    ///     m.times(p)?
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn p_change(i: usize, j: usize) -> Result<Matrix<T, ROW, ROW>, MatrixError> {
+        let mut mat = Matrix::<T, ROW, ROW>::eyes()?;
+        mat.set_element(i, i, T::zero())?;
+        mat.set_element(j, j, T::zero())?;
+        mat.set_element(i, j, T::one())?;
+        mat.set_element(j, i, T::one())?;
+        Ok(mat)
+    }
+
+    /// multiply the i row of the matrix by a scalar
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// // [[1i8, 0i8], [0i8, 1i8]]
+    /// let m = Matrix::<i8, 2, 2>::create(vec![1, 2, 3, 4])?;
+    /// let p = Matrix::<i8, 2, 2>::p_muls(1, 2)?;
+    /// assert_eq!(
+    ///     Matrix::<i8, 2, 2>::create(vec![2, 4, 3, 4])?,
+    ///     p.to_owned().times(m.to_owned())?
+    /// );
+    /// assert_eq!(
+    ///     Matrix::<i8, 2, 2>::create(vec![2, 2, 6, 4])?,
+    ///     m.times(p)?
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn p_muls(i: usize, k: T) -> Result<Matrix<T, ROW, ROW>, MatrixError> {
+        let mut mat = Matrix::<T, ROW, ROW>::eyes()?;
+        mat.set_element(i, i, k)?;
+        Ok(mat)
+    }
+
+    /// add k times of the i row to the j row
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// // [[1i8, 0i8], [0i8, 1i8]]
+    /// let m = Matrix::<i8, 2, 2>::create(vec![1, 2, 3, 4])?;
+    /// let p = Matrix::<i8, 2, 2>::p_add(1, 2, 1)?;
+    /// assert_eq!(
+    ///     Matrix::<i8, 2, 2>::create(vec![1, 2, 4, 6])?,
+    ///     p.to_owned().times(m.to_owned())?
+    /// );
+    /// assert_eq!(
+    ///     Matrix::<i8, 2, 2>::create(vec![1, 3, 3, 7])?,
+    ///     m.times(p.transpose()?)?
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn p_add(i: usize, j: usize, k: T) -> Result<Matrix<T, ROW, ROW>, MatrixError> {
+        let mut mat = Matrix::<T, ROW, ROW>::eyes()?;
+        mat.set_element(j, i, k)?;
+        Ok(mat)
+    }
+
+    /// matrix addition
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
@@ -308,19 +410,284 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # fn main() -> Result<(), MatrixError> {
     /// let mat1: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// let mat2: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// assert_eq!(Matrix::create(vec![1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6])?,
-    ///     mat1.vertical_concat(mat2)?);
+    /// assert_eq!(Matrix::create(vec![2, 4, 6, 8, 10, 12])?, mat1.plus(mat2)?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn vertical_concat<const RROW: usize>(
+    pub fn plus(self, rhs: Self) -> Result<Self, MatrixError> {
+        let sum = self
+            .inner
+            .iter()
+            .zip(rhs.inner.iter())
+            .map(|(a, b)| a.to_owned() + b.to_owned())
+            .collect::<Vec<_>>();
+        Self::create(sum)
+    }
+
+    /// matrix addition with scalar
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+    /// assert_eq!(Matrix::create(vec![2, 3, 4, 5, 6, 7])?, mat.adds(1)?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn adds(self, scalar: T) -> Result<Self, MatrixError> {
+        self.map(|a| scalar.to_owned() + a)
+    }
+
+    /// matrix multiplication
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let a: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
+    /// let b: Matrix<f64, 2, 2> = Matrix::create(vec![5.0f64, 6.0f64, 7.0f64, 8.0f64])?;
+    /// assert_eq!(
+    ///     Matrix::<f64, 2, 2>::create(vec![19.0f64, 22.0f64, 43.0f64, 50.0f64])?,
+    ///     a.times(b)?
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn times<const SIDE: usize>(
         self,
-        rhs: Matrix<T, RROW, COL>,
-    ) -> Result<Matrix<T, { ROW + RROW }, COL>, MatrixError>
+        rhs: Matrix<T, COL, SIDE>,
+    ) -> Result<Matrix<T, ROW, SIDE>, MatrixError> {
+        let mut product = Matrix::<T, ROW, SIDE>::create(vec![T::zero(); ROW * SIDE])?;
+        for c in 1..=COL {
+            product = product
+                .plus(times_v(
+                    self.get_col(c)?.map(|e| e.to_owned())?,
+                    rhs.get_row(c)?.map(|e| e.to_owned())?,
+                )?)?
+                .to_owned();
+        }
+        Ok(product)
+    }
+
+    /// matrix multiplication with scalar
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+    /// assert_eq!(Matrix::create(vec![2, 4, 6, 8, 10, 12])?, mat.muls(2)?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn muls(self, scalar: T) -> Result<Self, MatrixError> {
+        self.map(|a| scalar.to_owned() * a)
+    }
+
+    /// matrix subtraction
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let a: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
+    /// let b: Matrix<f64, 2, 2> = Matrix::create(vec![5.0f64, 6.0f64, 7.0f64, 8.0f64])?;
+    /// assert_eq!(
+    ///     Matrix::<f64, 2, 2>::create(vec![4.0f64, 4.0f64, 4.0f64, 4.0f64])?,
+    ///     b.subtract(a)?
+    /// );
+    /// # Ok(())
+    /// # }
+    pub fn subtract(self, rhs: Self) -> Result<Self, MatrixError> {
+        self.plus(rhs.map(|e| -e)?)
+    }
+
+    /// get the trace of a matrix
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let m: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
+    /// assert_eq!(5.0f64, m.trace()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn trace(&self) -> Result<T, MatrixError>
     where
-        T: Clone + Default,
+        [(); Self::get_edge()]:,
     {
-        Matrix::create([&self.inner[..], &rhs.inner[..]].concat())
+        if ROW == 1 || COL == 1 {
+            // for vector v.trace() = v.sum()
+            Ok(self
+                .inner
+                .iter()
+                .fold(T::default(), |acc: T, e: &T| acc + e.to_owned()))
+        } else {
+            // else m.trace() = m.diag().sum()
+            Ok(self
+                .get_diag()?
+                .inner
+                .iter()
+                .map(|e| e.to_owned())
+                .fold(T::default(), |acc: T, e: &T| acc + e.to_owned()))
+        }
+    }
+
+    /// get the rank of a matrix
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let m = Matrix::<i8, 3, 4>::create(vec![1, 2, 3, -1, 4, 5, 6, 2, 7, 8, 9, 3])?;
+    /// assert_eq!(3usize, m.rank()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rank(&self) -> Result<usize, MatrixError> {
+        let reduced = self.row_eliminate()?.0;
+        Ok((1..=ROW)
+            .rev()
+            .map(|i| Ok(reduced.get_row(i)?.inner))
+            .map(|v| -> Result<bool, MatrixError> {
+                Ok(v?
+                    .iter()
+                    .map(|e| e.to_owned())
+                    .all(|e| e.to_owned().is_zero()))
+            })
+            .map(|b| match b {
+                Ok(false) => 1,
+                _ => 0,
+            })
+            .sum())
+    }
+
+    /// transform the matrix to upper triangle form by rows elimination
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let mat = Matrix::<i8, 3, 3>::create(vec![1, 2, 4, 3, 6, 8, 5, 7, 9])?;
+    /// let eliminates = mat.row_eliminate()?;
+    /// assert_eq!(Matrix::create(vec![1, 2, 4, 0, -3, -11, 0, 0, -4])?,
+    ///     eliminates.0);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn row_eliminate(&self) -> Result<(Self, Option<Self>, Option<T>), MatrixError> {
+        todo!();
+        let mut reduced = self.to_owned();
+        if is_upper_triangle_matrix(&reduced)? {
+            // if already an upper triangular matrix
+            // no processing is required
+            Ok((reduced, None, None))
+        } else {
+            let mut p_all = Self::eyes()?;
+            let mut lambda = T::one();
+            let mut i: usize = 1;
+            let mut bias: usize = 0;
+            while i + bias < Self::get_edge() {
+                // check pivot
+                while i + bias <= COL && reduced.get_element(i, i + bias)?.is_zero() {
+                    let mut changed = false;
+                    for k in (i + 1)..=ROW {
+                        if !reduced.get_element(k, i + bias)?.is_zero() {
+                            // row exchange
+                            let p_change = Self::p_change(i, k)?;
+                            p_all = p_change.to_owned().times(p_all)?;
+                            reduced = p_change.times(reduced)?;
+                            lambda = lambda.neg();
+                            changed = true;
+                        }
+                    }
+                    if !changed {
+                        bias += 1;
+                    }
+                }
+                // do eliminate
+                let value = reduced.to_owned();
+                let pivot = value.get_element(i, i + bias)?;
+                for j in (i + 1)..=ROW {
+                    let p = value
+                        .get_element(j, i + bias)?
+                        .to_owned()
+                        .ndiv(pivot.to_owned())?;
+                    let p_add = Self::p_add(i, j, p.neg())?;
+                    p_all = p_add.to_owned().times(p_all)?;
+                    reduced = p_add.times(reduced)?;
+                }
+                // do next row
+                i += 1;
+            }
+            Ok((reduced, Some(p_all), Some(lambda)))
+        }
+    }
+
+    /// determinant of the matrix
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let mat = Matrix::<i8, 3, 3>::create(vec![1, 2, 4, 3, 6, 8, 5, 7, 9])?;
+    /// assert_eq!(-12, mat.determinant()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn determinant(&self) -> Result<T, MatrixError>
+    where
+        [(); Self::get_edge()]:,
+    {
+        if ROW != COL {
+            Err(MatrixError::IncompatibleShape((ROW, ROW), (ROW, COL)))
+        } else {
+            let (reduced, _, lambda) = self.row_eliminate()?;
+            Ok(reduced
+                .get_diag()?
+                .inner
+                .iter()
+                .map(|e| e.to_owned())
+                .fold(T::one(), |acc, e| acc * e.to_owned())
+                .mul(lambda.unwrap_or(T::one())))
+        }
+    }
+
+    pub fn row_reduce(&self) -> Result<Self, MatrixError>
+    where
+        [(); Self::get_edge()]:,
+    {
+        todo!();
+        let mut reduced = self.row_eliminate()?.0;
+        let mut bias = 0;
+        let mut i = 1;
+        while i <= Self::get_edge() && i + bias <= COL {
+            if !reduced.get_element(i, i + bias)?.is_zero() {
+                let p = reduced.get_element(i, i + bias)?.to_owned();
+                let p_smul = Self::p_muls(i, T::one().ndiv(p)?)?;
+                reduced = p_smul.times(reduced)?;
+                for j in 1..i {
+                    if !reduced.get_element(j, i + bias)?.is_zero() {
+                        let p = reduced
+                            .get_element(j, i + bias)?
+                            .to_owned()
+                            .ndiv(reduced.get_element(i, i + bias)?.to_owned())?;
+                        let p_add = Self::p_add(i, j, -p)?;
+                        reduced = p_add.times(reduced)?;
+                    }
+                }
+                i += 1;
+            } else {
+                bias += 1;
+            }
+        }
+        Ok(reduced)
+    }
+
+    pub fn inverse() {
+        todo!()
     }
 }
 

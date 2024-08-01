@@ -7,6 +7,8 @@
 pub enum MatrixError {
     /// likely to occur when constructing a matrix
     IncompatibleSizeError((usize, usize), usize),
+    /// likely to occur when the function need a sqaure matrix
+    IncompatibleShape((usize, usize), (usize, usize)),
     /// likely to occur when getting or setting value of a matrix
     OutOfBoundary(usize, usize),
     /// likely to occur when dividing by ZERO
@@ -25,12 +27,19 @@ impl std::fmt::Display for MatrixError {
                 "incompatible size while require ({:?} x {:?}) but the real size is {:?}",
                 required_row, required_col, real
             ),
+            MatrixError::IncompatibleShape(required, real) => {
+                write!(
+                    f,
+                    "incompatible shape while require {:?} but the real shape is {:?}",
+                    required, real
+                )
+            }
             MatrixError::OutOfBoundary(row, col) => {
-                write!(f, "out of boundary at ({}, {})", row, col)
+                write!(f, "out of boundary at ({:?}, {:?})", row, col)
             }
             MatrixError::DividedByZero => write!(f, "can not divide by zero"),
             MatrixError::NoDivision(type_name) => {
-                write!(f, "no proper division can do with {}", type_name)
+                write!(f, "no proper division can do with {:?}", type_name)
             }
         }
     }
