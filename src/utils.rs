@@ -113,8 +113,8 @@ pub fn is_sqaure_matrix<T, const ROW: usize, const COL: usize>(_: &Matrix<T, ROW
 /// # use rmatrix_ks::utils::is_upper_triangle_matrix;
 /// # use rmatrix_ks::error::MatrixError;
 /// # fn main() -> Result<(), MatrixError> {
-/// let mat1: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-/// let mat2: Matrix<i8, 2, 2> = Matrix::create(vec![1, 2, 0, 4])?;
+/// let mat1: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
+/// let mat2: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 2.0f32, 0.0f32, 4.0f32])?;
 /// assert_eq!(false, is_upper_triangle_matrix(&mat1)?);
 /// assert!(is_upper_triangle_matrix(&mat2)?);
 /// # Ok(())

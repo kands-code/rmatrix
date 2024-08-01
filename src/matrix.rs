@@ -37,7 +37,7 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 2i8], [3i8, 4i8]]
+    /// // {{1i8, 2i8}, {3i8, 4i8}}
     /// let _: Matrix<i8, 2, 2> = Matrix::create(vec![1, 2, 3, 4])?;
     /// # Ok(())
     /// # }
@@ -58,7 +58,7 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[0i8, 0i8], [0i8, 0i8]]
+    /// // {{0i8, 0i8}, {0i8, 0i8}}
     /// let _: Matrix<i8, 2, 2> = Matrix::zeros()?;
     /// # Ok(())
     /// # }
@@ -76,7 +76,7 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 2i8, 3i8], [4i8, 5i8, 6i8]]
+    /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// assert_eq!((2, 3), mat.dimensions());
     /// # Ok(())
@@ -97,7 +97,7 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 2i8, 3i8], [4i8, 5i8, 6i8]]
+    /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// assert_eq!(&5, mat.get_element(2, 2)?);
     /// # Ok(())
@@ -116,9 +116,9 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[0i8, 0i8], [0i8, 0i8]]
+    /// // {{0i8, 0i8}, {0i8, 0i8}}
     /// let mut mat: Matrix<i8, 2, 2> = Matrix::zeros()?;
-    /// // [[3i8, 0i8], [0i8, 0i8]]
+    /// // {{3i8, 0i8}, {0i8, 0i8}}
     /// mat.set_element(1, 1, 3i8)?;
     /// # Ok(())
     /// # }
@@ -139,9 +139,9 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 2i8, 3i8], [4i8, 5i8, 6i8]]
+    /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// // [[4i8, 5i8, 6i8]]
+    /// // {{4i8, 5i8, 6i8}}
     /// let _ = mat.get_row(2)?;
     /// # Ok(())
     /// # }
@@ -164,9 +164,9 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 2i8, 3i8], [4i8, 5i8, 6i8]]
+    /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// // [[2i8, 5i8]]
+    /// // {{2i8, 5i8}}
     /// let _ = mat.get_col(2)?;
     /// # Ok(())
     /// # }
@@ -205,9 +205,9 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 2i8, 3i8], [4i8, 5i8, 6i8]]
+    /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// // [[1i8, 5i8]]
+    /// // {{1i8, 5i8}}
     /// let _ = mat.get_diag()?;
     /// # Ok(())
     /// # }
@@ -229,9 +229,9 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 2i8, 3i8], [4i8, 5i8, 6i8]]
+    /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// // [[1i8, 4i8], [2i8, 5i8], [3i8, 6i8]]
+    /// // {{1i8, 4i8}, {2i8, 5i8}, {3i8, 6i8}}
     /// let _: Matrix<i8, 3, 2> = mat.transpose()?;
     /// # Ok(())
     /// # }
@@ -285,8 +285,8 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 0i8], [0i8, 1i8]]
-    /// let _: Matrix<i8, 2, 2> = Matrix::eyes()?;
+    /// // {{1.0f32, 0.0f32}, {0.0f32, 1.0f32}}
+    /// let _: Matrix<f32, 2, 2> = Matrix::eyes()?;
     /// # Ok(())
     /// # }
     /// ```
@@ -306,7 +306,7 @@ where
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
     /// // need "rand_mat" feature
-    /// let _: Matrix<i8, 2, 2> = Matrix::rand()?;
+    /// let _: Matrix<f32, 2, 2> = Matrix::rand()?;
     /// # Ok(())
     /// # }
     /// ```
@@ -327,15 +327,14 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 0i8], [0i8, 1i8]]
-    /// let m = Matrix::<i8, 2, 2>::create(vec![1, 2, 3, 4])?;
-    /// let p = Matrix::<i8, 2, 2>::p_change(1, 2)?;
+    /// let m = Matrix::<f32, 2, 2>::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
+    /// let p = Matrix::<f32, 2, 2>::p_change(1, 2)?;
     /// assert_eq!(
-    ///     Matrix::<i8, 2, 2>::create(vec![3, 4, 1, 2])?,
+    ///     Matrix::<f32, 2, 2>::create(vec![3.0f32, 4.0f32, 1.0f32, 2.0f32])?,
     ///     p.to_owned().times(m.to_owned())?
     /// );
     /// assert_eq!(
-    ///     Matrix::<i8, 2, 2>::create(vec![2, 1, 4, 3])?,
+    ///     Matrix::<f32, 2, 2>::create(vec![2.0f32, 1.0f32, 4.0f32, 3.0f32])?,
     ///     m.times(p)?
     /// );
     /// # Ok(())
@@ -356,15 +355,14 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 0i8], [0i8, 1i8]]
-    /// let m = Matrix::<i8, 2, 2>::create(vec![1, 2, 3, 4])?;
-    /// let p = Matrix::<i8, 2, 2>::p_muls(1, 2)?;
+    /// let m = Matrix::<f32, 2, 2>::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
+    /// let p = Matrix::<f32, 2, 2>::p_muls(1, 2.0f32)?;
     /// assert_eq!(
-    ///     Matrix::<i8, 2, 2>::create(vec![2, 4, 3, 4])?,
+    ///     Matrix::<f32, 2, 2>::create(vec![2.0f32, 4.0f32, 3.0f32, 4.0f32])?,
     ///     p.to_owned().times(m.to_owned())?
     /// );
     /// assert_eq!(
-    ///     Matrix::<i8, 2, 2>::create(vec![2, 2, 6, 4])?,
+    ///     Matrix::<f32, 2, 2>::create(vec![2.0f32, 2.0f32, 6.0f32, 4.0f32])?,
     ///     m.times(p)?
     /// );
     /// # Ok(())
@@ -382,15 +380,14 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// // [[1i8, 0i8], [0i8, 1i8]]
-    /// let m = Matrix::<i8, 2, 2>::create(vec![1, 2, 3, 4])?;
-    /// let p = Matrix::<i8, 2, 2>::p_add(1, 2, 1)?;
+    /// let m = Matrix::<f32, 2, 2>::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
+    /// let p = Matrix::<f32, 2, 2>::p_add(1, 2, 1.0f32)?;
     /// assert_eq!(
-    ///     Matrix::<i8, 2, 2>::create(vec![1, 2, 4, 6])?,
+    ///     Matrix::<f32, 2, 2>::create(vec![1.0f32, 2.0f32, 4.0f32, 6.0f32])?,
     ///     p.to_owned().times(m.to_owned())?
     /// );
     /// assert_eq!(
-    ///     Matrix::<i8, 2, 2>::create(vec![1, 3, 3, 7])?,
+    ///     Matrix::<f32, 2, 2>::create(vec![1.0f32, 3.0f32, 3.0f32, 7.0f32])?,
     ///     m.times(p.transpose()?)?
     /// );
     /// # Ok(())
@@ -408,9 +405,9 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// let mat1: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// let mat2: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// assert_eq!(Matrix::create(vec![2, 4, 6, 8, 10, 12])?, mat1.plus(mat2)?);
+    /// let mat1: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
+    /// let mat2: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
+    /// assert_eq!(Matrix::create(vec![2.0f32, 4.0f32, 6.0f32, 8.0f32, 10.0f32, 12.0f32])?, mat1.plus(mat2)?);
     /// # Ok(())
     /// # }
     /// ```
@@ -430,8 +427,8 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// assert_eq!(Matrix::create(vec![2, 3, 4, 5, 6, 7])?, mat.adds(1)?);
+    /// let mat: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
+    /// assert_eq!(Matrix::create(vec![2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32, 7.0f32])?, mat.adds(1.0f32)?);
     /// # Ok(())
     /// # }
     /// ```
@@ -476,8 +473,8 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// assert_eq!(Matrix::create(vec![2, 4, 6, 8, 10, 12])?, mat.muls(2)?);
+    /// let mat: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
+    /// assert_eq!(Matrix::create(vec![2.0f32, 4.0f32, 6.0f32, 8.0f32, 10.0f32, 12.0f32])?, mat.muls(2.0f32)?);
     /// # Ok(())
     /// # }
     /// ```
@@ -541,7 +538,9 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::MatrixError;
     /// # fn main() -> Result<(), MatrixError> {
-    /// let m = Matrix::<i8, 3, 4>::create(vec![1, 2, 3, -1, 4, 5, 6, 2, 7, 8, 9, 3])?;
+    /// let m = Matrix::<f32, 3, 4>::create(vec![
+    ///     1.0f32, 2.0f32, 3.0f32, -1.0f32, 4.0f32, 5.0f32, 6.0f32, 2.0f32, 7.0f32, 8.0f32, 9.0f32, 3.0f32,
+    /// ])?;
     /// assert_eq!(3usize, m.rank()?);
     /// # Ok(())
     /// # }
@@ -570,60 +569,59 @@ where
     /// # use rmatrix_ks::error::MatrixError;
     /// # use rmatrix_ks::matrix::Matrix;
     /// # fn main() -> Result<(), MatrixError> {
-    /// let mat = Matrix::<i8, 3, 3>::create(vec![1, 2, 4, 3, 6, 8, 5, 7, 9])?;
+    /// let mat = Matrix::<f32, 3, 3>::create(vec![1.0f32, 2.0f32, 4.0f32, 3.0f32, 6.0f32, 8.0f32, 5.0f32, 7.0f32, 9.0f32])?;
     /// let eliminates = mat.row_eliminate()?;
-    /// assert_eq!(Matrix::create(vec![1, 2, 4, 0, -3, -11, 0, 0, -4])?,
+    /// assert_eq!(Matrix::create(vec![1.0f32, 2.0f32, 4.0f32, 0.0f32, -3.0f32, -11.0f32, 0.0f32, 0.0f32, -4.0f32])?,
     ///     eliminates.0);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn row_eliminate(&self) -> Result<(Self, Option<Self>, Option<T>), MatrixError> {
-        todo!();
+    pub fn row_eliminate(&self) -> Result<(Self, Self, T), MatrixError> {
         let mut reduced = self.to_owned();
-        if is_upper_triangle_matrix(&reduced)? {
-            // if already an upper triangular matrix
-            // no processing is required
-            Ok((reduced, None, None))
-        } else {
-            let mut p_all = Self::eyes()?;
-            let mut lambda = T::one();
-            let mut i: usize = 1;
-            let mut bias: usize = 0;
-            while i + bias < Self::get_edge() {
+        let mut p_all = Self::eyes()?;
+        let mut lambda = T::one();
+
+        if !is_upper_triangle_matrix(&reduced)? {
+            let mut col: usize = 0;
+            for index in 1..=(ROW - 1) {
+                // prevent out of boundary
+                if index + col > COL {
+                    break;
+                }
                 // check pivot
-                while i + bias <= COL && reduced.get_element(i, i + bias)?.is_zero() {
-                    let mut changed = false;
-                    for k in (i + 1)..=ROW {
-                        if !reduced.get_element(k, i + bias)?.is_zero() {
-                            // row exchange
-                            let p_change = Self::p_change(i, k)?;
+                'pivot_check: while reduced.get_element(index, index + col)?.is_zero() {
+                    // find non-zero pivot
+                    for above in (index + 1)..=ROW {
+                        //do row exchange
+                        if !reduced.get_element(above, index + col)?.is_zero() {
+                            let p_change = Self::p_change(index, above)?;
                             p_all = p_change.to_owned().times(p_all)?;
                             reduced = p_change.times(reduced)?;
-                            lambda = lambda.neg();
-                            changed = true;
+                            lambda = -lambda;
+                            break 'pivot_check;
                         }
                     }
-                    if !changed {
-                        bias += 1;
+                    // find next column
+                    if index + col < COL {
+                        col = col + 1;
                     }
                 }
                 // do eliminate
                 let value = reduced.to_owned();
-                let pivot = value.get_element(i, i + bias)?;
-                for j in (i + 1)..=ROW {
-                    let p = value
-                        .get_element(j, i + bias)?
-                        .to_owned()
-                        .ndiv(pivot.to_owned())?;
-                    let p_add = Self::p_add(i, j, p.neg())?;
+                let pivot = value.get_element(index, index + col)?;
+                for above in (index + 1)..=ROW {
+                    // do row add
+                    let above_pivot = reduced.get_element(above, index + col)?;
+                    // *warning* for integer, division is non-accuracy
+                    let factor = above_pivot.to_owned().ndiv(pivot.to_owned())?;
+                    let p_add = Self::p_add(index, above, -factor)?;
                     p_all = p_add.to_owned().times(p_all)?;
                     reduced = p_add.times(reduced)?;
                 }
-                // do next row
-                i += 1;
             }
-            Ok((reduced, Some(p_all), Some(lambda)))
         }
+        // retuen
+        Ok((reduced, p_all, lambda))
     }
 
     /// determinant of the matrix
@@ -632,8 +630,10 @@ where
     /// # use rmatrix_ks::error::MatrixError;
     /// # use rmatrix_ks::matrix::Matrix;
     /// # fn main() -> Result<(), MatrixError> {
-    /// let mat = Matrix::<i8, 3, 3>::create(vec![1, 2, 4, 3, 6, 8, 5, 7, 9])?;
-    /// assert_eq!(-12, mat.determinant()?);
+    /// let mat = Matrix::<f32, 3, 3>::create(vec![
+    ///     1.0f32, 2.0f32, 4.0f32, 3.0f32, 6.0f32, 8.0f32, 5.0f32, 7.0f32, 9.0f32
+    /// ])?;
+    /// assert_eq!(-12.0, mat.determinant()?);
     /// # Ok(())
     /// # }
     /// ```
@@ -651,43 +651,78 @@ where
                 .iter()
                 .map(|e| e.to_owned())
                 .fold(T::one(), |acc, e| acc * e.to_owned())
-                .mul(lambda.unwrap_or(T::one())))
+                .mul(lambda))
         }
     }
 
-    pub fn row_reduce(&self) -> Result<Self, MatrixError>
+    /// transform the matrix to standard upper triangle form by rows elimination
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let mat = Matrix::<f32, 3, 3>::create(
+    ///     vec![1.0f32, 2.0f32, 4.0f32, 3.0f32, 6.0f32, 8.0f32, 5.0f32, 7.0f32, 9.0f32])?;
+    /// let reduced = mat.row_reduce()?;
+    /// assert_eq!(Matrix::create(
+    ///     vec![1.0f32, 0.0f32, 0.0f32, 0.0f32, 1.0f32, 0.0f32, 0.0f32, 0.0f32, 1.0f32])?,
+    ///     reduced.0);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn row_reduce(&self) -> Result<(Self, Self), MatrixError>
     where
         [(); Self::get_edge()]:,
     {
-        todo!();
-        let mut reduced = self.row_eliminate()?.0;
+        let eliminates = self.row_eliminate()?;
+        let mut reduced = eliminates.0;
+        let mut p_all = eliminates.1;
         let mut bias = 0;
-        let mut i = 1;
-        while i <= Self::get_edge() && i + bias <= COL {
-            if !reduced.get_element(i, i + bias)?.is_zero() {
-                let p = reduced.get_element(i, i + bias)?.to_owned();
-                let p_smul = Self::p_muls(i, T::one().ndiv(p)?)?;
+        let mut index = 1;
+        while index <= Self::get_edge() && index + bias <= COL {
+            if !reduced.get_element(index, index + bias)?.is_zero() {
+                let p = reduced.get_element(index, index + bias)?.to_owned();
+                let p_smul = Self::p_muls(index, T::one().ndiv(p)?)?;
+                p_all = p_smul.to_owned().times(p_all)?;
                 reduced = p_smul.times(reduced)?;
-                for j in 1..i {
-                    if !reduced.get_element(j, i + bias)?.is_zero() {
+                for j in 1..index {
+                    if !reduced.get_element(j, index + bias)?.is_zero() {
                         let p = reduced
-                            .get_element(j, i + bias)?
+                            .get_element(j, index + bias)?
                             .to_owned()
-                            .ndiv(reduced.get_element(i, i + bias)?.to_owned())?;
-                        let p_add = Self::p_add(i, j, -p)?;
+                            .ndiv(reduced.get_element(index, index + bias)?.to_owned())?;
+                        let p_add = Self::p_add(index, j, -p)?;
+                        p_all = p_add.to_owned().times(p_all)?;
                         reduced = p_add.times(reduced)?;
                     }
                 }
-                i += 1;
+                index += 1;
             } else {
                 bias += 1;
             }
         }
-        Ok(reduced)
+        Ok((reduced, p_all))
     }
 
-    pub fn inverse() {
-        todo!()
+    /// find the inverse of the matrix
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let mat = Matrix::<f32, 2, 2>::create(
+    ///     vec![1.4f32, 2.0f32, 3.0f32, -6.7f32])?;
+    /// assert_eq!(Matrix::create(
+    ///     vec![0.43563068f32, 0.13003902f32, 0.19505852f32, -0.09102731f32])?,
+    ///     mat.inverse()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn inverse(&self) -> Result<Self, MatrixError>
+    where
+        [(); Self::get_edge()]:,
+    {
+        Ok(self.row_reduce()?.1)
     }
 }
 
@@ -697,15 +732,15 @@ where
     T: std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[")?;
+        write!(f, "{{")?;
         for r in 1..=ROW {
-            write!(f, "[")?;
+            write!(f, "{{")?;
             for c in 1..=COL {
                 if let Ok(element) = self.get_element(r, c) {
                     write!(f, "{:#?}", element)?;
                 }
                 if c == COL {
-                    write!(f, "]")?;
+                    write!(f, "}}")?;
                 } else {
                     write!(f, ", ")?;
                 }
@@ -714,7 +749,7 @@ where
                 write!(f, ", ")?;
             }
         }
-        write!(f, "]")
+        write!(f, "}}")
     }
 }
 

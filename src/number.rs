@@ -4,6 +4,7 @@
 
 use crate::error::MatrixError;
 
+/// concept of zero
 pub trait Zero
 where
     Self: Default,
@@ -17,6 +18,7 @@ where
     fn is_zero(&self) -> bool;
 }
 
+/// concept of one
 pub trait One
 where
     Self: Default,
@@ -33,23 +35,23 @@ where
 /// # Example
 ///
 /// ```rust,ignore
-/// impl Zero for i8 {
+/// impl Zero for f32 {
 ///     fn is_zero(&self) -> bool {
-///         self.to_owned() == 0i8
+///         self.abs() < f32::EPSILON
 ///     }
 /// }
 ///
-/// impl One for i8 {
+/// impl One for f32 {
 ///     fn one() -> Self {
-///         1i8
+///         1.0f32
 ///     }
 ///
 ///     fn is_one(&self) -> bool {
-///         self.to_owned() == Self::one()
+///         (self - Self::one()).is_zero()
 ///     }
 /// }
 ///
-/// impl Number for i8 {
+/// impl Number for f32 {
 ///     fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
 ///         if rhs.is_zero() {
 ///             Err(MatrixError::DividedByZero)
@@ -76,23 +78,23 @@ where
     fn ndiv(self, rhs: Self) -> Result<Self, MatrixError>;
 }
 
-impl Zero for i8 {
+impl Zero for f32 {
     fn is_zero(&self) -> bool {
-        self.to_owned() == 0i8
+        self.abs() < f32::EPSILON
     }
 }
 
-impl One for i8 {
+impl One for f32 {
     fn one() -> Self {
-        1i8
+        1.0f32
     }
 
     fn is_one(&self) -> bool {
-        self.to_owned() == Self::one()
+        (self - Self::one()).is_zero()
     }
 }
 
-impl Number for i8 {
+impl Number for f32 {
     fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
         if rhs.is_zero() {
             Err(MatrixError::DividedByZero)
@@ -104,7 +106,7 @@ impl Number for i8 {
 
 impl Zero for f64 {
     fn is_zero(&self) -> bool {
-        self < &f64::EPSILON
+        self.abs() < f64::EPSILON
     }
 }
 
