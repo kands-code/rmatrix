@@ -88,7 +88,7 @@ where
 }
 
 /// solve linear equations
-fn _solve_linear_equations() {
+pub fn solve_linear_equations() {
     todo!()
 }
 
