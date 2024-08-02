@@ -1,9 +1,14 @@
 use rmatrix_ks::error::MatrixError;
 use rmatrix_ks::matrix::Matrix;
+use rmatrix_ks::rat;
+use rmatrix_ks::rational::Rational;
 
 fn main() -> Result<(), MatrixError> {
-    let mat = Matrix::<f32, 3, 3>::create(vec![
-        1.0f32, 2.0f32, 4.0f32, 3.0f32, 6.0f32, 8.0f32, 5.0f32, 7.0f32, 9.0f32,
+    let mat = Matrix::<Rational<i32>, 2, 2>::create(vec![
+        rat!(1, 1),
+        rat!(2, 1),
+        rat!(3, 1),
+        rat!(4, 1),
     ])?;
     let eliminates = mat.row_eliminate()?;
     println!("{}", mat);

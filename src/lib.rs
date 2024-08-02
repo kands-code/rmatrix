@@ -1,7 +1,7 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
-//! *warn: used incomplete features*
+//! *warn*: used incomplete features
 //! - `generic_const_exprs`
 //!
 //! # Description
@@ -17,5 +17,9 @@
 pub mod error;
 pub mod matrix;
 pub mod number;
+pub mod rational;
 pub mod utils;
 pub mod vector;
+
+#[cfg(feature = "serde_mat")]
+pub mod serde;

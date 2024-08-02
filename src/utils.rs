@@ -87,7 +87,11 @@ where
     Matrix::create([&mat.inner[..], &rhs.inner[..]].concat())
 }
 
-///
+/// solve linear equations
+fn _solve_linear_equations() {
+    todo!()
+}
+
 /// predicate whether a matrix is ​​square
 ///
 /// ```rust

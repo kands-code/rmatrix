@@ -563,6 +563,14 @@ where
             .sum())
     }
 
+    pub fn cofactor_submatrix() {
+        todo!()
+    }
+
+    pub fn adjoint_matrix() {
+        todo!()
+    }
+
     /// transform the matrix to upper triangle form by rows elimination
     ///
     /// ```rust
@@ -589,7 +597,7 @@ where
                     break;
                 }
                 // check pivot
-                'pivot_check: while reduced.get_element(index, index + col)?.is_zero() {
+                'check_pivot: while reduced.get_element(index, index + col)?.is_zero() {
                     // find non-zero pivot
                     for above in (index + 1)..=ROW {
                         //do row exchange
@@ -598,7 +606,7 @@ where
                             p_all = p_change.to_owned().times(p_all)?;
                             reduced = p_change.times(reduced)?;
                             lambda = -lambda;
-                            break 'pivot_check;
+                            break 'check_pivot;
                         }
                     }
                     // find next column
@@ -612,7 +620,7 @@ where
                 for above in (index + 1)..=ROW {
                     // do row add
                     let above_pivot = reduced.get_element(above, index + col)?;
-                    // *warning* for integer, division is non-accuracy
+                    // *warn*: for integer, division is non-accuracy, can use rational number
                     let factor = above_pivot.to_owned().ndiv(pivot.to_owned())?;
                     let p_add = Self::p_add(index, above, -factor)?;
                     p_all = p_add.to_owned().times(p_all)?;
@@ -642,8 +650,11 @@ where
         [(); Self::get_edge()]:,
     {
         if ROW != COL {
+            // only square matrix has determinant
             Err(MatrixError::IncompatibleShape((ROW, ROW), (ROW, COL)))
         } else {
+            // for upper triangle matrix
+            // determinant is the production of diagonal
             let (reduced, _, lambda) = self.row_eliminate()?;
             Ok(reduced
                 .get_diag()?
@@ -651,7 +662,7 @@ where
                 .iter()
                 .map(|e| e.to_owned())
                 .fold(T::one(), |acc, e| acc * e.to_owned())
-                .mul(lambda))
+                .mul(lambda)) // original matrix row exchange will affect determinant
         }
     }
 
@@ -674,33 +685,43 @@ where
     where
         [(); Self::get_edge()]:,
     {
+        // from upper triangle matrix to reduce
         let eliminates = self.row_eliminate()?;
         let mut reduced = eliminates.0;
+        // keep record the processes
         let mut p_all = eliminates.1;
-        let mut bias = 0;
+        let mut col = 0;
         let mut index = 1;
-        while index <= Self::get_edge() && index + bias <= COL {
-            if !reduced.get_element(index, index + bias)?.is_zero() {
-                let p = reduced.get_element(index, index + bias)?.to_owned();
-                let p_smul = Self::p_muls(index, T::one().ndiv(p)?)?;
+        // do reduce
+        while index <= Self::get_edge() && index + col <= COL {
+            if reduced.get_element(index, index + col)?.is_zero() {
+                // if pivot is zero, skip this column
+                col += 1;
+            } else {
+                // make pivot to one
+                // *warn*: for integer, division is non-accuracy, can use rational number
+                let p_smul = Self::p_muls(
+                    index,
+                    T::one().ndiv(reduced.get_element(index, index + col)?.to_owned())?,
+                )?;
                 p_all = p_smul.to_owned().times(p_all)?;
                 reduced = p_smul.times(reduced)?;
+                // reduce the previous row
                 for j in 1..index {
-                    if !reduced.get_element(j, index + bias)?.is_zero() {
+                    if !reduced.get_element(j, index + col)?.is_zero() {
                         let p = reduced
-                            .get_element(j, index + bias)?
+                            .get_element(j, index + col)?
                             .to_owned()
-                            .ndiv(reduced.get_element(index, index + bias)?.to_owned())?;
+                            .ndiv(reduced.get_element(index, index + col)?.to_owned())?;
                         let p_add = Self::p_add(index, j, -p)?;
                         p_all = p_add.to_owned().times(p_all)?;
                         reduced = p_add.times(reduced)?;
                     }
                 }
                 index += 1;
-            } else {
-                bias += 1;
             }
         }
+        // return
         Ok((reduced, p_all))
     }
 
@@ -722,6 +743,7 @@ where
     where
         [(); Self::get_edge()]:,
     {
+        // [A | E] <-> [E | A^-1]
         Ok(self.row_reduce()?.1)
     }
 }
@@ -729,7 +751,7 @@ where
 /// the simplest format print
 impl<T, const ROW: usize, const COL: usize> std::fmt::Display for Matrix<T, ROW, COL>
 where
-    T: std::fmt::Debug,
+    T: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{")?;
@@ -737,7 +759,7 @@ where
             write!(f, "{{")?;
             for c in 1..=COL {
                 if let Ok(element) = self.get_element(r, c) {
-                    write!(f, "{:#?}", element)?;
+                    write!(f, "{}", element)?;
                 }
                 if c == COL {
                     write!(f, "}}")?;
@@ -760,15 +782,5 @@ where
 {
     fn eq(&self, other: &Self) -> bool {
         self.inner == other.inner
-    }
-}
-
-#[cfg(test)]
-mod inner_test {
-    use crate::matrix::Matrix;
-
-    #[test]
-    fn test_to_inner_index() {
-        assert_eq!(1, Matrix::<i8, 2, 3>::to_inner_index(1, 2));
     }
 }

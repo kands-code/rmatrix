@@ -13,6 +13,8 @@ pub enum MatrixError {
     OutOfBoundary(usize, usize),
     /// likely to occur when dividing by ZERO
     DividedByZero,
+    /// likely to occur when read from string
+    IncompatibleFormat(String, &'static str),
     /// will only occur when doing division with something like quaternion
     NoDivision(&'static str),
 }
@@ -38,6 +40,9 @@ impl std::fmt::Display for MatrixError {
                 write!(f, "out of boundary at ({:?}, {:?})", row, col)
             }
             MatrixError::DividedByZero => write!(f, "can not divide by zero"),
+            MatrixError::IncompatibleFormat(from, type_name) => {
+                write!(f, "can not read {:?} into {:?}", from, type_name)
+            }
             MatrixError::NoDivision(type_name) => {
                 write!(f, "no proper division can do with {:?}", type_name)
             }
