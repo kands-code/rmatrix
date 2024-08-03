@@ -92,6 +92,16 @@ pub fn solve_linear_equations() {
     todo!()
 }
 
+// qr decomposition
+pub fn qr_decomposition() {
+    todo!()
+}
+
+// eigen system
+pub fn eigen_system() {
+    todo!()
+}
+
 /// predicate whether a matrix is ​​square
 ///
 /// ```rust

@@ -199,6 +199,42 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
         }
     }
 
+    /// create a diagonal matrix with size row by col
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// // {{1i8, 0i8}, {0i8, 2i8}}
+    /// let _: Matrix<i8, 2, 2> = Matrix::diag(vec![1, 2])?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn diag(data: Vec<T>) -> Result<Self, MatrixError>
+    where
+        T: Clone + Default,
+    {
+        if data.len() < Self::get_edge() {
+            Err(MatrixError::IncompatibleSizeError((ROW, COL), data.len()))
+        } else {
+            let mut diag_mat = Self::zeros()?;
+            for index in 1..=Self::get_edge() {
+                diag_mat.set_element(
+                    index,
+                    index,
+                    data.get(index - 1)
+                        .expect(&format!(
+                            "out of boundary: want {} but {}",
+                            index,
+                            data.len()
+                        ))
+                        .to_owned(),
+                )?;
+            }
+            Ok(diag_mat)
+        }
+    }
+
     /// get the main diagonal of the matrix
     ///
     /// ```rust
