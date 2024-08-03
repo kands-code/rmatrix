@@ -103,9 +103,7 @@ macro_rules! rat {
 impl<T: Integeral> std::fmt::Display for Rational<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // 0/0 means nan
-        let refined = self
-            .refine()
-            .unwrap_or(Rational::create(T::zero(), T::zero()));
+        let refined = self.refine().expect("failed to refine");
         write!(f, "{}/{}", refined.numerator, refined.denominator)
     }
 }

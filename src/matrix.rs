@@ -4,7 +4,7 @@
 //!
 //! *all indices will start from 1*
 //!
-//! *does not have any optimization*
+//! *do not have any optimization*
 
 use crate::error::MatrixError;
 use crate::number::Number;
@@ -520,15 +520,15 @@ where
             Ok(self
                 .inner
                 .iter()
-                .fold(T::default(), |acc: T, e: &T| acc + e.to_owned()))
+                .fold(T::zero(), |acc: T, e: &T| acc + e.to_owned()))
         } else {
             // else m.trace() = m.diag().sum()
             Ok(self
                 .get_diag()?
                 .inner
                 .iter()
-                .map(|e| e.to_owned())
-                .fold(T::default(), |acc: T, e: &T| acc + e.to_owned()))
+                .cloned()
+                .fold(T::zero(), |acc: T, e: &T| acc + e.to_owned()))
         }
     }
 
@@ -550,25 +550,106 @@ where
         Ok((1..=ROW)
             .rev()
             .map(|i| Ok(reduced.get_row(i)?.inner))
-            .map(|v| -> Result<bool, MatrixError> {
-                Ok(v?
-                    .iter()
-                    .map(|e| e.to_owned())
-                    .all(|e| e.to_owned().is_zero()))
-            })
-            .map(|b| match b {
-                Ok(false) => 1,
-                _ => 0,
-            })
-            .sum())
+            .map(|v| -> Result<bool, MatrixError> { Ok(v?.iter().cloned().all(|e| e.is_zero())) })
+            .filter(|b| b == &Ok(false))
+            .count())
     }
 
-    pub fn cofactor_submatrix() {
-        todo!()
+    /// get the submatrix of the matrix
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let m = Matrix::<f32, 3, 4>::create(vec![
+    ///     1.0f32, 2.0f32, 3.0f32, -1.0f32, 4.0f32, 5.0f32, 6.0f32, 2.0f32, 7.0f32, 8.0f32, 9.0f32, 3.0f32,
+    /// ])?;
+    /// assert_eq!(Matrix::create(vec![4.0f32, 5.0f32, 6.0f32, 7.0f32, 8.0f32, 9.0f32])?,
+    ///     m.submatrix(1, 4)?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn submatrix(
+        &self,
+        row: usize,
+        col: usize,
+    ) -> Result<Matrix<T, { ROW - 1 }, { COL - 1 }>, MatrixError> {
+        let mut submat = Matrix::zeros()?;
+        let mut row_index = 1;
+        for r in (1..=ROW).filter(|e| e != &row) {
+            let mut col_index = 1;
+            for c in (1..=COL).filter(|e| e != &col) {
+                submat.set_element(row_index, col_index, self.get_element(r, c)?.to_owned())?;
+                col_index = col_index + 1;
+            }
+            row_index = row_index + 1;
+        }
+        Ok(submat)
     }
 
-    pub fn adjoint_matrix() {
-        todo!()
+    /// get the cofactor matrix of the matrix
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let m = Matrix::<f32, 3, 4>::create(vec![
+    ///     1.0f32, 2.0f32, 3.0f32, -1.0f32, 4.0f32, 5.0f32, 6.0f32, 2.0f32, 7.0f32, 8.0f32, 9.0f32, 3.0f32,
+    /// ])?;
+    /// assert_eq!(Matrix::create(vec![-4.0f32, -5.0f32, -6.0f32, -7.0f32, -8.0f32, -9.0f32])?,
+    ///     m.cofactor(1, 4)?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn cofactor(
+        &self,
+        row: usize,
+        col: usize,
+    ) -> Result<Matrix<T, { ROW - 1 }, { COL - 1 }>, MatrixError> {
+        let cofactor = self.submatrix(row, col)?;
+        let cofactor = cofactor.muls(if (row + col) & 1 == 1 {
+            -T::one()
+        } else {
+            T::one()
+        })?;
+        Ok(cofactor)
+    }
+
+    /// get the adjugate matrix of the matrix
+    ///
+    /// adj(m) * m = det(m) E
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::MatrixError;
+    /// # fn main() -> Result<(), MatrixError> {
+    /// let m = Matrix::<f32, 2, 2>::create(vec![
+    ///     5.0f32, 4.0f32, 4.0f32, 11f32,
+    /// ])?;
+    /// assert_eq!(Matrix::create(vec![11.0f32, -4.0f32, -4.0f32, 5.0f32])?,
+    ///     m.adjugate()?);
+    /// assert_eq!(m.adjugate()?.times(m.to_owned()),
+    ///     Matrix::<f32, 2, 2>::eyes()?.muls(m.determinant()?));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn adjugate(&self) -> Result<Matrix<T, COL, ROW>, MatrixError>
+    where
+        [(); ROW - 1]:,
+        [(); COL - 1]:,
+    {
+        if ROW != COL {
+            // only square matrix
+            Err(MatrixError::IncompatibleShape((ROW, ROW), (ROW, COL)))
+        } else {
+            let mut mat = Self::zeros()?;
+            for row in 1..=ROW {
+                for col in 1..=COL {
+                    mat.set_element(row, col, self.cofactor(row, col)?.determinant()?)?;
+                }
+            }
+            mat.transpose()
+        }
     }
 
     /// transform the matrix to upper triangle form by rows elimination
@@ -645,10 +726,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn determinant(&self) -> Result<T, MatrixError>
-    where
-        [(); Self::get_edge()]:,
-    {
+    pub fn determinant(&self) -> Result<T, MatrixError> {
         if ROW != COL {
             // only square matrix has determinant
             Err(MatrixError::IncompatibleShape((ROW, ROW), (ROW, COL)))
@@ -656,13 +734,12 @@ where
             // for upper triangle matrix
             // determinant is the production of diagonal
             let (reduced, _, lambda) = self.row_eliminate()?;
-            Ok(reduced
-                .get_diag()?
-                .inner
-                .iter()
-                .map(|e| e.to_owned())
-                .fold(T::one(), |acc, e| acc * e.to_owned())
-                .mul(lambda)) // original matrix row exchange will affect determinant
+            (1..=ROW)
+                .map(|index| reduced.get_element(index, index))
+                .fold(Ok(T::one()), |acc, e| {
+                    e.and_then(|ev| acc.map(|v| v * ev.to_owned()))
+                })
+                .map(|e| e * lambda) // original matrix row exchange will affect determinant
         }
     }
 
@@ -681,10 +758,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn row_reduce(&self) -> Result<(Self, Self), MatrixError>
-    where
-        [(); Self::get_edge()]:,
-    {
+    pub fn row_reduce(&self) -> Result<(Self, Self), MatrixError> {
         // from upper triangle matrix to reduce
         let eliminates = self.row_eliminate()?;
         let mut reduced = eliminates.0;
@@ -739,11 +813,8 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn inverse(&self) -> Result<Self, MatrixError>
-    where
-        [(); Self::get_edge()]:,
-    {
-        // [A | E] <-> [E | A^-1]
+    pub fn inverse(&self) -> Result<Self, MatrixError> {
+        // Gauss-Jordan method
         Ok(self.row_reduce()?.1)
     }
 }

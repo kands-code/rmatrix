@@ -3,7 +3,7 @@
 //! self define errors, for debug
 
 /// errors what will happen with this library
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MatrixError {
     /// likely to occur when constructing a matrix
     IncompatibleSizeError((usize, usize), usize),

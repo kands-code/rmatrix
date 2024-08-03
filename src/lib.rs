@@ -12,7 +12,7 @@
 //! There are two optional features, `rand_mat` and `serde_mat`,
 //! corresponding to randomly generated matrices
 //! and the ability to read matrices using a specific file format.
-//! By default, both features are enabled.
+//! By default, `rand_mat` feature is enabled.
 
 pub mod error;
 pub mod matrix;

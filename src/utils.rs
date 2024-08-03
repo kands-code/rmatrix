@@ -135,8 +135,6 @@ where
         .filter(|(r, c)| r > c)
         .all(|(r, c)| {
             m.get_element(r.to_owned(), c.to_owned())
-                .unwrap_or(&T::default())
-                .to_owned()
-                .is_zero()
+                .is_ok_and(|e| e.is_zero())
         }))
 }
