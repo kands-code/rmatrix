@@ -4,13 +4,16 @@
 
 use crate::matrix::Matrix;
 
-#[cfg(feature = "serde_mat")]
-impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
-    pub fn read() {
-        todo!()
-    }
+pub fn read<T, const ROW: usize, const COL: usize>(
+) -> Result<Matrix<T, ROW, COL>, Box<dyn std::error::Error>>
+where
+    T: Clone + Default + std::marker::Send + std::marker::Sync + for<'a> serde::Deserializer<'a>,
+{
+    todo!();
+}
 
-    pub fn write() {
-        todo!()
-    }
+pub fn write<T, const ROW: usize, const COL: usize>(
+    _mats: Vec<&Matrix<T, ROW, COL>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    todo!()
 }

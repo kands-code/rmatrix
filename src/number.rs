@@ -66,6 +66,8 @@ where
         + std::fmt::Debug
         + std::fmt::Display
         + std::iter::Sum
+        + std::marker::Send
+        + std::marker::Sync
         + std::ops::Add<Output = Self>
         + std::ops::Sub<Output = Self>
         + std::ops::Mul<Output = Self>

@@ -13,6 +13,11 @@ use crate::vector::times_v;
 use crate::vector::VectorC;
 use crate::vector::VectorR;
 
+#[cfg(feature = "rayon_mat")]
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
+};
+
 #[cfg(feature = "rand_mat")]
 use rand::{
     distributions::{Distribution, Standard},
@@ -26,7 +31,10 @@ pub struct Matrix<T, const ROW: usize, const COL: usize> {
 }
 
 /// default implementations
-impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
+impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL>
+where
+    T: std::marker::Send + std::marker::Sync,
+{
     /// create a matrix with size row by col
     ///
     /// **note: this will consume the original vector**
@@ -293,19 +301,22 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # fn main() -> Result<(), MatrixError> {
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// let zero: Matrix<i8, 2, 3> = Matrix::create(vec![0i8; 6])?;
-    /// assert_eq!(zero, mat.map(|e| e * 0)?);
+    /// assert_eq!(zero, mat.map(&mut |e| e * 0)?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn map<N>(&self, mut f: impl FnMut(T) -> N) -> Result<Matrix<N, ROW, COL>, MatrixError>
+    pub fn map<N, F>(&self, f: &mut F) -> Result<Matrix<N, ROW, COL>, MatrixError>
     where
-        T: Clone,
+        T: Clone + std::marker::Send + std::marker::Sync,
+        N: std::marker::Send + std::marker::Sync,
+        F: Fn(T) -> N + std::marker::Sync + std::marker::Send,
     {
-        let mapped = self
-            .inner
-            .iter()
-            .map(|e| f(e.to_owned()))
-            .collect::<Vec<_>>();
+        #[cfg(feature = "rayon_mat")]
+        let mapped = self.inner.par_iter().map(|e| f(e.to_owned())).collect();
+
+        #[cfg(not(feature = "rayon_mat"))]
+        let mapped = self.inner.iter().map(|e| f(e.to_owned())).collect();
+
         Matrix::<N, ROW, COL>::create(mapped)
     }
 }
@@ -313,7 +324,7 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
 /// implementation for matrix which element type is a Number
 impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL>
 where
-    T: Number,
+    T: Number + std::marker::Send + std::marker::Sync,
 {
     /// create an identity matrix with size row by col
     ///
@@ -351,10 +362,16 @@ where
         T: Number,
         Standard: Distribution<T>,
     {
-        let mut mat = Self::zeros()?;
-        let mut rng = rand::rngs::ThreadRng::default();
-        mat.inner = mat.inner.iter().map(|_| rng.gen()).collect();
-        Ok(mat)
+        #[cfg(feature = "rayon_mat")]
+        let data = (1..=ROW * COL)
+            .into_par_iter()
+            .map(|_| rand::thread_rng().gen())
+            .collect();
+
+        #[cfg(not(feature = "rayon_mat"))]
+        let data = (1..=ROW * COL).map(|_| rand::thread_rng().gen()).collect();
+
+        Self::create(data)
     }
 
     /// exchange i row with j row
@@ -448,12 +465,22 @@ where
     /// # }
     /// ```
     pub fn plus(self, rhs: Self) -> Result<Self, MatrixError> {
+        #[cfg(feature = "rayon_mat")]
+        let sum = self
+            .inner
+            .par_iter()
+            .zip(rhs.inner.par_iter())
+            .map(|(a, b)| a.to_owned() + b.to_owned())
+            .collect::<Vec<_>>();
+
+        #[cfg(not(feature = "rayon_mat"))]
         let sum = self
             .inner
             .iter()
             .zip(rhs.inner.iter())
             .map(|(a, b)| a.to_owned() + b.to_owned())
             .collect::<Vec<_>>();
+
         Self::create(sum)
     }
 
@@ -469,7 +496,7 @@ where
     /// # }
     /// ```
     pub fn adds(self, scalar: T) -> Result<Self, MatrixError> {
-        self.map(|a| scalar.to_owned() + a)
+        self.map(&mut |a| scalar.to_owned() + a)
     }
 
     /// matrix multiplication
@@ -495,8 +522,8 @@ where
         for c in 1..=COL {
             product = product
                 .plus(times_v(
-                    self.get_col(c)?.map(|e| e.to_owned())?,
-                    rhs.get_row(c)?.map(|e| e.to_owned())?,
+                    self.get_col(c)?.map(&mut |e| e.to_owned())?,
+                    rhs.get_row(c)?.map(&mut |e| e.to_owned())?,
                 )?)?
                 .to_owned();
         }
@@ -515,7 +542,7 @@ where
     /// # }
     /// ```
     pub fn muls(self, scalar: T) -> Result<Self, MatrixError> {
-        self.map(|a| scalar.to_owned() * a)
+        self.map(&mut |a| scalar.to_owned() * a)
     }
 
     /// matrix subtraction
@@ -533,7 +560,7 @@ where
     /// # Ok(())
     /// # }
     pub fn subtract(self, rhs: Self) -> Result<Self, MatrixError> {
-        self.plus(rhs.map(|e| -e)?)
+        self.plus(rhs.map(&mut |e| -e)?)
     }
 
     /// get the trace of a matrix
@@ -551,21 +578,39 @@ where
     where
         [(); Self::get_edge()]:,
     {
-        if ROW == 1 || COL == 1 {
+        #[cfg(feature = "rayon_mat")]
+        let tr = if ROW == 1 || COL == 1 {
             // for vector v.trace() = v.sum()
-            Ok(self
-                .inner
-                .iter()
-                .fold(T::zero(), |acc: T, e: &T| acc + e.to_owned()))
+            self.inner
+                .par_iter()
+                .fold(|| T::zero(), |acc: T, e: &T| acc + e.to_owned())
+                .sum()
         } else {
             // else m.trace() = m.diag().sum()
-            Ok(self
-                .get_diag()?
+            self.get_diag()?
+                .inner
+                .par_iter()
+                .cloned()
+                .fold(|| T::zero(), |acc: T, e: &T| acc + e.to_owned())
+                .sum()
+        };
+
+        #[cfg(not(feature = "rayon_mat"))]
+        let tr = if ROW == 1 || COL == 1 {
+            // for vector v.trace() = v.sum()
+            self.inner
+                .iter()
+                .fold(T::zero(), |acc: T, e: &T| acc + e.to_owned())
+        } else {
+            // else m.trace() = m.diag().sum()
+            self.get_diag()?
                 .inner
                 .iter()
                 .cloned()
-                .fold(T::zero(), |acc: T, e: &T| acc + e.to_owned()))
-        }
+                .fold(T::zero(), |acc: T, e: &T| acc + e.to_owned())
+        };
+
+        Ok(tr)
     }
 
     /// get the rank of a matrix
@@ -583,12 +628,26 @@ where
     /// ```
     pub fn rank(&self) -> Result<usize, MatrixError> {
         let reduced = self.row_eliminate()?.0;
-        Ok((1..=ROW)
+
+        #[cfg(feature = "rayon_mat")]
+        let count = (1..=ROW)
+            .rev()
+            .map(|i| Ok(reduced.get_row(i)?.inner))
+            .map(|v| -> Result<bool, MatrixError> {
+                Ok(v?.par_iter().cloned().all(|e| e.is_zero()))
+            })
+            .filter(|b| b == &Ok(false))
+            .count();
+
+        #[cfg(not(feature = "rayon_mat"))]
+        let count = (1..=ROW)
             .rev()
             .map(|i| Ok(reduced.get_row(i)?.inner))
             .map(|v| -> Result<bool, MatrixError> { Ok(v?.iter().cloned().all(|e| e.is_zero())) })
             .filter(|b| b == &Ok(false))
-            .count())
+            .count();
+
+        Ok(count)
     }
 
     /// get the submatrix of the matrix
@@ -858,7 +917,7 @@ where
 /// the simplest format print
 impl<T, const ROW: usize, const COL: usize> std::fmt::Display for Matrix<T, ROW, COL>
 where
-    T: std::fmt::Display,
+    T: std::fmt::Display + Clone + std::marker::Send + std::marker::Sync,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{")?;

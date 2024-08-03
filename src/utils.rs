@@ -4,7 +4,10 @@
 
 use crate::error::MatrixError;
 use crate::matrix::Matrix;
-use crate::number::Zero;
+use crate::number::Number;
+
+#[cfg(feature = "rayon_mat")]
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 /// generate points of matrix
 ///
@@ -48,7 +51,7 @@ pub fn horizontal_concat<T, const ROW: usize, const COL: usize, const RCOL: usiz
     rhs: &Matrix<T, ROW, RCOL>,
 ) -> Result<Matrix<T, ROW, { COL + RCOL }>, MatrixError>
 where
-    T: Clone + Default,
+    T: Clone + Default + std::marker::Send + std::marker::Sync,
 {
     let mut hmat = Matrix::zeros()?;
     for r in 1..=ROW {
@@ -82,7 +85,7 @@ pub fn vertical_concat<T, const ROW: usize, const COL: usize, const RROW: usize>
     rhs: &Matrix<T, RROW, COL>,
 ) -> Result<Matrix<T, { ROW + RROW }, COL>, MatrixError>
 where
-    T: Clone + Default,
+    T: Clone + Default + std::marker::Send + std::marker::Sync,
 {
     Matrix::create([&mat.inner[..], &rhs.inner[..]].concat())
 }
@@ -138,13 +141,25 @@ pub fn is_upper_triangle_matrix<T, const ROW: usize, const COL: usize>(
     m: &Matrix<T, ROW, COL>,
 ) -> Result<bool, MatrixError>
 where
-    T: Zero,
+    T: Number,
 {
-    Ok(points(|r, c| (r, c), ROW, COL)
+    #[cfg(feature = "rayon_mat")]
+    let predicate = points(|r, c| (r, c), ROW, COL)
+        .par_iter()
+        .filter(|(r, c)| r > c)
+        .all(|(r, c)| {
+            m.get_element(r.to_owned(), c.to_owned())
+                .is_ok_and(|e| e.is_zero())
+        });
+
+    #[cfg(not(feature = "rayon_mat"))]
+    let predicate = points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r > c)
         .all(|(r, c)| {
             m.get_element(r.to_owned(), c.to_owned())
                 .is_ok_and(|e| e.is_zero())
-        }))
+        });
+
+    Ok(predicate)
 }

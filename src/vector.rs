@@ -4,6 +4,10 @@
 
 use crate::error::MatrixError;
 use crate::matrix::Matrix;
+use crate::number::Number;
+
+#[cfg(feature = "rayon_mat")]
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 /// vector is a one-dimensional matrix
 ///
@@ -19,15 +23,15 @@ pub type VectorR<T, const COL: usize> = Matrix<T, 1, COL>;
 /// # use rmatrix_ks::vector::times_c;
 /// # use rmatrix_ks::error::MatrixError;
 /// # fn main() -> Result<(), MatrixError> {
-/// let vec1: VectorC<i8, 3> = VectorC::create(vec![1, 2, 3])?;
-/// let vec2: VectorC<i8, 3> = VectorC::create(vec![4, 5, 6])?;
-/// assert_eq!(VectorC::create(vec![-3, 6, -3])?, times_c(vec1, vec2)?);
+/// let vec1: VectorC<f32, 3> = VectorC::create(vec![1.0f32, 2.0f32, 3.0f32])?;
+/// let vec2: VectorC<f32, 3> = VectorC::create(vec![4.0f32, 5.0f32, 6.0f32])?;
+/// assert_eq!(VectorC::create(vec![-3.0f32, 6.0f32, -3.0f32])?, times_c(vec1, vec2)?);
 /// # Ok(())
 /// # }
 /// ```
 pub fn times_c<T>(vec1: VectorC<T, 3>, vec2: VectorC<T, 3>) -> Result<VectorC<T, 3>, MatrixError>
 where
-    T: Clone + std::ops::Sub<Output = T> + std::ops::Mul<Output = T>,
+    T: Number,
 {
     VectorC::create(vec![
         vec1.get_element(2, 1)?.to_owned() * vec2.get_element(3, 1)?.to_owned()
@@ -46,9 +50,9 @@ where
 /// # use rmatrix_ks::vector::times_d;
 /// # use rmatrix_ks::error::MatrixError;
 /// # fn main() -> Result<(), MatrixError> {
-/// let vec1: VectorC<i8, 3> = VectorC::create(vec![1, 2, 3])?;
-/// let vec2: VectorC<i8, 3> = VectorC::create(vec![4, 5, 6])?;
-/// assert_eq!(32, times_d(vec1, vec2)?);
+/// let vec1: VectorC<f32, 3> = VectorC::create(vec![1.0f32, 2.0f32, 3.0f32])?;
+/// let vec2: VectorC<f32, 3> = VectorC::create(vec![4.0f32, 5.0f32, 6.0f32])?;
+/// assert_eq!(32.0f32, times_d(vec1, vec2)?);
 /// # Ok(())
 /// # }
 /// ```
@@ -57,11 +61,25 @@ pub fn times_d<T, const ROW: usize>(
     vec2: VectorC<T, ROW>,
 ) -> Result<T, MatrixError>
 where
-    T: std::ops::Mul<Output = T> + std::iter::Sum,
+    T: Number,
 {
-    Ok(std::iter::zip(vec1.inner, vec2.inner)
-        .map(|(e1, e2)| e1 * e2)
-        .sum())
+    #[cfg(feature = "rayon_mat")]
+    let prod = vec1
+        .inner
+        .par_iter()
+        .zip(vec2.inner.par_iter())
+        .map(|(e1, e2)| e1.to_owned() * e2.to_owned())
+        .sum();
+
+    #[cfg(not(feature = "rayon_mat"))]
+    let prod = vec1
+        .inner
+        .iter()
+        .zip(vec2.inner.iter())
+        .map(|(e1, e2)| e1.to_owned() * e2.to_owned())
+        .sum();
+
+    Ok(prod)
 }
 
 /// vector productor
@@ -73,9 +91,14 @@ where
 /// # use rmatrix_ks::vector::times_v;
 /// # use rmatrix_ks::error::MatrixError;
 /// # fn main() -> Result<(), MatrixError> {
-/// let vec1: VectorC<i8, 3> = VectorC::create(vec![1, 2, 3])?;
-/// let vec2: VectorR<i8, 3> = VectorR::create(vec![4, 5, 6])?;
-/// assert_eq!(Matrix::create(vec![4, 5, 6, 8, 10, 12, 12, 15, 18])?, times_v(vec1, vec2)?);
+/// let vec1: VectorC<f32, 3> = VectorC::create(vec![1.0f32, 2.0f32, 3.0f32])?;
+/// let vec2: VectorR<f32, 3> = VectorR::create(vec![4.0f32, 5.0f32, 6.0f32])?;
+/// assert_eq!(Matrix::create(
+///     vec![
+///         4.0f32, 5.0f32, 6.0f32,
+///         8.0f32, 10.0f32, 12.0f32,
+///         12.0f32, 15.0f32, 18.0f32])?,
+///     times_v(vec1, vec2)?);
 /// # Ok(())
 /// # }
 /// ```
@@ -84,7 +107,7 @@ pub fn times_v<T, const ROW: usize, const COL: usize>(
     vector_r: VectorR<T, COL>,
 ) -> Result<Matrix<T, ROW, COL>, MatrixError>
 where
-    T: Clone + Default + std::ops::Mul<Output = T>,
+    T: Number,
 {
     let mut mat = Matrix::<T, ROW, COL>::create(vec![T::default(); ROW * COL])?;
     for r in 1..=ROW {
