@@ -1,6 +1,10 @@
 //! # Relation
 //!
 //! relation number
+//!
+//! ## Warning
+//!
+//! very slow, and may overflow
 
 use crate::error::MatrixError;
 use crate::number::Number;
@@ -32,6 +36,7 @@ where
 }
 
 impl Integeral for i32 {}
+impl Integeral for i128 {}
 
 /// rational number
 #[derive(Debug, Clone, PartialEq)]
@@ -124,6 +129,8 @@ impl<T: Integeral> std::ops::Add for Rational<T> {
             + rhs.numerator * self.denominator.to_owned();
         let denominator = self.denominator * rhs.denominator;
         Self::create(numerator, denominator)
+            .refine()
+            .expect("refine add failed")
     }
 }
 
@@ -141,6 +148,8 @@ impl<T: Integeral> std::ops::Sub for Rational<T> {
             - rhs.numerator * self.denominator.to_owned();
         let denominator = self.denominator * rhs.denominator;
         Self::create(numerator, denominator)
+            .refine()
+            .expect("refine sub failed")
     }
 }
 
@@ -151,6 +160,8 @@ impl<T: Integeral> std::ops::Mul for Rational<T> {
         let numerator = self.numerator * rhs.numerator;
         let denominator = self.denominator * rhs.denominator;
         Self::create(numerator, denominator)
+            .refine()
+            .expect("refine mul failed")
     }
 }
 

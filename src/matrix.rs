@@ -760,9 +760,9 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn row_eliminate(&self) -> Result<(Self, Self, T), MatrixError> {
+    pub fn row_eliminate(&self) -> Result<(Self, Matrix<T, ROW, ROW>, T), MatrixError> {
         let mut reduced = self.to_owned();
-        let mut p_all = Self::eyes()?;
+        let mut p_all = Matrix::<T, ROW, ROW>::eyes()?;
         let mut lambda = T::one();
 
         if !is_upper_triangle_matrix(&reduced)? {
@@ -778,7 +778,7 @@ where
                     for above in (index + 1)..=ROW {
                         //do row exchange
                         if !reduced.get_element(above, index + col)?.is_zero() {
-                            let p_change = Self::p_change(index, above)?;
+                            let p_change = Matrix::<T, ROW, ROW>::p_change(index, above)?;
                             p_all = p_change.to_owned().times(p_all)?;
                             reduced = p_change.times(reduced)?;
                             lambda = -lambda;
@@ -796,11 +796,14 @@ where
                 for above in (index + 1)..=ROW {
                     // do row add
                     let above_pivot = reduced.get_element(above, index + col)?;
-                    // *warn*: for integer, division is non-accuracy, can use rational number
-                    let factor = above_pivot.to_owned().ndiv(pivot.to_owned())?;
-                    let p_add = Self::p_add(index, above, -factor)?;
-                    p_all = p_add.to_owned().times(p_all)?;
-                    reduced = p_add.times(reduced)?;
+                    // skip zero line
+                    if !above_pivot.is_zero() {
+                        // warn: for integer, division is non-accuracy, can use rational number
+                        let factor = above_pivot.to_owned().ndiv(pivot.to_owned())?;
+                        let p_add = Matrix::<T, ROW, ROW>::p_add(index, above, -factor)?;
+                        p_all = p_add.to_owned().times(p_all)?;
+                        reduced = p_add.times(reduced)?;
+                    }
                 }
             }
         }
@@ -853,7 +856,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn row_reduce(&self) -> Result<(Self, Self), MatrixError> {
+    pub fn row_reduce(&self) -> Result<(Self, Matrix<T, ROW, ROW>), MatrixError> {
         // from upper triangle matrix to reduce
         let eliminates = self.row_eliminate()?;
         let mut reduced = eliminates.0;
@@ -868,8 +871,8 @@ where
                 col += 1;
             } else {
                 // make pivot to one
-                // *warn*: for integer, division is non-accuracy, can use rational number
-                let p_smul = Self::p_muls(
+                // warn: for integer, division is non-accuracy, can use rational number
+                let p_smul = Matrix::<T, ROW, ROW>::p_muls(
                     index,
                     T::one().ndiv(reduced.get_element(index, index + col)?.to_owned())?,
                 )?;
@@ -882,7 +885,7 @@ where
                             .get_element(j, index + col)?
                             .to_owned()
                             .ndiv(reduced.get_element(index, index + col)?.to_owned())?;
-                        let p_add = Self::p_add(index, j, -p)?;
+                        let p_add = Matrix::<T, ROW, ROW>::p_add(index, j, -p)?;
                         p_all = p_add.to_owned().times(p_all)?;
                         reduced = p_add.times(reduced)?;
                     }
@@ -908,7 +911,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn inverse(&self) -> Result<Self, MatrixError> {
+    pub fn inverse(&self) -> Result<Matrix<T, ROW, ROW>, MatrixError> {
         // Gauss-Jordan method
         Ok(self.row_reduce()?.1)
     }

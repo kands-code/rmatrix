@@ -15,6 +15,8 @@ pub enum MatrixError {
     DividedByZero,
     /// likely to occur when read from string
     IncompatibleFormat(String, &'static str),
+    /// will occur when linear equations ROW > COL
+    NoSolution(usize, usize),
     /// will only occur when doing division with something like quaternion
     NoDivision(&'static str),
 }
@@ -42,6 +44,9 @@ impl std::fmt::Display for MatrixError {
             MatrixError::DividedByZero => write!(f, "can not divide by zero"),
             MatrixError::IncompatibleFormat(from, type_name) => {
                 write!(f, "can not read {:?} into {:?}", from, type_name)
+            }
+            MatrixError::NoSolution(row, col) => {
+                write!(f, "linear equation with {}x{} has no solution", row, col)
             }
             MatrixError::NoDivision(type_name) => {
                 write!(f, "no proper division can do with {:?}", type_name)

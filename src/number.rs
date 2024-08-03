@@ -101,7 +101,37 @@ impl Number for i32 {
         i32::abs(self)
     }
 
-    fn ndiv(self, rhs: Self) -> Result<i32, MatrixError> {
+    fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
+        if rhs.is_zero() {
+            Err(MatrixError::DividedByZero)
+        } else {
+            Ok(self / rhs)
+        }
+    }
+}
+
+impl Zero for i128 {
+    fn is_zero(&self) -> bool {
+        self == &0i128
+    }
+}
+
+impl One for i128 {
+    fn one() -> Self {
+        1i128
+    }
+
+    fn is_one(&self) -> bool {
+        self == &1i128
+    }
+}
+
+impl Number for i128 {
+    fn abs(self) -> Self {
+        i128::abs(self)
+    }
+
+    fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
         if rhs.is_zero() {
             Err(MatrixError::DividedByZero)
         } else {

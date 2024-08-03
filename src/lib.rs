@@ -1,7 +1,9 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
-//! *warn*: used incomplete features
+//! ## Warning
+//!
+//! used incomplete features
 //! - `generic_const_exprs`
 //!
 //! # Description
@@ -9,9 +11,11 @@
 //! This library is for matrix computation,
 //! just for learning and self using.
 //!
-//! There are two optional features, `rand_mat` and `serde_mat`,
-//! corresponding to randomly generated matrices
-//! and the ability to read matrices using a specific file format.
+//! There are some optional features
+//! - rand_mat: randomly generated matrices
+//! - serde_mat: ability to read matrices using a specific file format
+//! - rayon_mat: use rayon iter instead of std::iter
+//!
 //! By default, `rand_mat` feature is enabled.
 
 pub mod error;

@@ -4,6 +4,6 @@ matrix and some algebra in Rust
 
 **_just a toy_**
 
-> expect: 3
+> expect: 6
 >
-> todo: 5
+> todo: 4

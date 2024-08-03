@@ -85,14 +85,53 @@ pub fn vertical_concat<T, const ROW: usize, const COL: usize, const RROW: usize>
     rhs: &Matrix<T, RROW, COL>,
 ) -> Result<Matrix<T, { ROW + RROW }, COL>, MatrixError>
 where
-    T: Clone + Default + std::marker::Send + std::marker::Sync,
+    T: Clone + std::marker::Send + std::marker::Sync,
 {
     Matrix::create([&mat.inner[..], &rhs.inner[..]].concat())
 }
 
 /// solve linear equations
-pub fn solve_linear_equations() {
-    todo!()
+///
+/// only square matrix have the only solution
+///
+/// ## Warning
+///
+/// the return type is not the perfact shape (c, e)
+///
+/// ```rust
+/// # use rmatrix_ks::matrix::Matrix;
+/// # use rmatrix_ks::utils::linear_solve;
+/// # use rmatrix_ks::error::MatrixError;
+/// # fn main() -> Result<(), MatrixError> {
+/// let mat: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
+/// let b: Matrix<f32, 2, 2> = Matrix::create(vec![5.0f32, 6.0f32, 7.0f32, 8.0f32])?;
+/// assert_eq!(Matrix::create(vec![-3.0f32, -4.0f32, 4.0f32, 5.0f32])?,
+///     linear_solve(mat, b)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn linear_solve<T, const ROW: usize, const COL: usize, const EDGE: usize>(
+    mat: Matrix<T, ROW, COL>,
+    b: Matrix<T, ROW, EDGE>,
+) -> Result<Matrix<T, ROW, EDGE>, MatrixError>
+where
+    T: Number,
+{
+    if mat.rank()? > COL {
+        Err(MatrixError::NoSolution(ROW, COL))
+    } else {
+        mat.row_reduce()?.1.times(b)
+    }
+}
+
+pub fn lu_decomposition<T, const ROW: usize, const COL: usize>(
+    mat: Matrix<T, ROW, COL>,
+) -> Result<(Matrix<T, ROW, ROW>, Matrix<T, ROW, COL>), MatrixError>
+where
+    T: Number,
+{
+    let eliminates = mat.row_eliminate()?;
+    Ok((eliminates.1.inverse()?, eliminates.0))
 }
 
 // qr decomposition
