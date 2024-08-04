@@ -24,9 +24,14 @@ use rand::{
     Rng,
 };
 
+#[cfg(feature = "serde_mat")]
+use serde::{Deserialize, Serialize};
+
 /// matrix type
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_mat", derive(Serialize, Deserialize))]
 pub struct Matrix<T, const ROW: usize, const COL: usize> {
+    /// inner data
     pub(crate) inner: Vec<T>,
 }
 
@@ -227,17 +232,10 @@ where
         } else {
             let mut diag_mat = Self::zeros()?;
             for index in 1..=Self::get_edge() {
-                diag_mat.set_element(
-                    index,
-                    index,
-                    data.get(index - 1)
-                        .expect(&format!(
-                            "out of boundary: want {} but {}",
-                            index,
-                            data.len()
-                        ))
-                        .to_owned(),
-                )?;
+                match data.get(index - 1) {
+                    Some(v) => diag_mat.set_element(index, index, v.to_owned()),
+                    None => Err(MatrixError::IncompatibleSizeError((ROW, COL), data.len())),
+                }?;
             }
             Ok(diag_mat)
         }
@@ -765,19 +763,19 @@ where
         let mut p_all = Matrix::<T, ROW, ROW>::eyes()?;
         let mut lambda = T::one();
 
-        if !is_upper_triangle_matrix(&reduced)? {
-            let mut col: usize = 0;
+        if !(is_upper_triangle_matrix(&reduced)? || ROW < 2) {
+            let mut next: usize = 0;
             for index in 1..=(ROW - 1) {
                 // prevent out of boundary
-                if index + col > COL {
+                if index + next > COL {
                     break;
                 }
                 // check pivot
-                'check_pivot: while reduced.get_element(index, index + col)?.is_zero() {
+                'check_pivot: while reduced.get_element(index, index + next)?.is_zero() {
                     // find non-zero pivot
                     for above in (index + 1)..=ROW {
                         //do row exchange
-                        if !reduced.get_element(above, index + col)?.is_zero() {
+                        if !reduced.get_element(above, index + next)?.is_zero() {
                             let p_change = Matrix::<T, ROW, ROW>::p_change(index, above)?;
                             p_all = p_change.to_owned().times(p_all)?;
                             reduced = p_change.times(reduced)?;
@@ -786,16 +784,16 @@ where
                         }
                     }
                     // find next column
-                    if index + col < COL {
-                        col = col + 1;
+                    if index + next < COL {
+                        next = next + 1;
                     }
                 }
                 // do eliminate
                 let value = reduced.to_owned();
-                let pivot = value.get_element(index, index + col)?;
+                let pivot = value.get_element(index, index + next)?;
                 for above in (index + 1)..=ROW {
                     // do row add
-                    let above_pivot = reduced.get_element(above, index + col)?;
+                    let above_pivot = reduced.get_element(above, index + next)?;
                     // skip zero line
                     if !above_pivot.is_zero() {
                         // warn: for integer, division is non-accuracy, can use rational number

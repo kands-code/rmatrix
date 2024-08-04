@@ -11,14 +11,14 @@ pub enum MatrixError {
     IncompatibleShape((usize, usize), (usize, usize)),
     /// likely to occur when getting or setting value of a matrix
     OutOfBoundary(usize, usize),
+    /// likely to occur when getting or setting value of a array/vector
+    OutOfLength(usize, usize),
     /// likely to occur when dividing by ZERO
     DividedByZero,
-    /// likely to occur when read from string
-    IncompatibleFormat(String, &'static str),
+    /// likely to occur when matrix is strange
+    StrangeMatrix,
     /// will occur when linear equations ROW > COL
     NoSolution(usize, usize),
-    /// will only occur when doing division with something like quaternion
-    NoDivision(&'static str),
 }
 
 impl std::error::Error for MatrixError {}
@@ -41,15 +41,17 @@ impl std::fmt::Display for MatrixError {
             MatrixError::OutOfBoundary(row, col) => {
                 write!(f, "out of boundary at ({:?}, {:?})", row, col)
             }
-            MatrixError::DividedByZero => write!(f, "can not divide by zero"),
-            MatrixError::IncompatibleFormat(from, type_name) => {
-                write!(f, "can not read {:?} into {:?}", from, type_name)
+            MatrixError::OutOfLength(length, index) => {
+                write!(
+                    f,
+                    "length of array/vector is {:?} but index is {:?}",
+                    length, index
+                )
             }
+            MatrixError::DividedByZero => write!(f, "can not divide by zero"),
+            MatrixError::StrangeMatrix => write!(f, "matrix is strange which determinant is zero"),
             MatrixError::NoSolution(row, col) => {
                 write!(f, "linear equation with {}x{} has no solution", row, col)
-            }
-            MatrixError::NoDivision(type_name) => {
-                write!(f, "no proper division can do with {:?}", type_name)
             }
         }
     }

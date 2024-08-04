@@ -11,6 +11,9 @@ use crate::number::Number;
 use crate::number::One;
 use crate::number::Zero;
 
+#[cfg(feature = "serde_mat")]
+use serde::{Deserialize, Serialize};
+
 /// concept for integer
 pub trait Integeral
 where
@@ -27,11 +30,12 @@ where
     }
 
     /// least common multiple
-    fn lcm(&self, rhs: &Self) -> impl Number {
-        // a * b = gcd(a, b) * lcm(a, b)
-        (self.to_owned() * rhs.to_owned())
-            .ndiv(self.gcd(rhs))
-            .expect(&format!("gcd of {} and {} should not be zero", self, rhs))
+    fn lcm(&self, rhs: &Self) -> Self {
+        // |a * b| = gcd(a, b) * lcm(a, b)
+        match (self.to_owned() * rhs.to_owned()).abs().ndiv(self.gcd(rhs)) {
+            Ok(division) => division,
+            Err(_) => -Self::one(),
+        }
     }
 }
 
@@ -40,6 +44,7 @@ impl Integeral for i128 {}
 
 /// rational number
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde_mat", derive(Serialize, Deserialize))]
 pub struct Rational<T: Integeral> {
     numerator: T,
     denominator: T,
@@ -108,7 +113,10 @@ macro_rules! rat {
 impl<T: Integeral> std::fmt::Display for Rational<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // 0/0 means nan
-        let refined = self.refine().expect("failed to refine");
+        let refined = match self.refine() {
+            Ok(v) => v,
+            Err(_) => Rational::create(T::zero(), T::zero()),
+        };
         write!(f, "{}/{}", refined.numerator, refined.denominator)
     }
 }
@@ -129,8 +137,6 @@ impl<T: Integeral> std::ops::Add for Rational<T> {
             + rhs.numerator * self.denominator.to_owned();
         let denominator = self.denominator * rhs.denominator;
         Self::create(numerator, denominator)
-            .refine()
-            .expect("refine add failed")
     }
 }
 
@@ -148,8 +154,6 @@ impl<T: Integeral> std::ops::Sub for Rational<T> {
             - rhs.numerator * self.denominator.to_owned();
         let denominator = self.denominator * rhs.denominator;
         Self::create(numerator, denominator)
-            .refine()
-            .expect("refine sub failed")
     }
 }
 
@@ -160,8 +164,6 @@ impl<T: Integeral> std::ops::Mul for Rational<T> {
         let numerator = self.numerator * rhs.numerator;
         let denominator = self.denominator * rhs.denominator;
         Self::create(numerator, denominator)
-            .refine()
-            .expect("refine mul failed")
     }
 }
 
