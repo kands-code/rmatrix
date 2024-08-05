@@ -10,6 +10,7 @@ use std::io::Read;
 use std::io::Write;
 
 #[cfg(feature = "serde_mat")]
+#[doc(cfg(feature = "serde_mat"))]
 /// read matrix from json file with specific index
 ///
 /// index start from 1
@@ -74,6 +75,7 @@ where
 }
 
 #[cfg(feature = "serde_mat")]
+#[doc(cfg(feature = "serde_mat"))]
 /// store matrices into json file
 ///
 /// ```rust

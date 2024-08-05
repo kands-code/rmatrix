@@ -1,19 +1,19 @@
 [package]
 name = "rmatrix_ks"
 authors = ["Kevin Stephen <qarks@icloud.com>"]
-version = "0.3.7"
+version = "0.3.8"
 edition = "2021"
 resolver = "2"
 license = "AGPL-3.0-or-later"
 description = "matrix and some algebra in Rust"
 readme = "README.md"
+keywords = ["math", "matrix"]
 repository = "https://github.com/kands-code/rmatrix"
 documentation = "https://docs.rs/rmatrix_ks"
 
 [package.metadata.doc.rs]
-features = ["rand_mat", "rayon_mat", "serde_mat"]
 all-features = true
-no-default-features = true
+rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]

@@ -1,5 +1,6 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+#![feature(doc_cfg)]
 
 //! [![github]](https://github.com/kands-code/rmatrix)
 //! [![crates-io]](https://crates.io/crates/rmatrix_ks)
@@ -35,4 +36,5 @@ pub mod utils;
 pub mod vector;
 
 #[cfg(feature = "serde_mat")]
+#[doc(cfg(feature = "serde_mat"))]
 pub mod serde;
