@@ -11,6 +11,7 @@ repository = "https://github.com/kands-code/rmatrix"
 documentation = "https://docs.rs/rmatrix_ks"
 
 [package.metadata.doc.rs]
+rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition"]
 all-features = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
