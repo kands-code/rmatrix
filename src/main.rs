@@ -1,14 +1,11 @@
+use rmatrix_ks::error::Result;
 use rmatrix_ks::matrix::Matrix;
-use rmatrix_ks::utils::plu_decomposition;
+use rmatrix_ks::utils::eigen_values;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mat = Matrix::<f64, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
-    println!("{}", mat);
-    let plu = plu_decomposition(mat.to_owned())?;
-    println!("{}", plu.0);
-    println!("{}", plu.1);
-    println!("{}", plu.2);
-    println!("{}", mat.determinant()?);
+fn main() -> Result<()> {
+    let mat = Matrix::<f32, 2, 2>::create(vec![-3.0, 15.0, 3.0, 9.0])?;
 
+    let eigens = eigen_values(mat, 1024)?;
+    eigens.iter().for_each(|e| println!("{}", e));
     Ok(())
 }

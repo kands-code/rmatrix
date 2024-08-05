@@ -1,10 +1,20 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+#![feature(doc_cfg)]
 
+//! [![github]](https://github.com/kands-code/rmatrix)
+//! [![crates-io]](https://crates.io/crates/rmatrix_ks)
+//! [![docs-rs]](https://docs.rs/rmatrix_ks)
+//!
+//! [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
+//! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
+//! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs
+//!
 //! ## Warning
 //!
-//! used incomplete features
+//! used unstable features
 //! - `generic_const_exprs`
+//! - `doc_cfg`
 //!
 //! # Description
 //!
@@ -18,6 +28,7 @@
 //!
 //! By default, `rand_mat` feature is enabled.
 
+pub mod complex;
 pub mod error;
 pub mod matrix;
 pub mod number;
@@ -26,4 +37,5 @@ pub mod utils;
 pub mod vector;
 
 #[cfg(feature = "serde_mat")]
+#[doc(cfg(feature = "serde_mat"))]
 pub mod serde;

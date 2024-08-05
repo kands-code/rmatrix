@@ -2,7 +2,8 @@
 //!
 //! define the basic number typeclass
 
-use crate::error::MatrixError;
+use crate::error::Error;
+use crate::error::Result;
 
 /// concept of zero
 pub trait Zero
@@ -49,9 +50,17 @@ pub trait One {
 /// }
 ///
 /// impl Number for f32 {
-///     fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
+///     fn abs(self) -> Self {
+///         f32::abs(self)
+///     }
+///
+///     fn conjugate(self) -> Self {
+///         self
+///     }
+///
+///     fn ndiv(self, rhs: Self) -> Result<Self> {
 ///         if rhs.is_zero() {
-///             Err(MatrixError::DividedByZero)
+///             Err(Error::DividedByZero)
 ///         } else {
 ///             Ok(self / rhs)
 ///         }
@@ -76,8 +85,11 @@ where
     /// absolute value
     fn abs(self) -> Self;
 
+    /// conjugate
+    fn conjugate(self) -> Self;
+
     /// normal division with zero test
-    fn ndiv(self, rhs: Self) -> Result<Self, MatrixError>;
+    fn ndiv(self, rhs: Self) -> Result<Self>;
 }
 
 impl Zero for i32 {
@@ -101,9 +113,13 @@ impl Number for i32 {
         i32::abs(self)
     }
 
-    fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
+    fn conjugate(self) -> Self {
+        self
+    }
+
+    fn ndiv(self, rhs: Self) -> Result<Self> {
         if rhs.is_zero() {
-            Err(MatrixError::DividedByZero)
+            Err(Error::DividedByZero)
         } else {
             Ok(self / rhs)
         }
@@ -131,9 +147,13 @@ impl Number for i128 {
         i128::abs(self)
     }
 
-    fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
+    fn conjugate(self) -> Self {
+        self
+    }
+
+    fn ndiv(self, rhs: Self) -> Result<Self> {
         if rhs.is_zero() {
-            Err(MatrixError::DividedByZero)
+            Err(Error::DividedByZero)
         } else {
             Ok(self / rhs)
         }
@@ -142,7 +162,7 @@ impl Number for i128 {
 
 impl Zero for f32 {
     fn is_zero(&self) -> bool {
-        self.abs() < f32::EPSILON
+        self.abs() < 1.0e-6
     }
 }
 
@@ -161,9 +181,13 @@ impl Number for f32 {
         f32::abs(self)
     }
 
-    fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
+    fn conjugate(self) -> Self {
+        self
+    }
+
+    fn ndiv(self, rhs: Self) -> Result<Self> {
         if rhs.is_zero() {
-            Err(MatrixError::DividedByZero)
+            Err(Error::DividedByZero)
         } else {
             Ok(self / rhs)
         }
@@ -172,7 +196,7 @@ impl Number for f32 {
 
 impl Zero for f64 {
     fn is_zero(&self) -> bool {
-        self.abs() < f64::EPSILON
+        self.abs() < 1.0e-8
     }
 }
 
@@ -191,11 +215,63 @@ impl Number for f64 {
         f64::abs(self)
     }
 
-    fn ndiv(self, rhs: Self) -> Result<Self, MatrixError> {
+    fn conjugate(self) -> Self {
+        self
+    }
+
+    fn ndiv(self, rhs: Self) -> Result<Self> {
         if rhs.is_zero() {
-            Err(MatrixError::DividedByZero)
+            Err(Error::DividedByZero)
         } else {
             Ok(self / rhs)
         }
+    }
+}
+
+/// concept for integeral number
+pub trait Integeral
+where
+    Self: Number + std::cmp::PartialOrd + std::ops::Rem<Output = Self>,
+{
+    /// greatest common divisor
+    fn gcd(&self, rhs: &Self) -> Self {
+        if rhs.to_owned() == Self::zero() {
+            // gcd is non-negative
+            self.to_owned().abs()
+        } else {
+            rhs.gcd(&(self.to_owned().rem(rhs.to_owned())))
+        }
+    }
+
+    /// least common multiple
+    fn lcm(&self, rhs: &Self) -> Self {
+        // |a * b| = gcd(a, b) * lcm(a, b)
+        match (self.to_owned() * rhs.to_owned()).abs().ndiv(self.gcd(rhs)) {
+            Ok(division) => division,
+            Err(_) => -Self::one(),
+        }
+    }
+}
+
+impl Integeral for i32 {}
+impl Integeral for i128 {}
+
+/// concept for floating point number
+pub trait Fractional
+where
+    Self: Number,
+{
+    fn sqrt(self) -> Self;
+}
+
+impl Fractional for f32 {
+    fn sqrt(self) -> Self {
+        f32::sqrt(self)
+    }
+}
+
+impl Fractional for f64 {
+    fn sqrt(self) -> Self {
+        f64::sqrt(self)
     }
 }

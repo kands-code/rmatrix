@@ -6,7 +6,9 @@
 //!
 //! *do not have any optimization*
 
-use crate::error::MatrixError;
+use crate::error::Error;
+use crate::error::Result;
+use crate::number::Fractional;
 use crate::number::Number;
 use crate::utils::is_upper_triangle_matrix;
 use crate::vector::times_v;
@@ -36,10 +38,7 @@ pub struct Matrix<T, const ROW: usize, const COL: usize> {
 }
 
 /// default implementations
-impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL>
-where
-    T: std::marker::Send + std::marker::Sync,
-{
+impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// create a matrix with size row by col
     ///
     /// **note: this will consume the original vector**
@@ -48,16 +47,17 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1i8, 2i8}, {3i8, 4i8}}
     /// let _: Matrix<i8, 2, 2> = Matrix::create(vec![1, 2, 3, 4])?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create(data: Vec<T>) -> Result<Self, MatrixError> {
+    pub fn create(data: Vec<T>) -> Result<Self> {
         if data.len() < ROW * COL {
-            Err(MatrixError::IncompatibleSizeError((ROW, COL), data.len()))
+            Err(Error::IncompatibleSizeError((ROW, COL), data.len()))
         } else {
             Ok(Matrix::<T, ROW, COL> { inner: data })
         }
@@ -69,14 +69,15 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{0i8, 0i8}, {0i8, 0i8}}
     /// let _: Matrix<i8, 2, 2> = Matrix::zeros()?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn zeros() -> Result<Self, MatrixError>
+    pub fn zeros() -> Result<Self>
     where
         T: Clone + Default,
     {
@@ -87,8 +88,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// assert_eq!((2, 3), mat.dimensions());
@@ -108,18 +110,19 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// assert_eq!(&5, mat.get_element(2, 2)?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_element(&self, row: usize, col: usize) -> Result<&T, MatrixError> {
+    pub fn get_element(&self, row: usize, col: usize) -> Result<&T> {
         match self.inner.get(Self::to_inner_index(row, col)) {
             Some(element) => Ok(element),
-            None => Err(MatrixError::OutOfBoundary(row, col)),
+            None => Err(Error::OutOfBoundary(row, col)),
         }
     }
 
@@ -127,8 +130,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{0i8, 0i8}, {0i8, 0i8}}
     /// let mut mat: Matrix<i8, 2, 2> = Matrix::zeros()?;
     /// // {{3i8, 0i8}, {0i8, 0i8}}
@@ -136,13 +140,13 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set_element(&mut self, row: usize, col: usize, replace: T) -> Result<(), MatrixError> {
+    pub fn set_element(&mut self, row: usize, col: usize, replace: T) -> Result<()> {
         match self.inner.get_mut(Self::to_inner_index(row, col)) {
             Some(element) => {
                 *element = replace;
                 Ok(())
             }
-            None => Err(MatrixError::OutOfBoundary(row, col)),
+            None => Err(Error::OutOfBoundary(row, col)),
         }
     }
 
@@ -150,8 +154,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// // {{4i8, 5i8, 6i8}}
@@ -159,9 +164,9 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_row(&self, row: usize) -> Result<VectorR<&T, COL>, MatrixError> {
+    pub fn get_row(&self, row: usize) -> Result<VectorR<&T, COL>> {
         if row > ROW {
-            Err(MatrixError::OutOfBoundary(row, 1))
+            Err(Error::OutOfBoundary(row, 1))
         } else {
             let mut nth_row = Vec::with_capacity(COL);
             for c in 1..=COL {
@@ -175,8 +180,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// // {{2i8, 5i8}}
@@ -184,9 +190,9 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_col(&self, col: usize) -> Result<VectorC<&T, ROW>, MatrixError> {
+    pub fn get_col(&self, col: usize) -> Result<VectorC<&T, ROW>> {
         if col > COL {
-            Err(MatrixError::OutOfBoundary(1, col))
+            Err(Error::OutOfBoundary(1, col))
         } else {
             let mut nth_col = Vec::with_capacity(COL);
             for r in 1..=ROW {
@@ -216,25 +222,26 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1i8, 0i8}, {0i8, 2i8}}
     /// let _: Matrix<i8, 2, 2> = Matrix::diag(vec![1, 2])?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn diag(data: Vec<T>) -> Result<Self, MatrixError>
+    pub fn diag(data: Vec<T>) -> Result<Self>
     where
         T: Clone + Default,
     {
         if data.len() < Self::get_edge() {
-            Err(MatrixError::IncompatibleSizeError((ROW, COL), data.len()))
+            Err(Error::IncompatibleSizeError((ROW, COL), data.len()))
         } else {
             let mut diag_mat = Self::zeros()?;
             for index in 1..=Self::get_edge() {
                 match data.get(index - 1) {
                     Some(v) => diag_mat.set_element(index, index, v.to_owned()),
-                    None => Err(MatrixError::IncompatibleSizeError((ROW, COL), data.len())),
+                    None => Err(Error::IncompatibleSizeError((ROW, COL), data.len())),
                 }?;
             }
             Ok(diag_mat)
@@ -245,8 +252,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// // {{1i8, 5i8}}
@@ -254,7 +262,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_diag(&self) -> Result<VectorC<&T, { Self::get_edge() }>, MatrixError> {
+    pub fn get_diag(&self) -> Result<VectorC<&T, { Self::get_edge() }>> {
         let edge: usize = Self::get_edge();
         let mut diag = Vec::with_capacity(edge);
         for i in 1..=edge {
@@ -269,8 +277,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// // {{1i8, 4i8}, {2i8, 5i8}, {3i8, 6i8}}
@@ -278,11 +287,11 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn transpose(self) -> Result<Matrix<T, COL, ROW>, MatrixError>
+    pub fn transpose(&self) -> Result<Matrix<T, COL, ROW>>
     where
         T: Clone,
     {
-        let mut transposed = Vec::with_capacity(self.inner.capacity());
+        let mut transposed = Vec::with_capacity(ROW * COL);
         for c in 1..=COL {
             for r in 1..=ROW {
                 transposed.push(self.get_element(r, c)?.to_owned());
@@ -295,15 +304,16 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
     /// let zero: Matrix<i8, 2, 3> = Matrix::create(vec![0i8; 6])?;
     /// assert_eq!(zero, mat.map(&mut |e| e * 0)?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn map<N, F>(&self, f: &mut F) -> Result<Matrix<N, ROW, COL>, MatrixError>
+    pub fn map<N, F>(&self, f: &mut F) -> Result<Matrix<N, ROW, COL>>
     where
         T: Clone + std::marker::Send + std::marker::Sync,
         N: std::marker::Send + std::marker::Sync,
@@ -322,20 +332,21 @@ where
 /// implementation for matrix which element type is a Number
 impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL>
 where
-    T: Number + std::marker::Send + std::marker::Sync,
+    T: Number,
 {
     /// create an identity matrix with size row by col
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // {{1.0f32, 0.0f32}, {0.0f32, 1.0f32}}
     /// let _: Matrix<f32, 2, 2> = Matrix::eyes()?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn eyes() -> Result<Self, MatrixError> {
+    pub fn eyes() -> Result<Self> {
         let mut mat = Self::zeros()?;
         for i in 1..=Self::get_edge() {
             mat.set_element(i, i, T::one())?;
@@ -348,14 +359,15 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// // need "rand_mat" feature
     /// let _: Matrix<f32, 2, 2> = Matrix::rand()?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rand() -> Result<Self, MatrixError>
+    pub fn rand() -> Result<Self>
     where
         T: Number,
         Standard: Distribution<T>,
@@ -376,8 +388,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let m = Matrix::<f32, 2, 2>::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
     /// let p = Matrix::<f32, 2, 2>::p_change(1, 2)?;
     /// assert_eq!(
@@ -391,7 +404,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_change(i: usize, j: usize) -> Result<Matrix<T, ROW, ROW>, MatrixError> {
+    pub fn p_change(i: usize, j: usize) -> Result<Matrix<T, ROW, ROW>> {
         let mut mat = Matrix::<T, ROW, ROW>::eyes()?;
         mat.set_element(i, i, T::zero())?;
         mat.set_element(j, j, T::zero())?;
@@ -404,8 +417,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let m = Matrix::<f32, 2, 2>::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
     /// let p = Matrix::<f32, 2, 2>::p_muls(1, 2.0f32)?;
     /// assert_eq!(
@@ -419,7 +433,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_muls(i: usize, k: T) -> Result<Matrix<T, ROW, ROW>, MatrixError> {
+    pub fn p_muls(i: usize, k: T) -> Result<Matrix<T, ROW, ROW>> {
         let mut mat = Matrix::<T, ROW, ROW>::eyes()?;
         mat.set_element(i, i, k)?;
         Ok(mat)
@@ -429,8 +443,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let m = Matrix::<f32, 2, 2>::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
     /// let p = Matrix::<f32, 2, 2>::p_add(1, 2, 1.0f32)?;
     /// assert_eq!(
@@ -444,7 +459,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_add(i: usize, j: usize, k: T) -> Result<Matrix<T, ROW, ROW>, MatrixError> {
+    pub fn p_add(i: usize, j: usize, k: T) -> Result<Matrix<T, ROW, ROW>> {
         let mut mat = Matrix::<T, ROW, ROW>::eyes()?;
         mat.set_element(j, i, k)?;
         Ok(mat)
@@ -454,15 +469,16 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let mat1: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
     /// let mat2: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
     /// assert_eq!(Matrix::create(vec![2.0f32, 4.0f32, 6.0f32, 8.0f32, 10.0f32, 12.0f32])?, mat1.plus(mat2)?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn plus(self, rhs: Self) -> Result<Self, MatrixError> {
+    pub fn plus(self, rhs: Self) -> Result<Self> {
         #[cfg(feature = "rayon_mat")]
         let sum = self
             .inner
@@ -486,14 +502,15 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let mat: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
     /// assert_eq!(Matrix::create(vec![2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32, 7.0f32])?, mat.adds(1.0f32)?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn adds(self, scalar: T) -> Result<Self, MatrixError> {
+    pub fn adds(self, scalar: T) -> Result<Self> {
         self.map(&mut |a| scalar.to_owned() + a)
     }
 
@@ -501,8 +518,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let a: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
     /// let b: Matrix<f64, 2, 2> = Matrix::create(vec![5.0f64, 6.0f64, 7.0f64, 8.0f64])?;
     /// assert_eq!(
@@ -515,7 +533,7 @@ where
     pub fn times<const SIDE: usize>(
         self,
         rhs: Matrix<T, COL, SIDE>,
-    ) -> Result<Matrix<T, ROW, SIDE>, MatrixError> {
+    ) -> Result<Matrix<T, ROW, SIDE>> {
         let mut product = Matrix::<T, ROW, SIDE>::create(vec![T::zero(); ROW * SIDE])?;
         for c in 1..=COL {
             product = product
@@ -532,23 +550,57 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let mat: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
     /// assert_eq!(Matrix::create(vec![2.0f32, 4.0f32, 6.0f32, 8.0f32, 10.0f32, 12.0f32])?, mat.muls(2.0f32)?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn muls(self, scalar: T) -> Result<Self, MatrixError> {
+    pub fn muls(self, scalar: T) -> Result<Self> {
         self.map(&mut |a| scalar.to_owned() * a)
+    }
+
+    /// matrix division with scalar
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
+    /// let mat: Matrix<f32, 2, 2> = Matrix::create(vec![2.0f32, 4.0f32, 6.0f32, 8.0f32])?;
+    /// assert_eq!(Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?, mat.divs(2.0f32)?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn divs(self, scalar: T) -> Result<Self> {
+        let mut quotient = self.clone();
+        for index in 0..ROW * COL {
+            match quotient.inner.get_mut(index) {
+                Some(m) => match m.to_owned().ndiv(scalar.to_owned()) {
+                    Ok(v) => {
+                        *m = v;
+                        Ok(())
+                    }
+                    Err(e) => Err(e),
+                },
+                None => Err(Error::Message(format!(
+                    "read index {} out of boundary",
+                    index
+                ))),
+            }?;
+        }
+        Ok(quotient)
     }
 
     /// matrix subtraction
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let a: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
     /// let b: Matrix<f64, 2, 2> = Matrix::create(vec![5.0f64, 6.0f64, 7.0f64, 8.0f64])?;
     /// assert_eq!(
@@ -557,22 +609,52 @@ where
     /// );
     /// # Ok(())
     /// # }
-    pub fn subtract(self, rhs: Self) -> Result<Self, MatrixError> {
+    pub fn subtract(self, rhs: Self) -> Result<Self> {
         self.plus(rhs.map(&mut |e| -e)?)
+    }
+
+    /// conjugate transpose a matrix
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::complex::Complex;
+    /// # use rmatrix_ks::cmplx;
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
+    /// let mat: Matrix<Complex<i32>, 1, 2> =
+    ///     Matrix::create(vec![cmplx!(1, 2), cmplx!(2, 3)])?;
+    /// assert_eq!(Matrix::<_, 2, 1>::create(vec![cmplx!(1, -2), cmplx!(2, -3)])?,
+    ///     mat.conjugate_transpose()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn conjugate_transpose(&self) -> Result<Matrix<T, COL, ROW>>
+    where
+        T: Clone,
+    {
+        let mut transposed = Vec::with_capacity(ROW * COL);
+        for c in 1..=COL {
+            for r in 1..=ROW {
+                transposed.push(self.get_element(r, c)?.to_owned().conjugate());
+            }
+        }
+        Matrix::<T, COL, ROW>::create(transposed)
     }
 
     /// get the trace of a matrix
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let m: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
     /// assert_eq!(5.0f64, m.trace()?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn trace(&self) -> Result<T, MatrixError>
+    pub fn trace(&self) -> Result<T>
     where
         [(); Self::get_edge()]:,
     {
@@ -615,8 +697,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let m = Matrix::<f32, 3, 4>::create(vec![
     ///     1.0f32, 2.0f32, 3.0f32, -1.0f32, 4.0f32, 5.0f32, 6.0f32, 2.0f32, 7.0f32, 8.0f32, 9.0f32, 3.0f32,
     /// ])?;
@@ -624,24 +707,21 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rank(&self) -> Result<usize, MatrixError> {
+    pub fn rank(&self) -> Result<usize> {
         let reduced = self.row_eliminate()?.0;
 
         #[cfg(feature = "rayon_mat")]
         let count = (1..=ROW)
-            .rev()
+            .into_par_iter()
             .map(|i| Ok(reduced.get_row(i)?.inner))
-            .map(|v| -> Result<bool, MatrixError> {
-                Ok(v?.par_iter().cloned().all(|e| e.is_zero()))
-            })
+            .map(|v| -> Result<bool> { Ok(v?.par_iter().cloned().all(|e| e.is_zero())) })
             .filter(|b| b == &Ok(false))
             .count();
 
         #[cfg(not(feature = "rayon_mat"))]
         let count = (1..=ROW)
-            .rev()
             .map(|i| Ok(reduced.get_row(i)?.inner))
-            .map(|v| -> Result<bool, MatrixError> { Ok(v?.iter().cloned().all(|e| e.is_zero())) })
+            .map(|v| -> Result<bool> { Ok(v?.iter().cloned().all(|e| e.is_zero())) })
             .filter(|b| b == &Ok(false))
             .count();
 
@@ -652,8 +732,9 @@ where
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let m = Matrix::<f32, 3, 4>::create(vec![
     ///     1.0f32, 2.0f32, 3.0f32, -1.0f32, 4.0f32, 5.0f32, 6.0f32, 2.0f32, 7.0f32, 8.0f32, 9.0f32, 3.0f32,
     /// ])?;
@@ -662,11 +743,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn submatrix(
-        &self,
-        row: usize,
-        col: usize,
-    ) -> Result<Matrix<T, { ROW - 1 }, { COL - 1 }>, MatrixError> {
+    pub fn submatrix(&self, row: usize, col: usize) -> Result<Matrix<T, { ROW - 1 }, { COL - 1 }>> {
         let mut submat = Matrix::zeros()?;
         let mut row_index = 1;
         for r in (1..=ROW).filter(|e| e != &row) {
@@ -680,42 +757,15 @@ where
         Ok(submat)
     }
 
-    /// get the cofactor matrix of the matrix
-    ///
-    /// ```rust
-    /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
-    /// let m = Matrix::<f32, 3, 4>::create(vec![
-    ///     1.0f32, 2.0f32, 3.0f32, -1.0f32, 4.0f32, 5.0f32, 6.0f32, 2.0f32, 7.0f32, 8.0f32, 9.0f32, 3.0f32,
-    /// ])?;
-    /// assert_eq!(Matrix::create(vec![-4.0f32, -5.0f32, -6.0f32, -7.0f32, -8.0f32, -9.0f32])?,
-    ///     m.cofactor(1, 4)?);
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn cofactor(
-        &self,
-        row: usize,
-        col: usize,
-    ) -> Result<Matrix<T, { ROW - 1 }, { COL - 1 }>, MatrixError> {
-        let cofactor = self.submatrix(row, col)?;
-        let cofactor = cofactor.muls(if (row + col) & 1 == 1 {
-            -T::one()
-        } else {
-            T::one()
-        })?;
-        Ok(cofactor)
-    }
-
     /// get the adjugate matrix of the matrix
     ///
     /// adj(m) * m = det(m) E
     ///
     /// ```rust
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # use rmatrix_ks::error::MatrixError;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
     /// let m = Matrix::<f32, 2, 2>::create(vec![
     ///     5.0f32, 4.0f32, 4.0f32, 11f32,
     /// ])?;
@@ -726,19 +776,28 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn adjugate(&self) -> Result<Matrix<T, COL, ROW>, MatrixError>
+    pub fn adjugate(&self) -> Result<Matrix<T, COL, ROW>>
     where
         [(); ROW - 1]:,
         [(); COL - 1]:,
     {
         if ROW != COL {
             // only square matrix
-            Err(MatrixError::IncompatibleShape((ROW, ROW), (ROW, COL)))
+            Err(Error::IncompatibleShape((ROW, ROW), (ROW, COL)))
         } else {
             let mut mat = Self::zeros()?;
             for row in 1..=ROW {
                 for col in 1..=COL {
-                    mat.set_element(row, col, self.cofactor(row, col)?.determinant()?)?;
+                    mat.set_element(
+                        row,
+                        col,
+                        self.submatrix(row, col)?.determinant()?
+                            * if (row + col) & 1 == 1 {
+                                -T::one()
+                            } else {
+                                T::one()
+                            },
+                    )?;
                 }
             }
             mat.transpose()
@@ -748,9 +807,10 @@ where
     /// transform the matrix to upper triangle form by rows elimination
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # fn main() -> Result<()> {
     /// let mat = Matrix::<f32, 3, 3>::create(vec![1.0f32, 2.0f32, 4.0f32, 3.0f32, 6.0f32, 8.0f32, 5.0f32, 7.0f32, 9.0f32])?;
     /// let eliminates = mat.row_eliminate()?;
     /// assert_eq!(Matrix::create(vec![1.0f32, 2.0f32, 4.0f32, 0.0f32, -3.0f32, -11.0f32, 0.0f32, 0.0f32, -4.0f32])?,
@@ -758,7 +818,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn row_eliminate(&self) -> Result<(Self, Matrix<T, ROW, ROW>, T), MatrixError> {
+    pub fn row_eliminate(&self) -> Result<(Self, Matrix<T, ROW, ROW>, T)> {
         let mut reduced = self.to_owned();
         let mut p_all = Matrix::<T, ROW, ROW>::eyes()?;
         let mut lambda = T::one();
@@ -812,9 +872,10 @@ where
     /// determinant of the matrix
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # fn main() -> Result<()> {
     /// let mat = Matrix::<f32, 3, 3>::create(vec![
     ///     1.0f32, 2.0f32, 4.0f32, 3.0f32, 6.0f32, 8.0f32, 5.0f32, 7.0f32, 9.0f32
     /// ])?;
@@ -822,10 +883,10 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn determinant(&self) -> Result<T, MatrixError> {
+    pub fn determinant(&self) -> Result<T> {
         if ROW != COL {
             // only square matrix has determinant
-            Err(MatrixError::IncompatibleShape((ROW, ROW), (ROW, COL)))
+            Err(Error::IncompatibleShape((ROW, ROW), (ROW, COL)))
         } else {
             // for upper triangle matrix
             // determinant is the production of diagonal
@@ -842,9 +903,10 @@ where
     /// transform the matrix to standard upper triangle form by rows elimination
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # fn main() -> Result<()> {
     /// let mat = Matrix::<f32, 3, 3>::create(
     ///     vec![1.0f32, 2.0f32, 4.0f32, 3.0f32, 6.0f32, 8.0f32, 5.0f32, 7.0f32, 9.0f32])?;
     /// let reduced = mat.row_reduce()?;
@@ -854,7 +916,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn row_reduce(&self) -> Result<(Self, Matrix<T, ROW, ROW>), MatrixError> {
+    pub fn row_reduce(&self) -> Result<(Self, Matrix<T, ROW, ROW>)> {
         // from upper triangle matrix to reduce
         let eliminates = self.row_eliminate()?;
         let mut reduced = eliminates.0;
@@ -898,9 +960,10 @@ where
     /// find the inverse of the matrix
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
     /// # use rmatrix_ks::matrix::Matrix;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # fn main() -> Result<()> {
     /// let mat = Matrix::<f32, 2, 2>::create(
     ///     vec![1.4f32, 2.0f32, 3.0f32, -6.7f32])?;
     /// assert_eq!(Matrix::create(
@@ -909,9 +972,50 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn inverse(&self) -> Result<Matrix<T, ROW, ROW>, MatrixError> {
-        // Gauss-Jordan method
+    pub fn inverse(&self) -> Result<Matrix<T, ROW, ROW>> {
+        // use Gauss-Jordan method
         Ok(self.row_reduce()?.1)
+    }
+}
+
+impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL>
+where
+    T: Fractional,
+{
+    /// equality check for fractional matrices
+    ///
+    /// for fractional, a == b is not accuracy like integral does,
+    /// so we need another equality check function
+    ///
+    /// ```rust
+    /// # use rmatrix_ks::matrix::Matrix;
+    /// # use rmatrix_ks::error::Result;
+    /// # fn main() -> Result<()> {
+    /// let mat = Matrix::<f32, 2, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])?;
+    /// assert!(mat.equal(
+    ///     &Matrix::<f32, 2, 3>::create(vec![0.0, 2.0, 3.0, 4.0, 4.0, 6.0])?
+    ///         .plus(Matrix::<f32, 2, 3>::eyes()?)?));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn equal(&self, rhs: &Self) -> bool {
+        #[cfg(feature = "rayon_mat")]
+        let check = self
+            .inner
+            .par_iter()
+            .take(ROW * COL)
+            .zip(rhs.inner.par_iter())
+            .all(|(e1, e2)| (e1.to_owned() - e2.to_owned()).is_zero());
+
+        #[cfg(not(feature = "rayon_mat"))]
+        let check = self
+            .inner
+            .iter()
+            .take(ROW * COL)
+            .zip(rhs.inner.iter())
+            .all(|(e1, e2)| (e1.to_owned() - e2.to_owned()).is_zero());
+
+        check
     }
 }
 
@@ -921,15 +1025,15 @@ where
     T: std::fmt::Display + Clone + std::marker::Send + std::marker::Sync,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{")?;
+        write!(f, "{}", "\u{007b}")?;
         for r in 1..=ROW {
-            write!(f, "{{")?;
+            write!(f, "{}", "\u{007b}")?;
             for c in 1..=COL {
                 if let Ok(element) = self.get_element(r, c) {
                     write!(f, "{}", element)?;
                 }
                 if c == COL {
-                    write!(f, "}}")?;
+                    write!(f, "{}", "\u{007d}")?;
                 } else {
                     write!(f, ", ")?;
                 }
@@ -938,7 +1042,7 @@ where
                 write!(f, ", ")?;
             }
         }
-        write!(f, "}}")
+        write!(f, "{}", "\u{007d}")
     }
 }
 

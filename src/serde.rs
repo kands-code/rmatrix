@@ -2,18 +2,25 @@
 //!
 //! read from file and save to file
 
-use std::io::{Read, Write};
+use crate::error::Error;
+use crate::error::Result;
+use crate::matrix::Matrix;
 
-use crate::{error::MatrixError, matrix::Matrix};
+use std::io::Read;
+use std::io::Write;
 
+#[cfg(feature = "serde_mat")]
+#[doc(cfg(feature = "serde_mat"))]
 /// read matrix from json file with specific index
 ///
 /// index start from 1
 ///
 /// ```rust
+/// # use rmatrix_ks::error::Error;
+/// # use rmatrix_ks::error::Result;
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::serde::{read, write};
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// # fn main() -> Result<()> {
 /// let mat1 = Matrix::<f64, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// let mat2 = Matrix::<f64, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// write(&[&mat1, &mat2], std::path::Path::new("data/test.json"))?;
@@ -31,26 +38,52 @@ use crate::{error::MatrixError, matrix::Matrix};
 pub fn read<T, const ROW: usize, const COL: usize>(
     path: &std::path::Path,
     index: usize,
-) -> Result<Matrix<T, ROW, COL>, Box<dyn std::error::Error>>
+) -> Result<Matrix<T, ROW, COL>>
 where
     T: Clone + for<'a> serde::Deserialize<'a>,
 {
-    let mut file = std::fs::File::open(path)?;
+    let full_path = match path.canonicalize() {
+        Ok(full_path) => Ok(full_path),
+        Err(_) => Err(Error::Message(format!("path {:?} is wrong", path))),
+    }?;
+    let mut file = match std::fs::File::open(&full_path) {
+        Ok(handle) => Ok(handle),
+        Err(_) => Err(Error::Message(format!("file {:?} is not exist", full_path))),
+    }?;
     let mut mats_string = String::new();
-    file.read_to_string(&mut mats_string)?;
-    let mats: Vec<Matrix<T, ROW, COL>> = serde_json::from_str(&mats_string)?;
+    match file.read_to_string(&mut mats_string) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::Message(format!(
+            "read file {:?} to string failed",
+            full_path
+        ))),
+    }?;
+    let mats: Vec<Matrix<T, ROW, COL>> = match serde_json::from_str(&mats_string) {
+        Ok(matrices) => Ok(matrices),
+        Err(_) => Err(Error::Message(format!(
+            "file {:?} contents wrong format",
+            path
+        ))),
+    }?;
     match mats.get(index - 1) {
         Some(mat) => Ok(mat.to_owned()),
-        None => Err(Box::new(MatrixError::OutOfLength(mats.len(), index))),
+        None => Err(Error::Message(format!(
+            "read index {} out of boundary",
+            index
+        ))),
     }
 }
 
+#[cfg(feature = "serde_mat")]
+#[doc(cfg(feature = "serde_mat"))]
 /// store matrices into json file
 ///
 /// ```rust
+/// # use rmatrix_ks::error::Error;
+/// # use rmatrix_ks::error::Result;
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::serde::{read, write};
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// # fn main() -> Result<()> {
 /// let mat1 = Matrix::<f64, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// let mat2 = Matrix::<f64, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// write(&[&mat1, &mat2], std::path::Path::new("data/test.json"))?;
@@ -60,12 +93,33 @@ where
 pub fn write<T, const ROW: usize, const COL: usize>(
     mats: &[&Matrix<T, ROW, COL>],
     path: &std::path::Path,
-) -> Result<(), Box<dyn std::error::Error>>
+) -> Result<()>
 where
-    T: serde::Serialize,
+    T: std::fmt::Debug + serde::Serialize,
 {
-    let mut file = std::fs::File::create(path)?;
-    let mats_string = serde_json::to_string(&mats)?;
-    file.write(mats_string.as_bytes())?;
-    Ok(())
+    let full_path = match path.canonicalize() {
+        Ok(full_path) => Ok(full_path),
+        Err(_) => Err(Error::Message(format!("path {:?} is wrong", path))),
+    }?;
+    let mut file = match std::fs::File::create(&full_path) {
+        Ok(handle) => Ok(handle),
+        Err(_) => Err(Error::Message(format!(
+            "create file {:?} failed",
+            full_path
+        ))),
+    }?;
+    let mats_string = match serde_json::to_string(&mats) {
+        Ok(mats_string) => Ok(mats_string),
+        Err(_) => Err(Error::Message(format!(
+            "serialize {:?} to string failed",
+            mats
+        ))),
+    }?;
+    match file.write(mats_string.as_bytes()) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::Message(format!(
+            "write to file {:?} failed",
+            full_path
+        ))),
+    }
 }

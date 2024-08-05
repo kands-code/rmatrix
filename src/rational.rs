@@ -6,7 +6,9 @@
 //!
 //! very slow, and may overflow
 
-use crate::error::MatrixError;
+use crate::error::Error;
+use crate::error::Result;
+use crate::number::Integeral;
 use crate::number::Number;
 use crate::number::One;
 use crate::number::Zero;
@@ -14,40 +16,12 @@ use crate::number::Zero;
 #[cfg(feature = "serde_mat")]
 use serde::{Deserialize, Serialize};
 
-/// concept for integer
-pub trait Integeral
-where
-    Self: Number + std::cmp::PartialOrd + std::ops::Rem<Output = Self>,
-{
-    /// greatest common divisor
-    fn gcd(&self, rhs: &Self) -> Self {
-        if rhs.to_owned() == Self::zero() {
-            // gcd is non-negative
-            self.to_owned().abs()
-        } else {
-            rhs.gcd(&(self.to_owned().rem(rhs.to_owned())))
-        }
-    }
-
-    /// least common multiple
-    fn lcm(&self, rhs: &Self) -> Self {
-        // |a * b| = gcd(a, b) * lcm(a, b)
-        match (self.to_owned() * rhs.to_owned()).abs().ndiv(self.gcd(rhs)) {
-            Ok(division) => division,
-            Err(_) => -Self::one(),
-        }
-    }
-}
-
-impl Integeral for i32 {}
-impl Integeral for i128 {}
-
 /// rational number
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde_mat", derive(Serialize, Deserialize))]
 pub struct Rational<T: Integeral> {
-    numerator: T,
-    denominator: T,
+    pub numerator: T,
+    pub denominator: T,
 }
 
 impl<T: Integeral> Rational<T> {
@@ -75,16 +49,17 @@ impl<T: Integeral> Rational<T> {
     /// if an overflow error occurs, try this function to do simplify
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::MatrixError;
+    /// # use rmatrix_ks::error::Error;
+    /// # use rmatrix_ks::error::Result;
     /// # use rmatrix_ks::rat;
     /// # use rmatrix_ks::rational::Rational;
-    /// # fn main() -> Result<(), MatrixError> {
+    /// # fn main() -> Result<()> {
     /// let mut r1 = Rational::create(2i32, 4i32); // 2/4
     /// r1.refine()?; // 1/2
     /// # Ok(())
     /// # }
     /// ```
-    pub fn refine(&self) -> Result<Self, MatrixError> {
+    pub fn refine(&self) -> Result<Self> {
         let gcd = self.numerator.gcd(&self.denominator);
         let mut numerator = self.numerator.to_owned().ndiv(gcd.to_owned())?;
         let mut denominator = self.denominator.to_owned().ndiv(gcd)?;
@@ -198,10 +173,14 @@ impl<T: Integeral> Number for Rational<T> {
         Self::create(self.numerator.abs(), self.denominator.abs())
     }
 
+    fn conjugate(self) -> Self {
+        rat!(self.numerator.conjugate(), self.denominator.conjugate())
+    }
+
     /// (a / b) / (c / d) = (a * d) / (b * c)
-    fn ndiv(self, rhs: Self) -> Result<Self, crate::error::MatrixError> {
+    fn ndiv(self, rhs: Self) -> Result<Self> {
         if rhs.is_zero() {
-            Err(MatrixError::DividedByZero)
+            Err(Error::DividedByZero)
         } else {
             Ok(self * Self::create(rhs.denominator, rhs.numerator))
         }
