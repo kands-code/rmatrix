@@ -38,8 +38,8 @@ pub fn points<T, R>(
 /// # use rmatrix_ks::error::Result;
 /// # use rmatrix_ks::utils::common::horizontal_concat;
 /// # fn main() -> Result<()> {
-/// let mat1: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-/// let mat2: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+/// let mat1: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+/// let mat2: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
 /// assert_eq!(Matrix::create(vec![1, 2, 3, 1, 2, 3, 4, 5, 6, 4, 5, 6])?,
 ///     horizontal_concat(&mat1, &mat2)?);
 /// # Ok(())
@@ -72,8 +72,8 @@ where
 /// # use rmatrix_ks::utils::common::vertical_concat;
 /// # use rmatrix_ks::error::Result;
 /// # fn main() -> Result<()> {
-/// let mat1: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-/// let mat2: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+/// let mat1: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+/// let mat2: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
 /// assert_eq!(Matrix::create(vec![1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6])?,
 ///     vertical_concat(&mat1, &mat2)?);
 /// # Ok(())

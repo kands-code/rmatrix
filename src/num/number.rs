@@ -97,6 +97,46 @@ where
     fn ndiv(self, rhs: Self) -> Result<Self>;
 }
 
+impl Equal for i8 {
+    fn equal(&self, rhs: &Self) -> bool {
+        self == rhs
+    }
+}
+
+impl Zero for i8 {
+    fn is_zero(&self) -> bool {
+        self == &0i8
+    }
+}
+
+impl One for i8 {
+    fn one() -> Self {
+        1i8
+    }
+
+    fn is_one(&self) -> bool {
+        self == &1i8
+    }
+}
+
+impl Number for i8 {
+    fn abs(self) -> Self {
+        i8::abs(self)
+    }
+
+    fn conjugate(self) -> Self {
+        self
+    }
+
+    fn ndiv(self, rhs: Self) -> Result<Self> {
+        if rhs.is_zero() {
+            Err(Error::DividedByZero)
+        } else {
+            Ok(self / rhs)
+        }
+    }
+}
+
 impl Equal for i32 {
     fn equal(&self, rhs: &Self) -> bool {
         self == rhs
@@ -122,6 +162,46 @@ impl One for i32 {
 impl Number for i32 {
     fn abs(self) -> Self {
         i32::abs(self)
+    }
+
+    fn conjugate(self) -> Self {
+        self
+    }
+
+    fn ndiv(self, rhs: Self) -> Result<Self> {
+        if rhs.is_zero() {
+            Err(Error::DividedByZero)
+        } else {
+            Ok(self / rhs)
+        }
+    }
+}
+
+impl Equal for i64 {
+    fn equal(&self, rhs: &Self) -> bool {
+        self == rhs
+    }
+}
+
+impl Zero for i64 {
+    fn is_zero(&self) -> bool {
+        self == &0i64
+    }
+}
+
+impl One for i64 {
+    fn one() -> Self {
+        1i64
+    }
+
+    fn is_one(&self) -> bool {
+        self == &1i64
+    }
+}
+
+impl Number for i64 {
+    fn abs(self) -> Self {
+        i64::abs(self)
     }
 
     fn conjugate(self) -> Self {
@@ -286,7 +366,9 @@ where
     }
 }
 
+impl Integeral for i8 {}
 impl Integeral for i32 {}
+impl Integeral for i64 {}
 impl Integeral for i128 {}
 
 /// concept for floating point number

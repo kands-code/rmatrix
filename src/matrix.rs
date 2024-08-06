@@ -338,8 +338,8 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::Result;
     /// # fn main() -> Result<()> {
-    /// let mat: Matrix<i8, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-    /// let zero: Matrix<i8, 2, 3> = Matrix::create(vec![0i8; 6])?;
+    /// let mat: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
+    /// let zero: Matrix<i32, 2, 3> = Matrix::create(vec![0i32; 6])?;
     /// assert_eq!(zero, mat.map(&mut |e| e * 0)?);
     /// # Ok(())
     /// # }
