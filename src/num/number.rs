@@ -39,6 +39,12 @@ pub trait One {
 /// # Example
 ///
 /// ```rust,ignore
+/// impl Equal for f32 {
+///     fn equal(&self, rhs: &Self) -> bool {
+///         (self - rhs).is_zero()
+///     }
+/// }
+///
 /// impl Zero for f32 {
 ///     fn is_zero(&self) -> bool {
 ///         self.abs() < f32::EPSILON
@@ -80,8 +86,6 @@ where
         + std::fmt::Debug
         + std::fmt::Display
         + std::iter::Sum
-        + std::marker::Send
-        + std::marker::Sync
         + std::ops::Add<Output = Self>
         + std::ops::Sub<Output = Self>
         + std::ops::Mul<Output = Self>
@@ -95,46 +99,6 @@ where
 
     /// normal division with zero test
     fn ndiv(self, rhs: Self) -> Result<Self>;
-}
-
-impl Equal for i8 {
-    fn equal(&self, rhs: &Self) -> bool {
-        self == rhs
-    }
-}
-
-impl Zero for i8 {
-    fn is_zero(&self) -> bool {
-        self == &0i8
-    }
-}
-
-impl One for i8 {
-    fn one() -> Self {
-        1i8
-    }
-
-    fn is_one(&self) -> bool {
-        self == &1i8
-    }
-}
-
-impl Number for i8 {
-    fn abs(self) -> Self {
-        i8::abs(self)
-    }
-
-    fn conjugate(self) -> Self {
-        self
-    }
-
-    fn ndiv(self, rhs: Self) -> Result<Self> {
-        if rhs.is_zero() {
-            Err(Error::DividedByZero)
-        } else {
-            Ok(self / rhs)
-        }
-    }
 }
 
 impl Equal for i32 {
@@ -217,46 +181,6 @@ impl Number for i64 {
     }
 }
 
-impl Equal for i128 {
-    fn equal(&self, rhs: &Self) -> bool {
-        self == rhs
-    }
-}
-
-impl Zero for i128 {
-    fn is_zero(&self) -> bool {
-        self == &0i128
-    }
-}
-
-impl One for i128 {
-    fn one() -> Self {
-        1i128
-    }
-
-    fn is_one(&self) -> bool {
-        self == &1i128
-    }
-}
-
-impl Number for i128 {
-    fn abs(self) -> Self {
-        i128::abs(self)
-    }
-
-    fn conjugate(self) -> Self {
-        self
-    }
-
-    fn ndiv(self, rhs: Self) -> Result<Self> {
-        if rhs.is_zero() {
-            Err(Error::DividedByZero)
-        } else {
-            Ok(self / rhs)
-        }
-    }
-}
-
 impl Equal for f32 {
     fn equal(&self, rhs: &Self) -> bool {
         (self - rhs).is_zero()
@@ -299,48 +223,6 @@ impl Number for f32 {
     }
 }
 
-impl Equal for f64 {
-    fn equal(&self, rhs: &Self) -> bool {
-        (self - rhs).is_zero()
-    }
-}
-
-impl Zero for f64 {
-    /// if a f64 number smaller than sqrt(eps),
-    /// then we can say it is zero
-    fn is_zero(&self) -> bool {
-        self.abs() < f64::EPSILON.sqrt()
-    }
-}
-
-impl One for f64 {
-    fn one() -> Self {
-        1.0f64
-    }
-
-    fn is_one(&self) -> bool {
-        (self - Self::one()).is_zero()
-    }
-}
-
-impl Number for f64 {
-    fn abs(self) -> Self {
-        f64::abs(self)
-    }
-
-    fn conjugate(self) -> Self {
-        self
-    }
-
-    fn ndiv(self, rhs: Self) -> Result<Self> {
-        if rhs.is_zero() {
-            Err(Error::DividedByZero)
-        } else {
-            Ok(self / rhs)
-        }
-    }
-}
-
 /// concept for integeral number
 pub trait Integeral
 where
@@ -366,10 +248,7 @@ where
     }
 }
 
-impl Integeral for i8 {}
 impl Integeral for i32 {}
-impl Integeral for i64 {}
-impl Integeral for i128 {}
 
 /// concept for floating point number
 pub trait Fractional
@@ -390,15 +269,5 @@ impl Fractional for f32 {
 
     fn from_usize(size: usize) -> Self {
         size as f32
-    }
-}
-
-impl Fractional for f64 {
-    fn sqrt(self) -> Self {
-        f64::sqrt(self)
-    }
-
-    fn from_usize(size: usize) -> Self {
-        size as f64
     }
 }

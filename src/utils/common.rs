@@ -5,7 +5,6 @@
 use crate::error::Result;
 use crate::matrix::Matrix;
 use crate::num::number::Fractional;
-use crate::num::number::Number;
 use crate::utils::decompose::qr_decomposition;
 
 /// generate points of matrix
@@ -50,7 +49,7 @@ pub fn horizontal_concat<T, const ROW: usize, const COL: usize, const RCOL: usiz
     rhs: &Matrix<T, ROW, RCOL>,
 ) -> Result<Matrix<T, ROW, { COL + RCOL }>>
 where
-    T: Clone + Default + std::marker::Send + std::marker::Sync,
+    T: Clone + Default,
 {
     let mut hmat = Matrix::zeros()?;
     for r in 1..=ROW {
@@ -84,7 +83,7 @@ pub fn vertical_concat<T, const ROW: usize, const COL: usize, const RROW: usize>
     rhs: &Matrix<T, RROW, COL>,
 ) -> Result<Matrix<T, { ROW + RROW }, COL>>
 where
-    T: Clone + std::marker::Send + std::marker::Sync,
+    T: Clone,
 {
     Matrix::create([&mat.inner[..], &rhs.inner[..]].concat())
 }
@@ -131,13 +130,7 @@ where
 /// solve linear equations
 ///
 /// **TODO**
-pub fn linear_solve<T, const ROW: usize, const COL: usize, const EDGE: usize>(
-    _mat: Matrix<T, ROW, COL>,
-    _b: Matrix<T, ROW, EDGE>,
-) -> Result<Matrix<T, COL, EDGE>>
-where
-    T: Number,
-{
+pub fn linear_solve() {
     todo!()
 }
 

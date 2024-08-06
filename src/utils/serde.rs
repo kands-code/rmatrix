@@ -20,16 +20,16 @@ use std::io::Write;
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::serde::{read, write};
 /// # fn main() -> Result<()> {
-/// let mat1 = Matrix::<f64, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
-/// let mat2 = Matrix::<f64, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
+/// let mat1 = Matrix::<f32, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
+/// let mat2 = Matrix::<f32, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// write(&[&mat1, &mat2], std::path::Path::new("data/test.json"))?;
 /// assert_eq!(
 ///     mat1,
-///     read::<f64, 3, 3>(std::path::Path::new("data/test.json"), 1)?
+///     read::<f32, 3, 3>(std::path::Path::new("data/test.json"), 1)?
 /// );
 /// assert_eq!(
 ///     mat2,
-///     read::<f64, 3, 3>(std::path::Path::new("data/test.json"), 2)?
+///     read::<f32, 3, 3>(std::path::Path::new("data/test.json"), 2)?
 /// );
 /// # Ok(())
 /// # }
@@ -82,8 +82,8 @@ where
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::serde::{read, write};
 /// # fn main() -> Result<()> {
-/// let mat1 = Matrix::<f64, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
-/// let mat2 = Matrix::<f64, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
+/// let mat1 = Matrix::<f32, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
+/// let mat2 = Matrix::<f32, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// write(&[&mat1, &mat2], std::path::Path::new("data/test.json"))?;
 /// # Ok(())
 /// # }

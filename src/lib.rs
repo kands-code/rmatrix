@@ -23,7 +23,6 @@
 //! There are some optional features
 //! - rand_mat: randomly generated matrices
 //! - serde_mat: ability to read matrices using a specific file format
-//! - rayon_mat: use rayon iter instead of std::iter
 //!
 //! By default, `rand_mat` feature is enabled.
 

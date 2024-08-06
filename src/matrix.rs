@@ -15,11 +15,6 @@ use crate::vector::times_v;
 use crate::vector::VectorC;
 use crate::vector::VectorR;
 
-#[cfg(feature = "rayon_mat")]
-use rayon::iter::{
-    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
-};
-
 #[cfg(feature = "rand_mat")]
 use rand::{
     distributions::{
@@ -346,17 +341,10 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// ```
     pub fn map<N, F>(&self, f: &mut F) -> Result<Matrix<N, ROW, COL>>
     where
-        T: Clone + std::marker::Send + std::marker::Sync,
-        N: std::marker::Send + std::marker::Sync,
-        F: Fn(T) -> N + std::marker::Sync + std::marker::Send,
+        T: Clone,
+        F: Fn(T) -> N,
     {
-        #[cfg(feature = "rayon_mat")]
-        let mapped = self.inner.par_iter().map(|e| f(e.to_owned())).collect();
-
-        #[cfg(not(feature = "rayon_mat"))]
-        let mapped = self.inner.iter().map(|e| f(e.to_owned())).collect();
-
-        Matrix::<N, ROW, COL>::create(mapped)
+        Matrix::<N, ROW, COL>::create(self.inner.iter().map(|e| f(e.to_owned())).collect())
     }
 }
 
@@ -398,24 +386,15 @@ where
     /// ```
     pub fn rand<R>(range: R) -> Result<Self>
     where
-        R: std::ops::RangeBounds<T>
-            + SampleRange<T>
-            + Clone
-            + std::marker::Send
-            + std::marker::Sync,
+        R: std::ops::RangeBounds<T> + SampleRange<T> + Clone,
         T: Number + std::cmp::PartialOrd + SampleUniform,
         Standard: Distribution<T>,
     {
-        #[cfg(feature = "rayon_mat")]
-        let data = (1..=ROW * COL)
-            .into_par_iter()
-            .map(|_| rand::thread_rng().gen_range(range.to_owned()))
-            .collect();
-
-        #[cfg(not(feature = "rayon_mat"))]
-        let data = (1..=ROW * COL).map(|_| rand::thread_rng().gen()).collect();
-
-        Self::create(data)
+        Self::create(
+            (1..=ROW * COL)
+                .map(|_| rand::thread_rng().gen_range(range.to_owned()))
+                .collect(),
+        )
     }
 
     /// exchange i row with j row
@@ -509,23 +488,13 @@ where
     /// # }
     /// ```
     pub fn plus(self, rhs: Self) -> Result<Self> {
-        #[cfg(feature = "rayon_mat")]
-        let sum = self
-            .inner
-            .par_iter()
-            .zip(rhs.inner.par_iter())
-            .map(|(a, b)| a.to_owned() + b.to_owned())
-            .collect::<Vec<_>>();
-
-        #[cfg(not(feature = "rayon_mat"))]
-        let sum = self
-            .inner
-            .iter()
-            .zip(rhs.inner.iter())
-            .map(|(a, b)| a.to_owned() + b.to_owned())
-            .collect::<Vec<_>>();
-
-        Self::create(sum)
+        Self::create(
+            self.inner
+                .iter()
+                .zip(rhs.inner.iter())
+                .map(|(a, b)| a.to_owned() + b.to_owned())
+                .collect::<Vec<_>>(),
+        )
     }
 
     /// matrix addition with scalar
@@ -549,10 +518,10 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::Result;
     /// # fn main() -> Result<()> {
-    /// let a: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
-    /// let b: Matrix<f64, 2, 2> = Matrix::create(vec![5.0f64, 6.0f64, 7.0f64, 8.0f64])?;
+    /// let a: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
+    /// let b: Matrix<f32, 2, 2> = Matrix::create(vec![5.0f32, 6.0f32, 7.0f32, 8.0f32])?;
     /// assert_eq!(
-    ///     Matrix::<f64, 2, 2>::create(vec![19.0f64, 22.0f64, 43.0f64, 50.0f64])?,
+    ///     Matrix::<f32, 2, 2>::create(vec![19.0f32, 22.0f32, 43.0f32, 50.0f32])?,
     ///     a.times(b)?
     /// );
     /// # Ok(())
@@ -626,10 +595,10 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::Result;
     /// # fn main() -> Result<()> {
-    /// let a: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
-    /// let b: Matrix<f64, 2, 2> = Matrix::create(vec![5.0f64, 6.0f64, 7.0f64, 8.0f64])?;
+    /// let a: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
+    /// let b: Matrix<f32, 2, 2> = Matrix::create(vec![5.0f32, 6.0f32, 7.0f32, 8.0f32])?;
     /// assert_eq!(
-    ///     Matrix::<f64, 2, 2>::create(vec![4.0f64, 4.0f64, 4.0f64, 4.0f64])?,
+    ///     Matrix::<f32, 2, 2>::create(vec![4.0f32, 4.0f32, 4.0f32, 4.0f32])?,
     ///     b.subtract(a)?
     /// );
     /// # Ok(())
@@ -672,8 +641,8 @@ where
     /// # use rmatrix_ks::matrix::Matrix;
     /// # use rmatrix_ks::error::Result;
     /// # fn main() -> Result<()> {
-    /// let m: Matrix<f64, 2, 2> = Matrix::create(vec![1.0f64, 2.0f64, 3.0f64, 4.0f64])?;
-    /// assert_eq!(5.0f64, m.trace()?);
+    /// let m: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32])?;
+    /// assert_eq!(5.0f32, m.trace()?);
     /// # Ok(())
     /// # }
     /// ```
@@ -681,24 +650,6 @@ where
     where
         [(); Self::get_edge()]:,
     {
-        #[cfg(feature = "rayon_mat")]
-        let tr = if ROW == 1 || COL == 1 {
-            // for vector v.trace() = v.sum()
-            self.inner
-                .par_iter()
-                .fold(|| T::zero(), |acc: T, e: &T| acc + e.to_owned())
-                .sum()
-        } else {
-            // else m.trace() = m.diag().sum()
-            self.get_diag()?
-                .inner
-                .par_iter()
-                .cloned()
-                .fold(|| T::zero(), |acc: T, e: &T| acc + e.to_owned())
-                .sum()
-        };
-
-        #[cfg(not(feature = "rayon_mat"))]
         let tr = if ROW == 1 || COL == 1 {
             // for vector v.trace() = v.sum()
             self.inner
@@ -732,22 +683,11 @@ where
     pub fn rank(&self) -> Result<usize> {
         let reduced = self.row_eliminate()?.0;
 
-        #[cfg(feature = "rayon_mat")]
-        let count = (1..=ROW)
-            .into_par_iter()
-            .map(|i| Ok(reduced.get_row(i)?.inner))
-            .map(|v| -> Result<bool> { Ok(v?.par_iter().cloned().all(|e| e.is_zero())) })
-            .filter(|b| b == &Ok(false))
-            .count();
-
-        #[cfg(not(feature = "rayon_mat"))]
-        let count = (1..=ROW)
+        Ok((1..=ROW)
             .map(|i| Ok(reduced.get_row(i)?.inner))
             .map(|v| -> Result<bool> { Ok(v?.iter().cloned().all(|e| e.is_zero())) })
             .filter(|b| b == &Ok(false))
-            .count();
-
-        Ok(count)
+            .count())
     }
 
     /// get the submatrix of the matrix
@@ -997,7 +937,7 @@ where
 /// the simplest format print
 impl<T, const ROW: usize, const COL: usize> std::fmt::Display for Matrix<T, ROW, COL>
 where
-    T: std::fmt::Display + Clone + std::marker::Send + std::marker::Sync,
+    T: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", "\u{007b}")?;

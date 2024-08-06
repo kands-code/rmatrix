@@ -12,9 +12,6 @@ use crate::vector::euclid_norm;
 use crate::vector::times_d;
 use crate::vector::VectorC;
 
-#[cfg(feature = "rayon_mat")]
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-
 /// transform the square matrix to lower triangle form by rows elimination
 pub(crate) fn lower_triangularize<T, const ROW: usize>(
     mat: Matrix<T, ROW, ROW>,
@@ -147,15 +144,6 @@ where
         }?
         .to_owned();
 
-        #[cfg(feature = "rayon_mat")]
-        let ai = VectorC::<T, ROW>::create(
-            ai.inner
-                .par_iter()
-                .map(|e| e.to_owned().to_owned())
-                .collect(),
-        )?;
-
-        #[cfg(not(feature = "rayon_mat"))]
         let ai =
             VectorC::<T, ROW>::create(ai.inner.iter().map(|e| e.to_owned().to_owned()).collect())?;
 
@@ -171,15 +159,6 @@ where
             }?
             .to_owned();
 
-            #[cfg(feature = "rayon_mat")]
-            let ek = VectorC::<T, ROW>::create(
-                ek.inner
-                    .par_iter()
-                    .map(|e| e.to_owned().to_owned())
-                    .collect(),
-            )?;
-
-            #[cfg(not(feature = "rayon_mat"))]
             let ek = VectorC::<T, ROW>::create(
                 ek.inner.iter().map(|e| e.to_owned().to_owned()).collect(),
             )?;
@@ -221,15 +200,6 @@ where
         }?
         .to_owned();
 
-        #[cfg(feature = "rayon_mat")]
-        let ei = VectorC::<T, ROW>::create(
-            ei.inner
-                .par_iter()
-                .map(|e| e.to_owned().to_owned())
-                .collect(),
-        )?;
-
-        #[cfg(not(feature = "rayon_mat"))]
         let ei =
             VectorC::<T, ROW>::create(ei.inner.iter().map(|e| e.to_owned().to_owned()).collect())?;
 
@@ -243,15 +213,6 @@ where
             }?
             .to_owned();
 
-            #[cfg(feature = "rayon_mat")]
-            let ai = VectorC::<T, ROW>::create(
-                ai.inner
-                    .par_iter()
-                    .map(|e| e.to_owned().to_owned())
-                    .collect(),
-            )?;
-
-            #[cfg(not(feature = "rayon_mat"))]
             let ai = VectorC::<T, ROW>::create(
                 ai.inner.iter().map(|e| e.to_owned().to_owned()).collect(),
             )?;

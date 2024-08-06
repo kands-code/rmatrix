@@ -7,9 +7,6 @@ use crate::matrix::Matrix;
 use crate::num::number::Fractional;
 use crate::num::number::Number;
 
-#[cfg(feature = "rayon_mat")]
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
-
 /// vector is a one-dimensional matrix
 ///
 /// by default, the vector is a column vector
@@ -62,23 +59,12 @@ pub fn times_d<T, const EDGE: usize>(vec1: VectorR<T, EDGE>, vec2: VectorC<T, ED
 where
     T: Number,
 {
-    #[cfg(feature = "rayon_mat")]
-    let prod = vec1
-        .inner
-        .par_iter()
-        .zip(vec2.inner.par_iter())
-        .map(|(e1, e2)| e1.to_owned() * e2.to_owned())
-        .sum();
-
-    #[cfg(not(feature = "rayon_mat"))]
-    let prod = vec1
+    Ok(vec1
         .inner
         .iter()
         .zip(vec2.inner.iter())
         .map(|(e1, e2)| e1.to_owned() * e2.to_owned())
-        .sum();
-
-    Ok(prod)
+        .sum())
 }
 
 /// vector convolution

@@ -7,9 +7,6 @@ use crate::num::number::Number;
 use crate::utils::common::points;
 use crate::{error::Result, num::number::Equal};
 
-#[cfg(feature = "rayon_mat")]
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-
 /// predicate whether a matrix is ​​square
 ///
 /// ```rust
@@ -64,25 +61,13 @@ pub fn is_upper_triangle_matrix<T, const ROW: usize, const COL: usize>(
 where
     T: Number,
 {
-    #[cfg(feature = "rayon_mat")]
-    let predicate = points(|r, c| (r, c), ROW, COL)
-        .par_iter()
-        .filter(|(r, c)| r > c)
-        .all(|(r, c)| {
-            mat.get_element(r.to_owned(), c.to_owned())
-                .is_ok_and(|e| e.is_zero())
-        });
-
-    #[cfg(not(feature = "rayon_mat"))]
-    let predicate = points(|r, c| (r, c), ROW, COL)
+    Ok(points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r > c)
         .all(|(r, c)| {
             mat.get_element(r.to_owned(), c.to_owned())
                 .is_ok_and(|e| e.is_zero())
-        });
-
-    Ok(predicate)
+        }))
 }
 
 /// predicate whether a matrix is lower triangle
@@ -105,25 +90,13 @@ pub fn is_lower_triangle_matrix<T, const ROW: usize, const COL: usize>(
 where
     T: Number,
 {
-    #[cfg(feature = "rayon_mat")]
-    let predicate = points(|r, c| (r, c), ROW, COL)
-        .par_iter()
-        .filter(|(r, c)| r < c)
-        .all(|(r, c)| {
-            mat.get_element(r.to_owned(), c.to_owned())
-                .is_ok_and(|e| e.is_zero())
-        });
-
-    #[cfg(not(feature = "rayon_mat"))]
-    let predicate = points(|r, c| (r, c), ROW, COL)
+    Ok(points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r < c)
         .all(|(r, c)| {
             mat.get_element(r.to_owned(), c.to_owned())
                 .is_ok_and(|e| e.is_zero())
-        });
-
-    Ok(predicate)
+        }))
 }
 
 /// predicate whether a matrix is diagonal
@@ -146,25 +119,13 @@ pub fn is_diagonal_matrix<T, const ROW: usize, const COL: usize>(
 where
     T: Number,
 {
-    #[cfg(feature = "rayon_mat")]
-    let predicate = points(|r, c| (r, c), ROW, COL)
-        .par_iter()
-        .filter(|(r, c)| r != c)
-        .all(|(r, c)| {
-            mat.get_element(r.to_owned(), c.to_owned())
-                .is_ok_and(|e| e.is_zero())
-        });
-
-    #[cfg(not(feature = "rayon_mat"))]
-    let predicate = points(|r, c| (r, c), ROW, COL)
+    Ok(points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r != c)
         .all(|(r, c)| {
             mat.get_element(r.to_owned(), c.to_owned())
                 .is_ok_and(|e| e.is_zero())
-        });
-
-    Ok(predicate)
+        }))
 }
 
 /// predicate whether a matrix is identity
@@ -187,24 +148,7 @@ pub fn is_identity_matrix<T, const ROW: usize, const COL: usize>(
 where
     T: Number,
 {
-    #[cfg(feature = "rayon_mat")]
-    let predicate = points(|r, c| (r, c), ROW, COL)
-        .par_iter()
-        .filter(|(r, c)| r != c)
-        .all(|(r, c)| {
-            mat.get_element(r.to_owned(), c.to_owned())
-                .is_ok_and(|e| e.is_zero())
-        })
-        && points(|r, c| (r, c), ROW, COL)
-            .par_iter()
-            .filter(|(r, c)| r == c)
-            .all(|(r, c)| {
-                mat.get_element(r.to_owned(), c.to_owned())
-                    .is_ok_and(|e| e.is_one())
-            });
-
-    #[cfg(not(feature = "rayon_mat"))]
-    let predicate = points(|r, c| (r, c), ROW, COL)
+    Ok(points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r != c)
         .all(|(r, c)| {
@@ -217,9 +161,7 @@ where
             .all(|(r, c)| {
                 mat.get_element(r.to_owned(), c.to_owned())
                     .is_ok_and(|e| e.is_one())
-            });
-
-    Ok(predicate)
+            }))
 }
 
 /// predicate whether a matrix is orthogonal
@@ -261,11 +203,11 @@ where
 /// # use rmatrix_ks::num::complex::Complex;
 /// # use rmatrix_ks::utils::predicate::is_unitary_matrix;
 /// # fn main() -> Result<()> {
-/// let mat: Matrix<Complex<f64>, 2, 2> =
+/// let mat: Matrix<Complex<f32>, 2, 2> =
 ///     Matrix::create(vec![
 ///         cmplx!(1.0, 0.0), cmplx!(0.0, 1.0),
 ///         cmplx!(0.0, 1.0), cmplx!(1.0, 0.0)])?
-///     .divs(cmplx!(2.0f64.sqrt(), 0.0))?;
+///     .divs(cmplx!(2.0f32.sqrt(), 0.0))?;
 /// assert!(is_unitary_matrix(&mat)?);
 /// # Ok(())
 /// # }
