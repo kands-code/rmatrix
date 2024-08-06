@@ -2,9 +2,10 @@
 //!
 //! vector manipulations
 
+use crate::error::Result;
 use crate::matrix::Matrix;
-use crate::number::Number;
-use crate::{error::Result, number::Fractional};
+use crate::num::number::Fractional;
+use crate::num::number::Number;
 
 #[cfg(feature = "rayon_mat")]
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
@@ -16,12 +17,11 @@ pub type VectorC<T, const ROW: usize> = Matrix<T, ROW, 1>;
 /// the row vector
 pub type VectorR<T, const COL: usize> = Matrix<T, 1, COL>;
 
-/// vector cross productor
+/// vector cross product
 ///
 /// ```rust
 /// # use rmatrix_ks::vector::VectorC;
 /// # use rmatrix_ks::vector::times_c;
-/// # use rmatrix_ks::error::Error;
 /// # use rmatrix_ks::error::Result;
 /// # fn main() -> Result<()> {
 /// let vec1: VectorC<f32, 3> = VectorC::create(vec![1.0f32, 2.0f32, 3.0f32])?;
@@ -44,21 +44,21 @@ where
     ])
 }
 
-/// vector dot productor
+/// vector dot product
 ///
 /// ```rust
 /// # use rmatrix_ks::vector::VectorC;
+/// # use rmatrix_ks::vector::VectorR;
 /// # use rmatrix_ks::vector::times_d;
-/// # use rmatrix_ks::error::Error;
 /// # use rmatrix_ks::error::Result;
 /// # fn main() -> Result<()> {
-/// let vec1: VectorC<f32, 3> = VectorC::create(vec![1.0f32, 2.0f32, 3.0f32])?;
+/// let vec1: VectorR<f32, 3> = VectorR::create(vec![1.0f32, 2.0f32, 3.0f32])?;
 /// let vec2: VectorC<f32, 3> = VectorC::create(vec![4.0f32, 5.0f32, 6.0f32])?;
 /// assert_eq!(32.0f32, times_d(vec1, vec2)?);
 /// # Ok(())
 /// # }
 /// ```
-pub fn times_d<T, const ROW: usize>(vec1: VectorC<T, ROW>, vec2: VectorC<T, ROW>) -> Result<T>
+pub fn times_d<T, const EDGE: usize>(vec1: VectorR<T, EDGE>, vec2: VectorC<T, EDGE>) -> Result<T>
 where
     T: Number,
 {
@@ -81,14 +81,55 @@ where
     Ok(prod)
 }
 
-/// vector productor
+/// vector convolution
+///
+/// ```rust
+/// # use rmatrix_ks::vector::VectorC;
+/// # use rmatrix_ks::vector::convolution;
+/// # use rmatrix_ks::error::Result;
+/// # fn main() -> Result<()> {
+/// let vec1: VectorC<f32, 3> = VectorC::create(vec![1.0f32, 2.0f32, 3.0f32])?;
+/// let vec2: VectorC<f32, 3> = VectorC::create(vec![4.0f32, 5.0f32, 6.0f32])?;
+/// assert_eq!(VectorC::create(vec![4.0f32, 13.0f32, 28.0f32, 27.0f32, 18.0f32])?,
+///     convolution(vec1, vec2)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn convolution<T, const M: usize, const N: usize>(
+    vec1: VectorC<T, M>,
+    vec2: VectorC<T, N>,
+) -> Result<VectorC<T, { M + N - 1 }>>
+where
+    T: Number,
+{
+    let mut conv: VectorC<T, { M + N - 1 }> = VectorC::zeros()?;
+
+    for k in 1..=(N + M - 1) {
+        for i in 1..=(k.min(M)) {
+            // k + 1 = i + j
+            let j = k + 1 - i;
+            if (1..=N).contains(&j) {
+                conv.set_element(
+                    k,
+                    1,
+                    conv.get_element(k, 1)?.to_owned()
+                        + vec1.get_element(i, 1)?.to_owned() * vec2.get_element(j, 1)?.to_owned(),
+                )?;
+            }
+        }
+    }
+
+    Ok(conv)
+}
+
+/// vector product
 ///
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::vector::VectorC;
 /// # use rmatrix_ks::vector::VectorR;
 /// # use rmatrix_ks::vector::times_v;
-/// # use rmatrix_ks::error::Error;
+
 /// # use rmatrix_ks::error::Result;
 /// # fn main() -> Result<()> {
 /// let vec1: VectorC<f32, 3> = VectorC::create(vec![1.0f32, 2.0f32, 3.0f32])?;
@@ -122,25 +163,44 @@ where
     Ok(mat)
 }
 
-pub fn l2_norm_c<T, const ROW: usize>(vc: VectorC<T, ROW>) -> T
+/// euclid norm for vector
+///
+/// aka l2-norm
+///
+/// ```rust
+/// # use rmatrix_ks::vector::VectorC;
+/// # use rmatrix_ks::vector::euclid_norm;
+
+/// # use rmatrix_ks::error::Result;
+/// # fn main() -> Result<()> {
+/// let v: VectorC<f32, 2> = VectorC::create(vec![3.0f32, 4.0f32])?;
+/// assert_eq!(5.0f32, euclid_norm(v)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn euclid_norm<T, const ROW: usize>(vc: VectorC<T, ROW>) -> Result<T>
 where
     T: Fractional,
 {
-    #[cfg(feature = "rayon_mat")]
-    let norm = vc
-        .inner
-        .par_iter()
-        .map(|e| e.to_owned() * e.to_owned())
-        .sum::<T>()
-        .sqrt();
+    Ok(times_d(vc.conjugate_transpose()?, vc)?.sqrt())
+}
 
-    #[cfg(not(feature = "rayon_mat"))]
-    let norm = vc
-        .inner
-        .iter()
-        .map(|e| e.to_owned() * e.to_owned())
-        .sum::<T>()
-        .sqrt();
+/// root mean square for a vector
+///
+/// ```rust
+/// # use rmatrix_ks::vector::VectorC;
+/// # use rmatrix_ks::vector::root_mean_square;
 
-    norm
+/// # use rmatrix_ks::error::Result;
+/// # fn main() -> Result<()> {
+/// let v: VectorC<f32, 2> = VectorC::create(vec![3.0f32, 4.0f32])?;
+/// assert_eq!(5.0f32 / 2.0f32.sqrt(), root_mean_square(v)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn root_mean_square<T, const ROW: usize>(vc: VectorC<T, ROW>) -> Result<T>
+where
+    T: Fractional,
+{
+    euclid_norm(vc)?.ndiv(T::from_usize(ROW).sqrt())
 }

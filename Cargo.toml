@@ -32,6 +32,3 @@ default = ["rand_mat"]
 rayon_mat = ["rayon"]
 rand_mat = ["rand"]
 serde_mat = ["serde", "serde_json"]
-
-[dev-dependencies]
-rand = "^0.8.5"

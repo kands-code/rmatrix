@@ -6,13 +6,15 @@
 
 use crate::error::Error;
 use crate::error::Result;
-use crate::number::Fractional;
-use crate::number::Number;
-use crate::number::One;
-use crate::number::Zero;
+use crate::num::number::Fractional;
+use crate::num::number::Number;
+use crate::num::number::One;
+use crate::num::number::Zero;
 
 #[cfg(feature = "serde_mat")]
 use serde::{Deserialize, Serialize};
+
+use super::number::Equal;
 
 /// complex number
 #[derive(Debug, Clone, PartialEq)]
@@ -27,7 +29,7 @@ impl<T: Number> Complex<T> {
     ///
     /// ```rust
     /// # use rmatrix_ks::cmplx;
-    /// # use rmatrix_ks::complex::Complex;
+    /// # use rmatrix_ks::num::complex::Complex;
     /// # fn main() {
     /// let _ = Complex::create(1i32, 2i32); // 1 + 2I
     /// // or can use cmplx!()
@@ -43,7 +45,7 @@ impl<T: Number> Complex<T> {
     /// norm(a + bI) = sqrt(a^2 + b^2)
     ///
     /// ```rust
-    /// # use rmatrix_ks::complex::Complex;
+    /// # use rmatrix_ks::num::complex::Complex;
     /// # fn main() {
     /// let c = Complex::create(3.0f32, 4.0f32); // 3 + 4I
     /// assert_eq!(5.0f32, c.norm());
@@ -122,6 +124,12 @@ impl<T: Number> Default for Complex<T> {
     }
 }
 
+impl<T: Number> Equal for Complex<T> {
+    fn equal(&self, rhs: &Self) -> bool {
+        self.real.equal(&rhs.real) && self.imag.equal(&rhs.imag)
+    }
+}
+
 impl<T: Number> Zero for Complex<T> {
     fn is_zero(&self) -> bool {
         self.real.is_zero() && self.imag.is_zero()
@@ -152,9 +160,9 @@ impl<T: Number> Number for Complex<T> {
     /// conj(a + bI) = a - bI
     ///
     /// ```rust
-    /// # use rmatrix_ks::complex::Complex;
     /// # use rmatrix_ks::cmplx;
-    /// # use rmatrix_ks::number::Number;
+    /// # use rmatrix_ks::num::complex::Complex;
+    /// # use rmatrix_ks::num::number::Number;
     /// # fn main() {
     /// let c = Complex::create(3.0f32, 4.0f32); // 3 + 4I
     /// assert_eq!(cmplx!(3.0f32, -4.0f32), c.conjugate());

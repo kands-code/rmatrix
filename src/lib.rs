@@ -27,14 +27,8 @@
 //!
 //! By default, `rand_mat` feature is enabled.
 
-pub mod complex;
 pub mod error;
 pub mod matrix;
-pub mod number;
-pub mod rational;
+pub mod num;
 pub mod utils;
 pub mod vector;
-
-#[cfg(feature = "serde_mat")]
-#[doc(cfg(feature = "serde_mat"))]
-pub mod serde;

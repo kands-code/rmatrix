@@ -8,13 +8,15 @@
 
 use crate::error::Error;
 use crate::error::Result;
-use crate::number::Integeral;
-use crate::number::Number;
-use crate::number::One;
-use crate::number::Zero;
+use crate::num::number::Integeral;
+use crate::num::number::Number;
+use crate::num::number::One;
+use crate::num::number::Zero;
 
 #[cfg(feature = "serde_mat")]
 use serde::{Deserialize, Serialize};
+
+use super::number::Equal;
 
 /// rational number
 #[derive(Debug, Clone, PartialEq)]
@@ -28,8 +30,8 @@ impl<T: Integeral> Rational<T> {
     /// create a rational number
     ///
     /// ```rust
+    /// # use rmatrix_ks::num::rational::Rational;
     /// # use rmatrix_ks::rat;
-    /// # use rmatrix_ks::rational::Rational;
     /// # fn main() {
     /// let _ = Rational::create(1i32, 2i32); // 1/2
     /// // or can use rat!()
@@ -49,10 +51,9 @@ impl<T: Integeral> Rational<T> {
     /// if an overflow error occurs, try this function to do simplify
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::Error;
     /// # use rmatrix_ks::error::Result;
+    /// # use rmatrix_ks::num::rational::Rational;
     /// # use rmatrix_ks::rat;
-    /// # use rmatrix_ks::rational::Rational;
     /// # fn main() -> Result<()> {
     /// let mut r1 = Rational::create(2i32, 4i32); // 2/4
     /// r1.refine()?; // 1/2
@@ -148,6 +149,22 @@ impl<T: Integeral> Default for Rational<T> {
             numerator: T::zero(),
             denominator: T::one(),
         }
+    }
+}
+
+impl<T: Integeral> Equal for Rational<T> {
+    fn equal(&self, rhs: &Self) -> bool {
+        let self_refined = match self.refine() {
+            Ok(v) => v,
+            Err(_) => Rational::create(T::zero(), T::zero()),
+        };
+        let rhs_refined = match rhs.refine() {
+            Ok(v) => v,
+            Err(_) => Rational::create(T::zero(), T::zero()),
+        };
+
+        self_refined.numerator.equal(&rhs_refined.numerator)
+            && self_refined.denominator.equal(&rhs_refined.denominator)
     }
 }
 

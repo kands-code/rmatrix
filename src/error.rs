@@ -7,7 +7,7 @@
 pub enum Error {
     /// likely to occur when constructing a matrix
     IncompatibleSizeError((usize, usize), usize),
-    /// likely to occur when the function need a sqaure matrix
+    /// likely to occur when the function need a square matrix
     IncompatibleShape((usize, usize), (usize, usize)),
     /// likely to occur when getting or setting value of a matrix
     OutOfBoundary(usize, usize),
@@ -16,7 +16,7 @@ pub enum Error {
     /// likely to occur when matrix is strange
     SingularMatrix,
     /// will occur when linear equations ROW > COL
-    NoSolution(usize, usize),
+    NoSolution((usize, usize), usize),
     /// likely occur when using serde_mat
     Message(String),
 }
@@ -45,8 +45,12 @@ impl std::fmt::Display for Error {
             }
             Error::DividedByZero => write!(f, "can not divide by zero"),
             Error::SingularMatrix => write!(f, "matrix is strange which determinant is zero"),
-            Error::NoSolution(row, col) => {
-                write!(f, "linear equation {:?}x{:?} has no solution", row, col)
+            Error::NoSolution((row, col), rank) => {
+                write!(
+                    f,
+                    "linear equation {:?}x{:?} with rank {:?} has no solution",
+                    row, col, rank
+                )
             }
             Error::Message(msg) => write!(f, "{:?}", msg),
         }

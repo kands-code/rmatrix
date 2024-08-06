@@ -5,6 +5,12 @@
 use crate::error::Error;
 use crate::error::Result;
 
+/// concept of equality
+pub trait Equal {
+    /// check whether two element are EQUAL
+    fn equal(&self, rhs: &Self) -> bool;
+}
+
 /// concept of zero
 pub trait Zero
 where
@@ -67,10 +73,9 @@ pub trait One {
 ///     }
 /// }
 /// ```
-pub trait Number: Zero + One
+pub trait Number: Equal + Zero + One
 where
     Self: std::clone::Clone
-        + std::cmp::PartialEq
         + std::default::Default
         + std::fmt::Debug
         + std::fmt::Display
@@ -90,6 +95,12 @@ where
 
     /// normal division with zero test
     fn ndiv(self, rhs: Self) -> Result<Self>;
+}
+
+impl Equal for i32 {
+    fn equal(&self, rhs: &Self) -> bool {
+        self == rhs
+    }
 }
 
 impl Zero for i32 {
@@ -123,6 +134,12 @@ impl Number for i32 {
         } else {
             Ok(self / rhs)
         }
+    }
+}
+
+impl Equal for i128 {
+    fn equal(&self, rhs: &Self) -> bool {
+        self == rhs
     }
 }
 
@@ -160,9 +177,17 @@ impl Number for i128 {
     }
 }
 
+impl Equal for f32 {
+    fn equal(&self, rhs: &Self) -> bool {
+        (self - rhs).is_zero()
+    }
+}
+
 impl Zero for f32 {
+    /// if a f32 number smaller than sqrt(eps),
+    /// then we can say it is zero
     fn is_zero(&self) -> bool {
-        self.abs() < 1.0e-6
+        self.abs() < f32::EPSILON.sqrt()
     }
 }
 
@@ -194,9 +219,17 @@ impl Number for f32 {
     }
 }
 
+impl Equal for f64 {
+    fn equal(&self, rhs: &Self) -> bool {
+        (self - rhs).is_zero()
+    }
+}
+
 impl Zero for f64 {
+    /// if a f64 number smaller than sqrt(eps),
+    /// then we can say it is zero
     fn is_zero(&self) -> bool {
-        self.abs() < 1.0e-8
+        self.abs() < f64::EPSILON.sqrt()
     }
 }
 
@@ -235,7 +268,7 @@ where
 {
     /// greatest common divisor
     fn gcd(&self, rhs: &Self) -> Self {
-        if rhs.to_owned() == Self::zero() {
+        if rhs.to_owned().equal(&Self::zero()) {
             // gcd is non-negative
             self.to_owned().abs()
         } else {
@@ -261,17 +294,29 @@ pub trait Fractional
 where
     Self: Number,
 {
+    /// square root for fractional
     fn sqrt(self) -> Self;
+
+    /// convert size to fractional for computation
+    fn from_usize(size: usize) -> Self;
 }
 
 impl Fractional for f32 {
     fn sqrt(self) -> Self {
         f32::sqrt(self)
     }
+
+    fn from_usize(size: usize) -> Self {
+        size as f32
+    }
 }
 
 impl Fractional for f64 {
     fn sqrt(self) -> Self {
         f64::sqrt(self)
+    }
+
+    fn from_usize(size: usize) -> Self {
+        size as f64
     }
 }

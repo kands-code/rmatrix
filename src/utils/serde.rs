@@ -16,10 +16,9 @@ use std::io::Write;
 /// index start from 1
 ///
 /// ```rust
-/// # use rmatrix_ks::error::Error;
 /// # use rmatrix_ks::error::Result;
 /// # use rmatrix_ks::matrix::Matrix;
-/// # use rmatrix_ks::serde::{read, write};
+/// # use rmatrix_ks::utils::serde::{read, write};
 /// # fn main() -> Result<()> {
 /// let mat1 = Matrix::<f64, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// let mat2 = Matrix::<f64, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
@@ -79,10 +78,9 @@ where
 /// store matrices into json file
 ///
 /// ```rust
-/// # use rmatrix_ks::error::Error;
 /// # use rmatrix_ks::error::Result;
 /// # use rmatrix_ks::matrix::Matrix;
-/// # use rmatrix_ks::serde::{read, write};
+/// # use rmatrix_ks::utils::serde::{read, write};
 /// # fn main() -> Result<()> {
 /// let mat1 = Matrix::<f64, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// let mat2 = Matrix::<f64, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
