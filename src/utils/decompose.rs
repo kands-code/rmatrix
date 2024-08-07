@@ -9,8 +9,12 @@ use crate::num::number::Fractional;
 use crate::num::number::Number;
 use crate::utils::predicate::is_lower_triangle_matrix;
 use crate::vector::euclid_norm;
+use crate::vector::identity_vector_column;
 use crate::vector::times_d;
+use crate::vector::times_v;
 use crate::vector::VectorC;
+
+use super::predicate::is_upper_triangle_matrix;
 
 /// transform the square matrix to lower triangle form by rows elimination
 pub(crate) fn lower_triangularize<T, const ROW: usize>(
@@ -106,9 +110,11 @@ where
 
 /// qr decomposition
 ///
-/// use Gram-Schmidt method
+/// use Householder method
 ///
-/// q * r = m
+/// q^H * r = m
+///
+/// H is conjugate transpose
 ///
 /// ```rust
 /// # use rmatrix_ks::error::Result;
@@ -117,11 +123,71 @@ where
 /// # fn main() -> Result<()> {
 /// let mat = Matrix::<f32, 3, 3>::create(vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
 /// let qr = qr_decomposition(mat.to_owned())?;
-/// assert!(qr.0.times(qr.1)?.equal(&mat)?);
+/// assert!(qr.0.conjugate_transpose()?.times(qr.1)?.equal(&mat)?);
 /// # Ok(())
 /// # }
 /// ```
 pub fn qr_decomposition<T, const ROW: usize, const COL: usize>(
+    mat: Matrix<T, ROW, COL>,
+) -> Result<(Matrix<T, ROW, ROW>, Matrix<T, ROW, COL>)>
+where
+    T: Fractional + std::cmp::PartialOrd,
+{
+    let mut q = Matrix::<T, ROW, ROW>::eyes()?;
+    let mut r = mat.to_owned();
+    let two = T::one() + T::one();
+
+    for index in 1..=COL.min(ROW) {
+        // an is sub-column-vector for mat
+        let mut an = r.get_col(index)?.map(&mut |e| e.to_owned())?;
+        let ann = r.get_element(index, index)?.to_owned();
+        // remove element over index
+        for row in 1..=((index - 1).min(ROW)) {
+            an.set_element(row, 1, T::zero())?;
+        }
+        let an_norm = euclid_norm(an.to_owned())?;
+        // vn = an - sign(ann) ||an|| en
+        let vn = an.to_owned().subtract(
+            identity_vector_column::<T, ROW>(index)?
+                .muls(an_norm.to_owned())?
+                .muls(if ann < T::zero() { -T::one() } else { T::one() })?,
+        )?;
+        // Hn = I - 2 (vn vn^H) / (vn^H v)
+        let hn = Matrix::<T, ROW, ROW>::eyes()?.subtract(
+            times_v(vn.to_owned(), vn.conjugate_transpose()?)?.muls(
+                two.to_owned()
+                    .ndiv(times_d(vn.conjugate_transpose()?, vn)?)?,
+            )?,
+        )?;
+        q = hn.to_owned().times(q)?;
+        r = hn.times(r)?;
+        // skip unnecessary calculation
+        if is_upper_triangle_matrix(&r)? {
+            break;
+        }
+    }
+
+    Ok((q, r))
+}
+
+/// qr decomposition
+///
+/// use Gram-Schmidt method
+///
+/// q * r = m
+///
+/// ```rust
+/// # use rmatrix_ks::error::Result;
+/// # use rmatrix_ks::matrix::Matrix;
+/// # use rmatrix_ks::utils::decompose::qr_decomposition_gs;
+/// # fn main() -> Result<()> {
+/// let mat = Matrix::<f32, 3, 3>::create(vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
+/// let qr = qr_decomposition_gs(mat.to_owned())?;
+/// assert!(qr.0.times(qr.1)?.equal(&mat)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn qr_decomposition_gs<T, const ROW: usize, const COL: usize>(
     mat: Matrix<T, ROW, COL>,
 ) -> Result<(Matrix<T, ROW, COL>, Matrix<T, COL, COL>)>
 where
@@ -142,10 +208,8 @@ where
                 col
             ))),
         }?
-        .to_owned();
-
-        let ai =
-            VectorC::<T, ROW>::create(ai.inner.iter().map(|e| e.to_owned().to_owned()).collect())?;
+        .to_owned()
+        .map(&mut |e| e.to_owned())?;
 
         // get u[i]
         let mut ui = ai.to_owned();
@@ -157,11 +221,8 @@ where
                     index
                 ))),
             }?
-            .to_owned();
-
-            let ek = VectorC::<T, ROW>::create(
-                ek.inner.iter().map(|e| e.to_owned().to_owned()).collect(),
-            )?;
+            .to_owned()
+            .map(&mut |e| e.to_owned())?;
 
             ui = ui.subtract(
                 ek.to_owned()
@@ -198,10 +259,8 @@ where
                 col1
             ))),
         }?
-        .to_owned();
-
-        let ei =
-            VectorC::<T, ROW>::create(ei.inner.iter().map(|e| e.to_owned().to_owned()).collect())?;
+        .to_owned()
+        .map(&mut |e| e.to_owned())?;
 
         for col2 in col1..=COL {
             let ai = match an.get(col2 - 1) {
@@ -211,11 +270,8 @@ where
                     col2
                 ))),
             }?
-            .to_owned();
-
-            let ai = VectorC::<T, ROW>::create(
-                ai.inner.iter().map(|e| e.to_owned().to_owned()).collect(),
-            )?;
+            .to_owned()
+            .map(&mut |e| e.to_owned())?;
 
             r.set_element(
                 col1,

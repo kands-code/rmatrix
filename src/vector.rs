@@ -6,6 +6,7 @@ use crate::error::Result;
 use crate::matrix::Matrix;
 use crate::num::number::Fractional;
 use crate::num::number::Number;
+use crate::num::number::One;
 
 /// vector is a one-dimensional matrix
 ///
@@ -13,6 +14,58 @@ use crate::num::number::Number;
 pub type VectorC<T, const ROW: usize> = Matrix<T, ROW, 1>;
 /// the row vector
 pub type VectorR<T, const COL: usize> = Matrix<T, 1, COL>;
+
+/// get the cloumn en
+///
+/// for column vector, e1(3) = {{1}, {0}, {0}},
+/// and e2(4) = {{0}, {1}, {0}, {0}}
+///
+/// ```rust
+/// # use rmatrix_ks::vector::VectorC;
+/// # use rmatrix_ks::vector::identity_vector_column;
+/// # use rmatrix_ks::error::Result;
+/// # fn main() -> Result<()> {
+/// assert_eq!(VectorC::create(vec![1.0, 0.0, 0.0])?,
+///     identity_vector_column::<f32, 3>(1)?);
+/// assert_eq!(VectorC::create(vec![0.0, 1.0, 0.0, 0.0])?,
+///     identity_vector_column::<f32, 4>(2)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn identity_vector_column<T, const ROW: usize>(index: usize) -> Result<VectorC<T, ROW>>
+where
+    T: Clone + Default + One,
+{
+    let mut vector = VectorC::zeros()?;
+    vector.set_element(index, 1, T::one())?;
+    Ok(vector)
+}
+
+/// get the row en
+///
+/// for row vector, e1(3) = {{1, 0, 0}},
+/// and e2(4) = {{0, 1, 0, 0}}
+///
+/// ```rust
+/// # use rmatrix_ks::vector::VectorR;
+/// # use rmatrix_ks::vector::identity_vector_row;
+/// # use rmatrix_ks::error::Result;
+/// # fn main() -> Result<()> {
+/// assert_eq!(VectorR::create(vec![1.0, 0.0, 0.0])?,
+///     identity_vector_row::<f32, 3>(1)?);
+/// assert_eq!(VectorR::create(vec![0.0, 1.0, 0.0, 0.0])?,
+///     identity_vector_row::<f32, 4>(2)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn identity_vector_row<T, const COL: usize>(index: usize) -> Result<VectorR<T, COL>>
+where
+    T: Clone + Default + One,
+{
+    let mut vector = VectorR::zeros()?;
+    vector.set_element(1, index, T::one())?;
+    Ok(vector)
+}
 
 /// vector cross product
 ///
@@ -168,7 +221,7 @@ pub fn euclid_norm<T, const ROW: usize>(vc: VectorC<T, ROW>) -> Result<T>
 where
     T: Fractional,
 {
-    Ok(times_d(vc.conjugate_transpose()?, vc)?.sqrt())
+    times_d(vc.conjugate_transpose()?, vc)?.nsqrt()
 }
 
 /// root mean square for a vector
@@ -188,5 +241,5 @@ pub fn root_mean_square<T, const ROW: usize>(vc: VectorC<T, ROW>) -> Result<T>
 where
     T: Fractional,
 {
-    euclid_norm(vc)?.ndiv(T::from_usize(ROW).sqrt())
+    euclid_norm(vc)?.ndiv(T::from_usize(ROW).nsqrt()?)
 }

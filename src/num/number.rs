@@ -141,46 +141,6 @@ impl Number for i32 {
     }
 }
 
-impl Equal for i64 {
-    fn equal(&self, rhs: &Self) -> bool {
-        self == rhs
-    }
-}
-
-impl Zero for i64 {
-    fn is_zero(&self) -> bool {
-        self == &0i64
-    }
-}
-
-impl One for i64 {
-    fn one() -> Self {
-        1i64
-    }
-
-    fn is_one(&self) -> bool {
-        self == &1i64
-    }
-}
-
-impl Number for i64 {
-    fn abs(self) -> Self {
-        i64::abs(self)
-    }
-
-    fn conjugate(self) -> Self {
-        self
-    }
-
-    fn ndiv(self, rhs: Self) -> Result<Self> {
-        if rhs.is_zero() {
-            Err(Error::DividedByZero)
-        } else {
-            Ok(self / rhs)
-        }
-    }
-}
-
 impl Equal for f32 {
     fn equal(&self, rhs: &Self) -> bool {
         (self - rhs).is_zero()
@@ -191,7 +151,7 @@ impl Zero for f32 {
     /// if a f32 number smaller than sqrt(eps),
     /// then we can say it is zero
     fn is_zero(&self) -> bool {
-        self.abs() < f32::EPSILON.sqrt()
+        self.abs() < 1e-6
     }
 }
 
@@ -256,15 +216,15 @@ where
     Self: Number,
 {
     /// square root for fractional
-    fn sqrt(self) -> Self;
+    fn nsqrt(self) -> Result<Self>;
 
     /// convert size to fractional for computation
     fn from_usize(size: usize) -> Self;
 }
 
 impl Fractional for f32 {
-    fn sqrt(self) -> Self {
-        f32::sqrt(self)
+    fn nsqrt(self) -> Result<Self> {
+        Ok(self.sqrt())
     }
 
     fn from_usize(size: usize) -> Self {

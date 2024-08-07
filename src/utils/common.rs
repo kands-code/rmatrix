@@ -4,8 +4,6 @@
 
 use crate::error::Result;
 use crate::matrix::Matrix;
-use crate::num::number::Fractional;
-use crate::utils::decompose::qr_decomposition;
 
 /// generate points of matrix
 ///
@@ -90,41 +88,9 @@ where
 
 /// eigen values
 ///
-/// suggest iter number is 1024
-///
-/// ```rust
-/// # use rmatrix_ks::error::Result;
-/// # use rmatrix_ks::matrix::Matrix;
-/// # use rmatrix_ks::num::number::Zero;
-/// # use rmatrix_ks::utils::common::eigen_values;
-/// # fn main() -> Result<()> {
-/// let mat = Matrix::<f32, 2, 2>::create(vec![0.0, 2.0, 2.0, 3.0])?;
-/// let eigens = eigen_values(mat, 10)?;
-/// assert!(eigens
-///     .iter()
-///     .zip(&[4.0, -1.0])
-///     .all(|(r, n)| (r - n).is_zero()));
-/// # Ok(())
-/// # }
-/// ```
-pub fn eigen_values<T, const ROW: usize>(
-    mat: Matrix<T, ROW, ROW>,
-    iter_count: usize,
-) -> Result<Vec<T>>
-where
-    T: Fractional,
-{
-    let qr = qr_decomposition(mat.to_owned())?;
-    let mut a = qr.1.times(qr.0)?;
-    for _ in 0..iter_count {
-        let qrn = qr_decomposition(a.to_owned())?;
-        a = qrn.1.times(qrn.0)?;
-    }
-    let mut eigens = Vec::with_capacity(ROW);
-    for index in 1..=ROW {
-        eigens.push(a.get_element(index, index)?.to_owned());
-    }
-    Ok(eigens)
+/// **TODO**
+pub fn eigen_values() {
+    todo!()
 }
 
 /// solve linear equations
