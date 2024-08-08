@@ -105,26 +105,19 @@ impl<T, const ROW: usize, const COL: usize> Matrix<T, ROW, COL> {
     /// # fn main() -> Result<()> {
     /// let m1 = Matrix::<f32, 2, 2>::create(vec![1.2f32, 0.9f32, 0.7f32, 0.5f32])?;
     /// let m2 = Matrix::<f32, 2, 2>::create(vec![0.9f32, 0.6f32, 0.4f32, 0.2f32])?;
-    /// assert!(m1.equal(&m2.adds(0.3f32)?)?);
+    /// assert!(m1.equal(&m2.adds(0.3f32)?));
     /// # Ok(())
     /// # }
     /// ```
-    pub fn equal(&self, rhs: &Self) -> Result<bool>
+    pub fn equal(&self, rhs: &Self) -> bool
     where
         T: Equal,
     {
-        let mut check = true;
-
-        for row in 1..=ROW {
-            for col in 1..=COL {
-                check = check
-                    && self
-                        .get_element(row, col)?
-                        .equal(rhs.get_element(row, col)?);
-            }
-        }
-
-        Ok(check)
+        self.inner
+            .iter()
+            .take(ROW * COL)
+            .zip(rhs.inner.iter())
+            .all(|(e1, e2)| e1.equal(e2))
     }
 
     /// convert index into inner index
@@ -782,7 +775,7 @@ where
         let mut p_all = Matrix::<T, ROW, ROW>::eyes()?;
         let mut lambda = T::one();
 
-        if !(is_upper_triangle_matrix(&reduced)? || ROW < 2) {
+        if !(is_upper_triangle_matrix(&reduced) || ROW < 2) {
             let mut next: usize = 0;
             for index in 1..=(ROW - 1) {
                 // prevent out of boundary
@@ -967,9 +960,21 @@ where
     T: Equal,
 {
     fn eq(&self, rhs: &Self) -> bool {
-        match self.equal(rhs) {
-            Ok(p) => p,
-            Err(_) => false,
-        }
+        self.equal(rhs)
+    }
+}
+
+/// access the inner by iter
+impl<T, const ROW: usize, const COL: usize> std::iter::IntoIterator for Matrix<T, ROW, COL> {
+    type Item = T;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner
+            .into_iter()
+            .take(ROW * COL) // for preventing user out of boundary
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 }

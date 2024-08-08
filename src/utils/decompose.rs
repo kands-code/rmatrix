@@ -8,13 +8,12 @@ use crate::matrix::Matrix;
 use crate::num::number::Fractional;
 use crate::num::number::Number;
 use crate::utils::predicate::is_lower_triangle_matrix;
+use crate::utils::predicate::is_upper_triangle_matrix;
 use crate::vector::euclid_norm;
 use crate::vector::identity_vector_column;
 use crate::vector::times_d;
 use crate::vector::times_v;
 use crate::vector::VectorC;
-
-use super::predicate::is_upper_triangle_matrix;
 
 /// transform the square matrix to lower triangle form by rows elimination
 pub(crate) fn lower_triangularize<T, const ROW: usize>(
@@ -26,7 +25,7 @@ where
     let mut reduced = mat.to_owned();
     let mut p_all = Matrix::<T, ROW, ROW>::eyes()?;
 
-    if !(is_lower_triangle_matrix(&reduced)? || ROW < 2) {
+    if !(is_lower_triangle_matrix(&reduced) || ROW < 2) {
         let mut next: usize = 0;
         for index in (2..=ROW).rev() {
             // prevent out of boundary
@@ -123,7 +122,7 @@ where
 /// # fn main() -> Result<()> {
 /// let mat = Matrix::<f32, 3, 3>::create(vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
 /// let qr = qr_decomposition(mat.to_owned())?;
-/// assert!(qr.0.conjugate_transpose()?.times(qr.1)?.equal(&mat)?);
+/// assert!(qr.0.conjugate_transpose()?.times(qr.1)?.equal(&mat));
 /// # Ok(())
 /// # }
 /// ```
@@ -146,10 +145,11 @@ where
             an.set_element(row, 1, T::zero())?;
         }
         let an_norm = euclid_norm(an.to_owned())?;
-        // vn = an - sign(ann) ||an|| en
-        let vn = an.to_owned().subtract(
+        // vn = an + sign(ann) ||an|| en
+        let vn = an.to_owned().plus(
             identity_vector_column::<T, ROW>(index)?
                 .muls(an_norm.to_owned())?
+                // sign(x) = 1 if x >= 0 else -1
                 .muls(if ann < T::zero() { -T::one() } else { T::one() })?,
         )?;
         // Hn = I - 2 (vn vn^H) / (vn^H v)
@@ -162,7 +162,7 @@ where
         q = hn.to_owned().times(q)?;
         r = hn.times(r)?;
         // skip unnecessary calculation
-        if is_upper_triangle_matrix(&r)? {
+        if is_upper_triangle_matrix(&r) {
             break;
         }
     }
@@ -183,7 +183,7 @@ where
 /// # fn main() -> Result<()> {
 /// let mat = Matrix::<f32, 3, 3>::create(vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
 /// let qr = qr_decomposition_gs(mat.to_owned())?;
-/// assert!(qr.0.times(qr.1)?.equal(&mat)?);
+/// assert!(qr.0.times(qr.1)?.equal(&mat));
 /// # Ok(())
 /// # }
 /// ```

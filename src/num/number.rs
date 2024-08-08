@@ -151,7 +151,7 @@ impl Zero for f32 {
     /// if a f32 number smaller than sqrt(eps),
     /// then we can say it is zero
     fn is_zero(&self) -> bool {
-        self.abs() < 1e-6
+        self.abs() < f32::EPSILON.sqrt()
     }
 }
 

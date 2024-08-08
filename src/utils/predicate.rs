@@ -50,24 +50,24 @@ where
 /// # fn main() -> Result<()> {
 /// let mat1: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 2.0f32, 0.0f32, 4.0f32])?;
-/// assert_eq!(false, is_upper_triangle_matrix(&mat1)?);
-/// assert!(is_upper_triangle_matrix(&mat2)?);
+/// assert_eq!(false, is_upper_triangle_matrix(&mat1));
+/// assert!(is_upper_triangle_matrix(&mat2));
 /// # Ok(())
 /// # }
 /// ```
 pub fn is_upper_triangle_matrix<T, const ROW: usize, const COL: usize>(
     mat: &Matrix<T, ROW, COL>,
-) -> Result<bool>
+) -> bool
 where
     T: Number,
 {
-    Ok(points(|r, c| (r, c), ROW, COL)
+    points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r > c)
         .all(|(r, c)| {
             mat.get_element(r.to_owned(), c.to_owned())
                 .is_ok_and(|e| e.is_zero())
-        }))
+        })
 }
 
 /// predicate whether a matrix is lower triangle
@@ -79,24 +79,24 @@ where
 /// # fn main() -> Result<()> {
 /// let mat1: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 0.0f32, 2.0f32, 4.0f32])?;
-/// assert_eq!(false, is_lower_triangle_matrix(&mat1)?);
-/// assert!(is_lower_triangle_matrix(&mat2)?);
+/// assert_eq!(false, is_lower_triangle_matrix(&mat1));
+/// assert!(is_lower_triangle_matrix(&mat2));
 /// # Ok(())
 /// # }
 /// ```
 pub fn is_lower_triangle_matrix<T, const ROW: usize, const COL: usize>(
     mat: &Matrix<T, ROW, COL>,
-) -> Result<bool>
+) -> bool
 where
     T: Number,
 {
-    Ok(points(|r, c| (r, c), ROW, COL)
+    points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r < c)
         .all(|(r, c)| {
             mat.get_element(r.to_owned(), c.to_owned())
                 .is_ok_and(|e| e.is_zero())
-        }))
+        })
 }
 
 /// predicate whether a matrix is diagonal
@@ -108,24 +108,22 @@ where
 /// # fn main() -> Result<()> {
 /// let mat1: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 0.0f32, 0.0f32, 4.0f32])?;
-/// assert_eq!(false, is_diagonal_matrix(&mat1)?);
-/// assert!(is_diagonal_matrix(&mat2)?);
+/// assert_eq!(false, is_diagonal_matrix(&mat1));
+/// assert!(is_diagonal_matrix(&mat2));
 /// # Ok(())
 /// # }
 /// ```
-pub fn is_diagonal_matrix<T, const ROW: usize, const COL: usize>(
-    mat: &Matrix<T, ROW, COL>,
-) -> Result<bool>
+pub fn is_diagonal_matrix<T, const ROW: usize, const COL: usize>(mat: &Matrix<T, ROW, COL>) -> bool
 where
     T: Number,
 {
-    Ok(points(|r, c| (r, c), ROW, COL)
+    points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r != c)
         .all(|(r, c)| {
             mat.get_element(r.to_owned(), c.to_owned())
                 .is_ok_and(|e| e.is_zero())
-        }))
+        })
 }
 
 /// predicate whether a matrix is identity
@@ -137,18 +135,16 @@ where
 /// # fn main() -> Result<()> {
 /// let mat1: Matrix<f32, 2, 3> = Matrix::create(vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32, 2, 2> = Matrix::create(vec![1.0f32, 0.0f32, 0.0f32, 1.0f32])?;
-/// assert_eq!(false, is_identity_matrix(&mat1)?);
-/// assert!(is_identity_matrix(&mat2)?);
+/// assert_eq!(false, is_identity_matrix(&mat1));
+/// assert!(is_identity_matrix(&mat2));
 /// # Ok(())
 /// # }
 /// ```
-pub fn is_identity_matrix<T, const ROW: usize, const COL: usize>(
-    mat: &Matrix<T, ROW, COL>,
-) -> Result<bool>
+pub fn is_identity_matrix<T, const ROW: usize, const COL: usize>(mat: &Matrix<T, ROW, COL>) -> bool
 where
     T: Number,
 {
-    Ok(points(|r, c| (r, c), ROW, COL)
+    points(|r, c| (r, c), ROW, COL)
         .iter()
         .filter(|(r, c)| r != c)
         .all(|(r, c)| {
@@ -161,7 +157,7 @@ where
             .all(|(r, c)| {
                 mat.get_element(r.to_owned(), c.to_owned())
                     .is_ok_and(|e| e.is_one())
-            }))
+            })
 }
 
 /// predicate whether a matrix is orthogonal
@@ -188,9 +184,13 @@ where
     let transposed = mat.transpose()?;
 
     if ROW > COL {
-        is_identity_matrix::<T, COL, COL>(&transposed.times(mat.to_owned())?)
+        Ok(is_identity_matrix::<T, COL, COL>(
+            &transposed.times(mat.to_owned())?,
+        ))
     } else {
-        is_identity_matrix::<T, ROW, ROW>(&mat.to_owned().times(transposed)?)
+        Ok(is_identity_matrix::<T, ROW, ROW>(
+            &mat.to_owned().times(transposed)?,
+        ))
     }
 }
 
@@ -221,8 +221,12 @@ where
     let transposed = mat.conjugate_transpose()?;
 
     if ROW > COL {
-        is_identity_matrix::<T, COL, COL>(&transposed.times(mat.to_owned())?)
+        Ok(is_identity_matrix::<T, COL, COL>(
+            &transposed.times(mat.to_owned())?,
+        ))
     } else {
-        is_identity_matrix::<T, ROW, ROW>(&mat.to_owned().times(transposed)?)
+        Ok(is_identity_matrix::<T, ROW, ROW>(
+            &mat.to_owned().times(transposed)?,
+        ))
     }
 }
