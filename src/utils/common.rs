@@ -2,8 +2,9 @@
 //!
 //! common tools for matrix or vectors
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::matrix::Matrix;
+use crate::num::number::Zero;
 
 /// generate points of matrix
 ///
@@ -35,31 +36,32 @@ pub fn points<T, R>(
 /// # use rmatrix_ks::error::Result;
 /// # use rmatrix_ks::utils::common::horizontal_concat;
 /// # fn main() -> Result<()> {
-/// let mat1: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-/// let mat2: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-/// assert_eq!(Matrix::create(vec![1, 2, 3, 1, 2, 3, 4, 5, 6, 4, 5, 6])?,
+/// let mat1: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
+/// let mat2: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
+/// assert_eq!(Matrix::create(2, 6, vec![1, 2, 3, 1, 2, 3, 4, 5, 6, 4, 5, 6])?,
 ///     horizontal_concat(&mat1, &mat2)?);
 /// # Ok(())
 /// # }
 /// ```
-pub fn horizontal_concat<T, const ROW: usize, const COL: usize, const RCOL: usize>(
-    mat: &Matrix<T, ROW, COL>,
-    rhs: &Matrix<T, ROW, RCOL>,
-) -> Result<Matrix<T, ROW, { COL + RCOL }>>
+pub fn horizontal_concat<T>(mat: &Matrix<T>, rhs: &Matrix<T>) -> Result<Matrix<T>>
 where
-    T: Clone + Default,
+    T: Clone + Zero,
 {
-    let mut hmat = Matrix::zeros()?;
-    for r in 1..=ROW {
-        for c1 in 1..=COL {
-            hmat.set_element(r, c1, mat.get_element(r, c1)?.to_owned())?;
-        }
+    if mat.row() != rhs.row() {
+        Err(Error::IncompatibleShape((mat.row(), rhs.column()), rhs.dim))
+    } else {
+        let mut hmat = Matrix::zeros(mat.row(), mat.column() + rhs.column())?;
+        for r in 1..=mat.row() {
+            for c1 in 1..=mat.column() {
+                hmat.set_element(r, c1, mat.get_element(r, c1)?.to_owned())?;
+            }
 
-        for c2 in 1..=RCOL {
-            hmat.set_element(r, COL + c2, rhs.get_element(r, c2)?.to_owned())?;
+            for c2 in 1..=rhs.column() {
+                hmat.set_element(r, mat.column() + c2, rhs.get_element(r, c2)?.to_owned())?;
+            }
         }
+        Ok(hmat)
     }
-    Ok(hmat)
 }
 
 /// concatenate two matrices vertically
@@ -69,21 +71,22 @@ where
 /// # use rmatrix_ks::utils::common::vertical_concat;
 /// # use rmatrix_ks::error::Result;
 /// # fn main() -> Result<()> {
-/// let mat1: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-/// let mat2: Matrix<i32, 2, 3> = Matrix::create(vec![1, 2, 3, 4, 5, 6])?;
-/// assert_eq!(Matrix::create(vec![1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6])?,
+/// let mat1: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
+/// let mat2: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
+/// assert_eq!(Matrix::create(4, 3, vec![1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6])?,
 ///     vertical_concat(&mat1, &mat2)?);
 /// # Ok(())
 /// # }
 /// ```
-pub fn vertical_concat<T, const ROW: usize, const COL: usize, const RROW: usize>(
-    mat: &Matrix<T, ROW, COL>,
-    rhs: &Matrix<T, RROW, COL>,
-) -> Result<Matrix<T, { ROW + RROW }, COL>>
+pub fn vertical_concat<T>(mat: &Matrix<T>, rhs: &Matrix<T>) -> Result<Matrix<T>>
 where
     T: Clone,
 {
-    Matrix::create([&mat.inner[..], &rhs.inner[..]].concat())
+    Matrix::create(
+        mat.row() + rhs.row(),
+        mat.column(),
+        [&mat.inner[..], &rhs.inner[..]].concat(),
+    )
 }
 
 /// eigen values

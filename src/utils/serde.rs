@@ -20,24 +20,21 @@ use std::io::Write;
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::serde::{read, write};
 /// # fn main() -> Result<()> {
-/// let mat1 = Matrix::<f32, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
-/// let mat2 = Matrix::<f32, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
+/// let mat1 = Matrix::<f32>::create(3, 3, vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
+/// let mat2 = Matrix::<f32>::create(3, 3, vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// write(&[&mat1, &mat2], std::path::Path::new("data/test.json"))?;
 /// assert_eq!(
 ///     mat1,
-///     read::<f32, 3, 3>(std::path::Path::new("data/test.json"), 1)?
+///     read::<f32>(std::path::Path::new("data/test.json"), 1)?
 /// );
 /// assert_eq!(
 ///     mat2,
-///     read::<f32, 3, 3>(std::path::Path::new("data/test.json"), 2)?
+///     read::<f32>(std::path::Path::new("data/test.json"), 2)?
 /// );
 /// # Ok(())
 /// # }
 /// ```
-pub fn read<T, const ROW: usize, const COL: usize>(
-    path: &std::path::Path,
-    index: usize,
-) -> Result<Matrix<T, ROW, COL>>
+pub fn read<T>(path: &std::path::Path, index: usize) -> Result<Matrix<T>>
 where
     T: Clone + for<'a> serde::Deserialize<'a>,
 {
@@ -57,7 +54,7 @@ where
             full_path
         ))),
     }?;
-    let mats: Vec<Matrix<T, ROW, COL>> = match serde_json::from_str(&mats_string) {
+    let mats: Vec<Matrix<T>> = match serde_json::from_str(&mats_string) {
         Ok(matrices) => Ok(matrices),
         Err(_) => Err(Error::Message(format!(
             "file {:?} contents wrong format",
@@ -82,16 +79,13 @@ where
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::serde::{read, write};
 /// # fn main() -> Result<()> {
-/// let mat1 = Matrix::<f32, 3, 3>::create(vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
-/// let mat2 = Matrix::<f32, 3, 3>::create(vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
+/// let mat1 = Matrix::<f32>::create(3, 3, vec![1.0, 2.0, 3.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
+/// let mat2 = Matrix::<f32>::create(3, 3, vec![1.0, 3.0, 2.0, 4.0, 8.0, 7.0, 5.0, 9.0, 6.0])?;
 /// write(&[&mat1, &mat2], std::path::Path::new("data/test.json"))?;
 /// # Ok(())
 /// # }
 /// ```
-pub fn write<T, const ROW: usize, const COL: usize>(
-    mats: &[&Matrix<T, ROW, COL>],
-    path: &std::path::Path,
-) -> Result<()>
+pub fn write<T>(mats: &[&Matrix<T>], path: &std::path::Path) -> Result<()>
 where
     T: std::fmt::Debug + serde::Serialize,
 {

@@ -1,5 +1,3 @@
-#![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
 #![feature(doc_cfg)]
 
 //! [![github]](https://github.com/kands-code/rmatrix)
@@ -13,7 +11,7 @@
 //! ## Warning
 //!
 //! used unstable features
-//! - `generic_const_exprs`
+//! - `doc_cfg`
 //!
 //! # Description
 //!
@@ -26,8 +24,9 @@
 //!
 //! By default, `rand_mat` feature is enabled.
 
+pub mod column_vector;
 pub mod error;
 pub mod matrix;
 pub mod num;
+pub mod row_vector;
 pub mod utils;
-pub mod vector;
