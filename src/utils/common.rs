@@ -2,7 +2,7 @@
 //!
 //! common tools for matrix or vectors
 
-use crate::error::{Error, Result};
+use crate::error::{IError, IResult};
 use crate::matrix::Matrix;
 use crate::num::number::Zero;
 
@@ -33,9 +33,9 @@ pub fn points<T, R>(
 ///
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
-/// # use rmatrix_ks::error::Result;
+/// # use rmatrix_ks::error::IResult;
 /// # use rmatrix_ks::utils::common::horizontal_concat;
-/// # fn main() -> Result<()> {
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
 /// let mat2: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
 /// assert_eq!(Matrix::create(2, 6, vec![1, 2, 3, 1, 2, 3, 4, 5, 6, 4, 5, 6])?,
@@ -43,21 +43,24 @@ pub fn points<T, R>(
 /// # Ok(())
 /// # }
 /// ```
-pub fn horizontal_concat<T>(mat: &Matrix<T>, rhs: &Matrix<T>) -> Result<Matrix<T>>
+pub fn horizontal_concat<T>(mat: &Matrix<T>, rhs: &Matrix<T>) -> IResult<Matrix<T>>
 where
     T: Clone + Zero,
 {
     if mat.row() != rhs.row() {
-        Err(Error::IncompatibleShape((mat.row(), rhs.column()), rhs.dim))
+        Err(IError::IncompatibleShape(
+            (mat.row(), rhs.column()),
+            rhs.dim,
+        ))
     } else {
         let mut hmat = Matrix::zeros(mat.row(), mat.column() + rhs.column())?;
         for r in 1..=mat.row() {
             for c1 in 1..=mat.column() {
-                hmat.set_element(r, c1, mat.get_element(r, c1)?.to_owned())?;
+                hmat.set_element(r, c1, mat.get_element(r, c1)?.clone())?;
             }
 
             for c2 in 1..=rhs.column() {
-                hmat.set_element(r, mat.column() + c2, rhs.get_element(r, c2)?.to_owned())?;
+                hmat.set_element(r, mat.column() + c2, rhs.get_element(r, c2)?.clone())?;
             }
         }
         Ok(hmat)
@@ -69,8 +72,8 @@ where
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::common::vertical_concat;
-/// # use rmatrix_ks::error::Result;
-/// # fn main() -> Result<()> {
+/// # use rmatrix_ks::error::IResult;
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
 /// let mat2: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
 /// assert_eq!(Matrix::create(4, 3, vec![1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6])?,
@@ -78,7 +81,7 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn vertical_concat<T>(mat: &Matrix<T>, rhs: &Matrix<T>) -> Result<Matrix<T>>
+pub fn vertical_concat<T>(mat: &Matrix<T>, rhs: &Matrix<T>) -> IResult<Matrix<T>>
 where
     T: Clone,
 {

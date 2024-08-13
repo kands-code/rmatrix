@@ -4,7 +4,7 @@
 
 /// errors what will happen with this library
 #[derive(Debug, PartialEq)]
-pub enum Error {
+pub enum IError {
     /// likely to occur when constructing a matrix
     IncompatibleSizeError((usize, usize), usize),
     /// likely to occur when the function need a square matrix
@@ -21,38 +21,38 @@ pub enum Error {
     Message(String),
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type IResult<T> = std::result::Result<T, IError>;
 
-impl std::error::Error for Error {}
+impl std::error::Error for IError {}
 
-impl std::fmt::Display for Error {
+impl std::fmt::Display for IError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::IncompatibleSizeError((required_row, required_col), real) => write!(
+            IError::IncompatibleSizeError((required_row, required_col), real) => write!(
                 f,
                 "incompatible size while require ({:?} x {:?}) but the real size is {:?}",
                 required_row, required_col, real
             ),
-            Error::IncompatibleShape(required, real) => {
+            IError::IncompatibleShape(required, real) => {
                 write!(
                     f,
                     "incompatible shape while require {:?} but the real shape is {:?}",
                     required, real
                 )
             }
-            Error::OutOfBoundary(row, col) => {
+            IError::OutOfBoundary(row, col) => {
                 write!(f, "out of boundary at ({:?}, {:?})", row, col)
             }
-            Error::DividedByZero => write!(f, "can not divide by zero"),
-            Error::SingularMatrix => write!(f, "matrix is strange which determinant is zero"),
-            Error::NoSolution((row, col), rank) => {
+            IError::DividedByZero => write!(f, "can not divide by zero"),
+            IError::SingularMatrix => write!(f, "matrix is strange which determinant is zero"),
+            IError::NoSolution((row, col), rank) => {
                 write!(
                     f,
                     "linear equation {:?}x{:?} with rank {:?} has no solution",
                     row, col, rank
                 )
             }
-            Error::Message(msg) => write!(f, "{:?}", msg),
+            IError::Message(msg) => write!(f, "{:?}", msg),
         }
     }
 }

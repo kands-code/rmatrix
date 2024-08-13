@@ -11,7 +11,7 @@ keywords = ["math", "matrix"]
 repository = "https://github.com/kands-code/rmatrix"
 documentation = "https://docs.rs/rmatrix_ks"
 
-[package.metadata.doc.rs]
+[package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition"]
 
@@ -19,12 +19,12 @@ rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition"]
 [lib]
 name = "rmatrix_ks"
 path = "src/lib.rs"
-crate-type = ["staticlib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]
 rand = { version = "^0.8.5", optional = true }
-serde = { version = "^1.0.204", features = ["derive"], optional = true }
-serde_json = { version = "^1.0.122", optional = true }
+serde = { version = "^1.0.207", features = ["derive"], optional = true }
+serde_json = { version = "^1.0.124", optional = true }
 
 [features]
 default = ["rand_mat"]

@@ -24,9 +24,8 @@
 //!
 //! By default, `rand_mat` feature is enabled.
 
-pub mod column_vector;
 pub mod error;
 pub mod matrix;
 pub mod num;
-pub mod row_vector;
 pub mod utils;
+pub mod vector;

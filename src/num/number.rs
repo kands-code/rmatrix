@@ -2,8 +2,8 @@
 //!
 //! define the basic number typeclass
 
-use crate::error::Error;
-use crate::error::Result;
+use crate::error::IError;
+use crate::error::IResult;
 
 /// concept of equality
 pub trait Equal {
@@ -98,7 +98,7 @@ where
     fn conjugate(self) -> Self;
 
     /// normal division with zero test
-    fn ndiv(self, rhs: Self) -> Result<Self>;
+    fn ndiv(self, rhs: Self) -> IResult<Self>;
 }
 
 impl Equal for i32 {
@@ -132,9 +132,9 @@ impl Number for i32 {
         self
     }
 
-    fn ndiv(self, rhs: Self) -> Result<Self> {
+    fn ndiv(self, rhs: Self) -> IResult<Self> {
         if rhs.is_zero() {
-            Err(Error::DividedByZero)
+            Err(IError::DividedByZero)
         } else {
             Ok(self / rhs)
         }
@@ -174,9 +174,9 @@ impl Number for f32 {
         self
     }
 
-    fn ndiv(self, rhs: Self) -> Result<Self> {
+    fn ndiv(self, rhs: Self) -> IResult<Self> {
         if rhs.is_zero() {
-            Err(Error::DividedByZero)
+            Err(IError::DividedByZero)
         } else {
             Ok(self / rhs)
         }
@@ -190,18 +190,18 @@ where
 {
     /// greatest common divisor
     fn gcd(&self, rhs: &Self) -> Self {
-        if rhs.to_owned().equal(&Self::zero()) {
+        if rhs.clone().equal(&Self::zero()) {
             // gcd is non-negative
-            self.to_owned().abs()
+            self.clone().abs()
         } else {
-            rhs.gcd(&(self.to_owned().rem(rhs.to_owned())))
+            rhs.gcd(&(self.clone().rem(rhs.clone())))
         }
     }
 
     /// least common multiple
     fn lcm(&self, rhs: &Self) -> Self {
         // |a * b| = gcd(a, b) * lcm(a, b)
-        match (self.to_owned() * rhs.to_owned()).abs().ndiv(self.gcd(rhs)) {
+        match (self.clone() * rhs.clone()).abs().ndiv(self.gcd(rhs)) {
             Ok(division) => division,
             Err(_) => -Self::one(),
         }
@@ -216,14 +216,14 @@ where
     Self: Number,
 {
     /// square root for fractional
-    fn nsqrt(self) -> Result<Self>;
+    fn nsqrt(self) -> IResult<Self>;
 
     /// convert size to fractional for computation
     fn from_usize(size: usize) -> Self;
 }
 
 impl Fractional for f32 {
-    fn nsqrt(self) -> Result<Self> {
+    fn nsqrt(self) -> IResult<Self> {
         Ok(self.sqrt())
     }
 

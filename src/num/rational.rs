@@ -6,8 +6,8 @@
 //!
 //! very slow, and may overflow
 
-use crate::error::Error;
-use crate::error::Result;
+use crate::error::IError;
+use crate::error::IResult;
 use crate::num::number::Integeral;
 use crate::num::number::Number;
 use crate::num::number::One;
@@ -51,19 +51,19 @@ impl<T: Integeral> Rational<T> {
     /// if an overflow error occurs, try this function to do simplify
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::Result;
+    /// # use rmatrix_ks::error::IResult;
     /// # use rmatrix_ks::num::rational::Rational;
     /// # use rmatrix_ks::rat;
-    /// # fn main() -> Result<()> {
+    /// # fn main() -> IResult<()> {
     /// let mut r1 = Rational::create(2i32, 4i32); // 2/4
     /// r1.refine()?; // 1/2
     /// # Ok(())
     /// # }
     /// ```
-    pub fn refine(&self) -> Result<Self> {
+    pub fn refine(&self) -> IResult<Self> {
         let gcd = self.numerator.gcd(&self.denominator);
-        let mut numerator = self.numerator.to_owned().ndiv(gcd.to_owned())?;
-        let mut denominator = self.denominator.to_owned().ndiv(gcd)?;
+        let mut numerator = self.numerator.clone().ndiv(gcd.clone())?;
+        let mut denominator = self.denominator.clone().ndiv(gcd)?;
         // refine negative
         if (numerator < T::zero() && denominator < T::zero())
             || (numerator > T::zero() && denominator < T::zero())
@@ -109,8 +109,8 @@ impl<T: Integeral> std::ops::Add for Rational<T> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        let numerator = self.numerator * rhs.denominator.to_owned()
-            + rhs.numerator * self.denominator.to_owned();
+        let numerator =
+            self.numerator * rhs.denominator.clone() + rhs.numerator * self.denominator.clone();
         let denominator = self.denominator * rhs.denominator;
         Self::create(numerator, denominator)
     }
@@ -126,8 +126,8 @@ impl<T: Integeral> std::ops::Sub for Rational<T> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        let numerator = self.numerator * rhs.denominator.to_owned()
-            - rhs.numerator * self.denominator.to_owned();
+        let numerator =
+            self.numerator * rhs.denominator.clone() - rhs.numerator * self.denominator.clone();
         let denominator = self.denominator * rhs.denominator;
         Self::create(numerator, denominator)
     }
@@ -195,9 +195,9 @@ impl<T: Integeral> Number for Rational<T> {
     }
 
     /// (a / b) / (c / d) = (a * d) / (b * c)
-    fn ndiv(self, rhs: Self) -> Result<Self> {
+    fn ndiv(self, rhs: Self) -> IResult<Self> {
         if rhs.is_zero() {
-            Err(Error::DividedByZero)
+            Err(IError::DividedByZero)
         } else {
             Ok(self * Self::create(rhs.denominator, rhs.numerator))
         }

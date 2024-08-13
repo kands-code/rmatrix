@@ -1,9 +1,14 @@
-use rmatrix_ks::column_vector::identity_vector_column;
-use rmatrix_ks::column_vector::ColumnVector;
-use rmatrix_ks::error::Result;
+use rmatrix_ks::error::IResult;
+use rmatrix_ks::matrix::Matrix;
+use rmatrix_ks::utils::decompose::qr_decomposition_reduced;
 
-fn main() -> Result<()> {
-    let x = identity_vector_column::<f32>(4, 2)?;
-    assert_eq!(ColumnVector::create(4, vec![0.0, 1.0, 0.0, 0.0])?, x);
+fn main() -> IResult<()> {
+    let mat = Matrix::<f32>::create(3, 2, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])?;
+    println!("{}", mat);
+
+    let qr = qr_decomposition_reduced(mat)?;
+    println!("{}", qr.0);
+    println!("{}", qr.1);
+
     Ok(())
 }

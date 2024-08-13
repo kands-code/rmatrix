@@ -5,15 +5,15 @@
 use crate::matrix::Matrix;
 use crate::num::number::{Number, One, Zero};
 use crate::utils::common::points;
-use crate::{error::Result, num::number::Equal};
+use crate::{error::IResult, num::number::Equal};
 
 /// predicate whether a matrix is ​​square
 ///
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::predicate::is_square_matrix;
-/// # use rmatrix_ks::error::Result;
-/// # fn main() -> Result<()> {
+/// # use rmatrix_ks::error::IResult;
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<i8> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
 /// let mat2: Matrix<i8> = Matrix::create(2, 2, vec![1, 2, 3, 4])?;
 /// assert_eq!(false, is_square_matrix(&mat1));
@@ -21,7 +21,10 @@ use crate::{error::Result, num::number::Equal};
 /// # Ok(())
 /// # }
 /// ```
-pub const fn is_square_matrix<T>(mat: &Matrix<T>) -> bool {
+pub const fn is_square_matrix<T>(mat: &Matrix<T>) -> bool
+where
+    T: Clone,
+{
     mat.row() == mat.column()
 }
 
@@ -30,8 +33,8 @@ pub const fn is_square_matrix<T>(mat: &Matrix<T>) -> bool {
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::predicate::is_symmetric_matrix;
-/// # use rmatrix_ks::error::Result;
-/// # fn main() -> Result<()> {
+/// # use rmatrix_ks::error::IResult;
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<i32> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
 /// let mat2: Matrix<i32> = Matrix::create(2, 2, vec![1, 2, 2, 1])?;
 /// assert_eq!(false, is_symmetric_matrix(&mat1)?);
@@ -39,9 +42,9 @@ pub const fn is_square_matrix<T>(mat: &Matrix<T>) -> bool {
 /// # Ok(())
 /// # }
 /// ```
-pub fn is_symmetric_matrix<T>(mat: &Matrix<T>) -> Result<bool>
+pub fn is_symmetric_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
-    T: Equal,
+    T: Clone + Equal,
 {
     if is_square_matrix(mat) {
         let mut is_symmetric = true;
@@ -62,8 +65,8 @@ where
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::predicate::is_upper_triangle_matrix;
-/// # use rmatrix_ks::error::Result;
-/// # fn main() -> Result<()> {
+/// # use rmatrix_ks::error::IResult;
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<f32> = Matrix::create(2, 3, vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32> = Matrix::create(2, 2, vec![1.0f32, 2.0f32, 0.0f32, 4.0f32])?;
 /// assert_eq!(false, is_upper_triangle_matrix(&mat1));
@@ -73,13 +76,13 @@ where
 /// ```
 pub fn is_upper_triangle_matrix<T>(mat: &Matrix<T>) -> bool
 where
-    T: Zero,
+    T: Clone + Zero,
 {
     points(|r, c| (r, c), mat.row(), mat.column())
         .iter()
         .filter(|(r, c)| r > c)
         .all(|(r, c)| {
-            mat.get_element(r.to_owned(), c.to_owned())
+            mat.get_element(r.clone(), c.clone())
                 .is_ok_and(|e| e.is_zero())
         })
 }
@@ -89,8 +92,8 @@ where
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::predicate::is_lower_triangle_matrix;
-/// # use rmatrix_ks::error::Result;
-/// # fn main() -> Result<()> {
+/// # use rmatrix_ks::error::IResult;
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<f32> = Matrix::create(2, 3, vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32> = Matrix::create(2, 2, vec![1.0f32, 0.0f32, 2.0f32, 4.0f32])?;
 /// assert_eq!(false, is_lower_triangle_matrix(&mat1));
@@ -100,13 +103,13 @@ where
 /// ```
 pub fn is_lower_triangle_matrix<T>(mat: &Matrix<T>) -> bool
 where
-    T: Zero,
+    T: Clone + Zero,
 {
     points(|r, c| (r, c), mat.row(), mat.column())
         .iter()
         .filter(|(r, c)| r < c)
         .all(|(r, c)| {
-            mat.get_element(r.to_owned(), c.to_owned())
+            mat.get_element(r.clone(), c.clone())
                 .is_ok_and(|e| e.is_zero())
         })
 }
@@ -116,8 +119,8 @@ where
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::predicate::is_diagonal_matrix;
-/// # use rmatrix_ks::error::Result;
-/// # fn main() -> Result<()> {
+/// # use rmatrix_ks::error::IResult;
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<f32> = Matrix::create(2, 3, vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32> = Matrix::create(2, 2, vec![1.0f32, 0.0f32, 0.0f32, 4.0f32])?;
 /// assert_eq!(false, is_diagonal_matrix(&mat1));
@@ -127,13 +130,13 @@ where
 /// ```
 pub fn is_diagonal_matrix<T>(mat: &Matrix<T>) -> bool
 where
-    T: Zero,
+    T: Clone + Zero,
 {
     points(|r, c| (r, c), mat.row(), mat.column())
         .iter()
         .filter(|(r, c)| r != c)
         .all(|(r, c)| {
-            mat.get_element(r.to_owned(), c.to_owned())
+            mat.get_element(r.clone(), c.clone())
                 .is_ok_and(|e| e.is_zero())
         })
 }
@@ -143,8 +146,8 @@ where
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::predicate::is_identity_matrix;
-/// # use rmatrix_ks::error::Result;
-/// # fn main() -> Result<()> {
+/// # use rmatrix_ks::error::IResult;
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<f32> = Matrix::create(2, 3, vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32> = Matrix::create(2, 2, vec![1.0f32, 0.0f32, 0.0f32, 1.0f32])?;
 /// assert_eq!(false, is_identity_matrix(&mat1));
@@ -154,20 +157,20 @@ where
 /// ```
 pub fn is_identity_matrix<T>(mat: &Matrix<T>) -> bool
 where
-    T: Zero + One,
+    T: Clone + Zero + One,
 {
     points(|r, c| (r, c), mat.row(), mat.column())
         .iter()
         .filter(|(r, c)| r != c)
         .all(|(r, c)| {
-            mat.get_element(r.to_owned(), c.to_owned())
+            mat.get_element(r.clone(), c.clone())
                 .is_ok_and(|e| e.is_zero())
         })
         && points(|r, c| (r, c), mat.row(), mat.column())
             .iter()
             .filter(|(r, c)| r == c)
             .all(|(r, c)| {
-                mat.get_element(r.to_owned(), c.to_owned())
+                mat.get_element(r.clone(), c.clone())
                     .is_ok_and(|e| e.is_one())
             })
 }
@@ -177,8 +180,8 @@ where
 /// ```rust
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::utils::predicate::is_orthogonal_matrix;
-/// # use rmatrix_ks::error::Result;
-/// # fn main() -> Result<()> {
+/// # use rmatrix_ks::error::IResult;
+/// # fn main() -> IResult<()> {
 /// let mat1: Matrix<f32> = Matrix::create(2, 3, vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
 /// let mat2: Matrix<f32> =
 ///     Matrix::create(2, 2, vec![1.0, -1.0, 1.0, 1.0])?.muls(1.0 / 2.0f32.sqrt())?;
@@ -187,16 +190,16 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn is_orthogonal_matrix<T>(mat: &Matrix<T>) -> Result<bool>
+pub fn is_orthogonal_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
     T: Number,
 {
-    let transposed = mat.transpose()?;
+    let transposed = mat.transpose()?.map(&mut |e| e.clone())?;
 
     if mat.row() > mat.column() {
-        Ok(is_identity_matrix::<T>(&transposed.times(mat.to_owned())?))
+        Ok(is_identity_matrix::<T>(&transposed.times(mat.clone())?))
     } else {
-        Ok(is_identity_matrix::<T>(&mat.to_owned().times(transposed)?))
+        Ok(is_identity_matrix::<T>(&mat.clone().times(transposed)?))
     }
 }
 
@@ -204,11 +207,11 @@ where
 ///
 /// ```rust
 /// # use rmatrix_ks::cmplx;
-/// # use rmatrix_ks::error::Result;
+/// # use rmatrix_ks::error::IResult;
 /// # use rmatrix_ks::matrix::Matrix;
 /// # use rmatrix_ks::num::complex::Complex;
 /// # use rmatrix_ks::utils::predicate::is_unitary_matrix;
-/// # fn main() -> Result<()> {
+/// # fn main() -> IResult<()> {
 /// let mat: Matrix<Complex<f32>> =
 ///     Matrix::create(2, 2, vec![
 ///         cmplx!(1.0, 0.0), cmplx!(0.0, 1.0),
@@ -218,15 +221,66 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn is_unitary_matrix<T>(mat: &Matrix<T>) -> Result<bool>
+pub fn is_unitary_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
     T: Number,
 {
     let transposed = mat.conjugate_transpose()?;
 
     if mat.row() > mat.column() {
-        Ok(is_identity_matrix(&transposed.times(mat.to_owned())?))
+        Ok(is_identity_matrix(&transposed.times(mat.clone())?))
     } else {
-        Ok(is_identity_matrix(&mat.to_owned().times(transposed)?))
+        Ok(is_identity_matrix(&mat.clone().times(transposed)?))
     }
+}
+
+/// predicate whether a matrix is hermitia matrix
+///
+/// m == m^H
+///
+/// ```rust
+/// # use rmatrix_ks::cmplx;
+/// # use rmatrix_ks::error::IResult;
+/// # use rmatrix_ks::matrix::Matrix;
+/// # use rmatrix_ks::num::complex::Complex;
+/// # use rmatrix_ks::utils::predicate::is_hermitian_matrix;
+/// # fn main() -> IResult<()> {
+/// let mat: Matrix<Complex<f32>> =
+///     Matrix::create(2, 2, vec![
+///         cmplx!(1.0, 0.0), cmplx!(3.0, 4.0),
+///         cmplx!(3.0, -4.0), cmplx!(2.0, 0.0)])?;
+/// assert!(is_hermitian_matrix(&mat)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn is_hermitian_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
+where
+    T: Number,
+{
+    Ok(mat.equal(&mat.conjugate_transpose()?))
+}
+
+/// predicate whether a matrix is normal
+///
+/// m * m^H == m^H * m
+///
+/// ```rust
+/// # use rmatrix_ks::error::IResult;
+/// # use rmatrix_ks::matrix::Matrix;
+/// # use rmatrix_ks::utils::predicate::is_normal_matrix;
+/// # fn main() -> IResult<()> {
+/// let mat: Matrix<f32> =
+///     Matrix::create(2, 2, vec![1.0, 2.0, -2.0, 1.0])?;
+/// assert!(is_normal_matrix(&mat)?);
+/// # Ok(())
+/// # }
+/// ```
+pub fn is_normal_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
+where
+    T: Number,
+{
+    Ok(mat
+        .clone()
+        .times(mat.conjugate_transpose()?)?
+        .equal(&mat.conjugate_transpose()?.times(mat.clone())?))
 }

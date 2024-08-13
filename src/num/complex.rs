@@ -4,8 +4,8 @@
 //!
 //! just an example
 
-use crate::error::Error;
-use crate::error::Result;
+use crate::error::IError;
+use crate::error::IResult;
 use crate::num::number::Fractional;
 use crate::num::number::Number;
 use crate::num::number::One;
@@ -45,19 +45,19 @@ impl<T: Number> Complex<T> {
     /// norm(a + bI) = sqrt(a^2 + b^2)
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::Result;
+    /// # use rmatrix_ks::error::IResult;
     /// # use rmatrix_ks::num::complex::Complex;
-    /// # fn main() -> Result<()> {
+    /// # fn main() -> IResult<()> {
     /// let c = Complex::create(3.0f32, 4.0f32); // 3 + 4I
     /// assert_eq!(5.0f32, c.norm()?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn norm(&self) -> Result<T>
+    pub fn norm(&self) -> IResult<T>
     where
         T: Fractional,
     {
-        (self.real.to_owned() * self.real.to_owned() + self.imag.to_owned() * self.imag.to_owned())
+        (self.real.clone() * self.real.clone() + self.imag.clone() * self.imag.clone())
             .nsqrt()
     }
 }
@@ -111,7 +111,7 @@ impl<T: Number> std::ops::Mul for Complex<T> {
 
     fn mul(self, rhs: Self) -> Self::Output {
         Self::create(
-            self.real.to_owned() * rhs.real.to_owned() - self.imag.to_owned() * rhs.imag.to_owned(),
+            self.real.clone() * rhs.real.clone() - self.imag.clone() * rhs.imag.clone(),
             self.real * rhs.imag + self.imag * rhs.real,
         )
     }
@@ -174,16 +174,16 @@ impl<T: Number> Number for Complex<T> {
         Complex::create(self.real, -self.imag)
     }
 
-    fn ndiv(self, rhs: Self) -> Result<Self> {
+    fn ndiv(self, rhs: Self) -> IResult<Self> {
         if rhs.is_zero() {
-            Err(Error::DividedByZero)
+            Err(IError::DividedByZero)
         } else {
-            let under = rhs.real.to_owned() * rhs.real.to_owned()
-                + rhs.imag.to_owned() * rhs.imag.to_owned();
+            let under = rhs.real.clone() * rhs.real.clone()
+                + rhs.imag.clone() * rhs.imag.clone();
             Ok(Complex::create(
-                (self.real.to_owned() * rhs.real.to_owned()
-                    + self.imag.to_owned() * rhs.imag.to_owned())
-                .ndiv(under.to_owned())?,
+                (self.real.clone() * rhs.real.clone()
+                    + self.imag.clone() * rhs.imag.clone())
+                .ndiv(under.clone())?,
                 (self.imag * rhs.real - self.real * rhs.imag).ndiv(under)?,
             ))
         }
@@ -194,17 +194,17 @@ impl<T: Fractional> Fractional for Complex<T> {
     /// one of the numeric value of sqrt(c)
     ///
     /// ```rust
-    /// # use rmatrix_ks::error::Result;
+    /// # use rmatrix_ks::error::IResult;
     /// # use rmatrix_ks::num::complex::Complex;
     /// # use crate::rmatrix_ks::num::number::Fractional;
-    /// # fn main() -> Result<()> {
+    /// # fn main() -> IResult<()> {
     /// let c = Complex::create(3.0f32, 4.0f32); // 3 + 4I
     /// // sqrt(3 + 4I) = 2 + 1I
     /// assert_eq!(Complex::create(2.0f32, 1.0f32), c.nsqrt()?);
     /// # Ok(())
     /// # }
     /// ```
-    fn nsqrt(self) -> Result<Self> {
+    fn nsqrt(self) -> IResult<Self> {
         if self.real.is_zero() {
             Ok(Complex::create(T::zero(), self.imag.nsqrt()?))
         } else if self.imag.is_zero() {
@@ -213,13 +213,13 @@ impl<T: Fractional> Fractional for Complex<T> {
             let real = self.real;
             let imag = self.imag;
             let sqrt_two = (T::one() + T::one()).nsqrt()?;
-            let aux = (real.to_owned()
-                + (real.to_owned() * real.to_owned() + imag.to_owned() * imag.to_owned())
+            let aux = (real.clone()
+                + (real.clone() * real.clone() + imag.clone() * imag.clone())
                     .nsqrt()?)
             .nsqrt()?;
-            let sqrt_real = aux.to_owned().ndiv(sqrt_two.to_owned())?;
-            let sqrt_imag = (-sqrt_two.to_owned() * real.to_owned() * aux.to_owned()
-                + (aux.to_owned() * aux.to_owned() * aux).ndiv(sqrt_two)?)
+            let sqrt_real = aux.clone().ndiv(sqrt_two.clone())?;
+            let sqrt_imag = (-sqrt_two.clone() * real.clone() * aux.clone()
+                + (aux.clone() * aux.clone() * aux).ndiv(sqrt_two)?)
             .ndiv(imag)?;
             Ok(Complex::create(sqrt_real, sqrt_imag))
         }
