@@ -2,7 +2,8 @@
 //!
 //! common tools for matrix or vectors
 
-use crate::error::{IError, IResult};
+use crate::error::IError;
+use crate::error::IResult;
 use crate::matrix::Matrix;
 use crate::num::number::Zero;
 

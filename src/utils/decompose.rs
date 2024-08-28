@@ -61,7 +61,8 @@ where
 /// # fn main() -> IResult<()> {
 /// let mat = Matrix::<f32>::create(3, 3, vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
 /// let qr = qr_decomposition(mat.clone())?;
-/// assert!(qr.0.conjugate_transpose()?.times(qr.1)?.equal(&mat));
+/// let t: Matrix<f32> = qr.0.conjugate_transpose()?;
+/// assert!(t.times(qr.1)?.equal(&mat));
 /// # Ok(())
 /// # }
 /// ```
@@ -122,8 +123,9 @@ where
 /// # fn main() -> IResult<()> {
 /// let mat = Matrix::<f32>::create(3, 2, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])?;
 /// let qr = qr_decomposition_reduced(mat.clone())?;
+/// let t: Matrix<f32> = qr.0.conjugate_transpose()?;
 /// assert_eq!(((2, 3), (2, 2)), (qr.0.dimensions(), qr.1.dimensions()));
-/// assert!(qr.0.conjugate_transpose()?.times(qr.1)?.equal(&mat));
+/// assert!(t.times(qr.1)?.equal(&mat));
 /// # Ok(())
 /// # }
 /// ```

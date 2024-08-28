@@ -13,12 +13,14 @@ use crate::num::number::Fractional;
 use crate::num::number::Number;
 use crate::num::number::One;
 use crate::num::number::Zero;
+use crate::utils::state::SColumn;
+use crate::utils::state::SRow;
 
 /// type alias for row vector
-pub type RowVector<T> = Matrix<T>;
+pub type RowVector<T> = Matrix<T, SRow>;
 
 /// type alias for column vector
-pub type ColumnVector<T> = Matrix<T>;
+pub type ColumnVector<T> = Matrix<T, SColumn>;
 
 /// get the row en
 ///

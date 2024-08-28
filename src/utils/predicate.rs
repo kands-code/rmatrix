@@ -2,10 +2,12 @@
 //!
 //! some predicate functions
 
+use crate::error::IResult;
 use crate::matrix::Matrix;
+use crate::num::number::Equal;
 use crate::num::number::{Number, One, Zero};
 use crate::utils::common::points;
-use crate::{error::IResult, num::number::Equal};
+use crate::utils::state::SMatrix;
 
 /// predicate whether a matrix is ​​square
 ///
@@ -74,7 +76,7 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn is_upper_triangle_matrix<T>(mat: &Matrix<T>) -> bool
+pub fn is_upper_triangle_matrix<T, S>(mat: &Matrix<T, S>) -> bool
 where
     T: Clone + Zero,
 {
@@ -194,7 +196,7 @@ pub fn is_orthogonal_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
     T: Number,
 {
-    let transposed = mat.transpose()?.map(&mut |e| e.clone())?;
+    let transposed: Matrix<T> = mat.transpose()?;
 
     if mat.row() > mat.column() {
         Ok(is_identity_matrix::<T>(&transposed.times(mat.clone())?))
@@ -225,7 +227,7 @@ pub fn is_unitary_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
     T: Number,
 {
-    let transposed = mat.conjugate_transpose()?;
+    let transposed: Matrix<T> = mat.conjugate_transpose()?;
 
     if mat.row() > mat.column() {
         Ok(is_identity_matrix(&transposed.times(mat.clone())?))
@@ -281,6 +283,6 @@ where
 {
     Ok(mat
         .clone()
-        .times(mat.conjugate_transpose()?)?
-        .equal(&mat.conjugate_transpose()?.times(mat.clone())?))
+        .times::<SMatrix, SMatrix>(mat.conjugate_transpose::<SMatrix>()?)?
+        .equal(&mat.conjugate_transpose::<SMatrix>()?.times(mat.clone())?))
 }

@@ -13,6 +13,7 @@ use crate::num::number::Number;
 use crate::num::number::Zero;
 use crate::utils::predicate::is_square_matrix;
 use crate::utils::predicate::is_upper_triangle_matrix;
+use crate::utils::state::SMatrix;
 use crate::vector::times_v;
 use crate::vector::ColumnVector;
 use crate::vector::RowVector;
@@ -32,14 +33,15 @@ use serde::{Deserialize, Serialize};
 /// matrix type
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_mat", derive(Serialize, Deserialize))]
-pub struct Matrix<T> {
+pub struct Matrix<T, S = SMatrix> {
     /// inner data
     pub(crate) dim: (usize, usize),
     pub(crate) inner: Vec<T>,
+    _state: std::marker::PhantomData<S>,
 }
 
 /// default implementations
-impl<T> Matrix<T>
+impl<T, S> Matrix<T, S>
 where
     T: Clone,
 {
@@ -62,9 +64,10 @@ where
         if data.len() < row * col {
             Err(IError::IncompatibleSizeError((row, col), data.len()))
         } else {
-            Ok(Matrix::<T> {
+            Ok(Self {
                 dim: (row, col),
                 inner: data.iter().take(row * col).cloned().collect::<Vec<T>>(),
+                _state: std::marker::PhantomData,
             })
         }
     }
@@ -349,18 +352,19 @@ where
     /// # fn main() -> IResult<()> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
-    /// assert_eq!((3, 2), mat.transpose()?.dimensions());
+    /// let trans: Matrix<i8> = mat.transpose()?;
+    /// assert_eq!((3, 2), trans.dimensions());
     /// # Ok(())
     /// # }
     /// ```
-    pub fn transpose(&self) -> IResult<Matrix<&T>> {
+    pub fn transpose<P>(&self) -> IResult<Matrix<T, P>> {
         let mut transposed = Vec::with_capacity(self.row() * self.column());
         for c in 1..=self.column() {
             for r in 1..=self.row() {
-                transposed.push(self.get_element(r, c)?);
+                transposed.push(self.get_element(r, c)?.clone());
             }
         }
-        Matrix::<&T>::create(self.column(), self.row(), transposed)
+        Matrix::<T, P>::create(self.column(), self.row(), transposed)
     }
 
     /// map a function to a matrix
@@ -375,12 +379,12 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn map<N, F>(&self, f: &mut F) -> IResult<Matrix<N>>
+    pub fn map<N, F>(&self, f: &mut F) -> IResult<Matrix<N, S>>
     where
         N: Clone,
         F: Fn(T) -> N,
     {
-        Matrix::<N>::create(
+        Matrix::<N, S>::create(
             self.row(),
             self.column(),
             self.get_inner().map(|e| f(e.clone())).collect(),
@@ -389,9 +393,10 @@ where
 }
 
 /// implementation for matrix which element type is a Number
-impl<T> Matrix<T>
+impl<T, S> Matrix<T, S>
 where
     T: Number,
+    S: Clone,
 {
     /// create an identity matrix with size row by col
     ///
@@ -413,6 +418,7 @@ where
     }
 
     #[cfg(feature = "rand_mat")]
+    #[doc(cfg(feature = "rand_mat"))]
     /// create a random matrix with size row by col
     ///
     /// ```rust
@@ -458,8 +464,8 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_change(row: usize, i: usize, j: usize) -> IResult<Matrix<T>> {
-        let mut mat = Matrix::<T>::eyes(row, row)?;
+    pub fn p_change(row: usize, i: usize, j: usize) -> IResult<Self> {
+        let mut mat = Self::eyes(row, row)?;
         mat.set_element(i, i, T::zero())?;
         mat.set_element(j, j, T::zero())?;
         mat.set_element(i, j, T::one())?;
@@ -486,8 +492,8 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_muls(row: usize, i: usize, k: T) -> IResult<Matrix<T>> {
-        let mut mat = Matrix::<T>::eyes(row, row)?;
+    pub fn p_muls(row: usize, i: usize, k: T) -> IResult<Self> {
+        let mut mat = Self::eyes(row, row)?;
         mat.set_element(i, i, k)?;
         Ok(mat)
     }
@@ -504,15 +510,16 @@ where
     ///     Matrix::<f32>::create(2, 2, vec![1.0f32, 2.0f32, 4.0f32, 6.0f32])?,
     ///     p.clone().times(m.clone())?
     /// );
+    /// let t: Matrix<f32> = p.transpose()?;
     /// assert_eq!(
     ///     Matrix::<f32>::create(2, 2, vec![1.0f32, 3.0f32, 3.0f32, 7.0f32])?,
-    ///     m.times(p.transpose()?)?
+    ///     m.times(t)?
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_add(row: usize, i: usize, j: usize, k: T) -> IResult<Matrix<T>> {
-        let mut mat = Matrix::<T>::eyes(row, row)?;
+    pub fn p_add(row: usize, i: usize, j: usize, k: T) -> IResult<Self> {
+        let mut mat = Self::eyes(row, row)?;
         mat.set_element(j, i, k)?;
         Ok(mat)
     }
@@ -525,13 +532,13 @@ where
     /// # fn main() -> IResult<()> {
     /// let mat1: Matrix<f32> = Matrix::create(2, 3, vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
     /// let mat2: Matrix<f32> = Matrix::create(2, 3, vec![1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32])?;
-    /// assert_eq!(Matrix::create(2, 3, vec![2.0f32, 4.0f32, 6.0f32, 8.0f32, 10.0f32, 12.0f32])?,
-    ///     mat1.plus(mat2)?);
+    /// let expect: Matrix<f32> = Matrix::create(2, 3, vec![2.0f32, 4.0f32, 6.0f32, 8.0f32, 10.0f32, 12.0f32])?;
+    /// assert_eq!(expect, mat1.plus(mat2)?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn plus(self, rhs: Self) -> IResult<Self> {
-        Self::create(
+    pub fn plus<P, Q>(self, rhs: Matrix<T, P>) -> IResult<Matrix<T, Q>> {
+        Matrix::<T, Q>::create(
             self.row(),
             self.column(),
             self.get_inner()
@@ -572,14 +579,18 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn times(self, rhs: Matrix<T>) -> IResult<Matrix<T>> {
+    pub fn times<P, Q>(self, rhs: Matrix<T, P>) -> IResult<Matrix<T, Q>>
+    where
+        P: Clone,
+        Q: Clone,
+    {
         if self.column() != rhs.row() {
             Err(IError::IncompatibleShape(
                 (self.column(), rhs.column()),
                 (rhs.row(), rhs.column()),
             ))
         } else {
-            let mut product = Matrix::<T>::create(
+            let mut product = Matrix::<T, Q>::create(
                 self.row(),
                 rhs.column(),
                 vec![T::zero(); self.row() * rhs.column()],
@@ -664,21 +675,27 @@ where
     /// # fn main() -> IResult<()> {
     /// let mat: Matrix<Complex<i32>> =
     ///     Matrix::create(1, 2, vec![cmplx!(1, 2), cmplx!(2, 3)])?;
-    /// assert_eq!(Matrix::create(2, 1, vec![cmplx!(1, -2), cmplx!(2, -3)])?,
-    ///     mat.conjugate_transpose()?);
+    /// let conj: Matrix<Complex<i32>> = mat.conjugate_transpose()?;
+    /// assert_eq!(Matrix::create(2, 1, vec![cmplx!(1, -2), cmplx!(2, -3)])?, conj);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn conjugate_transpose(&self) -> IResult<Matrix<T>> {
+    pub fn conjugate_transpose<P>(&self) -> IResult<Matrix<T, P>> {
         let mut transposed = Vec::with_capacity(self.row() * self.column());
         for c in 1..=self.column() {
             for r in 1..=self.row() {
                 transposed.push(self.get_element(r, c)?.clone().conjugate());
             }
         }
-        Matrix::<T>::create(self.column(), self.row(), transposed)
+        Matrix::<T, P>::create(self.column(), self.row(), transposed)
     }
+}
 
+/// Matrix operations
+impl<T> Matrix<T>
+where
+    T: Number,
+{
     /// get the trace of a matrix
     ///
     /// ```rust
@@ -740,7 +757,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn submatrix(&self, row: usize, col: usize) -> IResult<Matrix<T>> {
+    pub fn submatrix(&self, row: usize, col: usize) -> IResult<Self> {
         let mut submat = Matrix::zeros(self.row() - 1, self.column() - 1)?;
         let mut row_index = 1;
         for r in (1..=self.row()).filter(|e| e != &row) {
@@ -772,7 +789,7 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn adjugate(&self) -> IResult<Matrix<T>> {
+    pub fn adjugate(&self) -> IResult<Self> {
         if is_square_matrix(self) {
             let mut mat = Self::zeros(self.row(), self.column())?;
             for row in 1..=self.row() {
@@ -789,7 +806,7 @@ where
                     )?;
                 }
             }
-            mat.transpose()?.map(&mut |e| e.clone())
+            Ok(mat.transpose()?)
         } else {
             // only square matrix
             Err(IError::IncompatibleShape(
@@ -833,7 +850,7 @@ where
                     for above in (index + 1)..=self.row() {
                         //do row exchange
                         if !reduced.get_element(above, index + next)?.is_zero() {
-                            let p_change = Matrix::p_change(self.row(), index, above)?;
+                            let p_change: Matrix<T> = Matrix::p_change(self.row(), index, above)?;
                             p_all = p_change.clone().times(p_all)?;
                             reduced = p_change.times(reduced)?;
                             lambda = -lambda;
@@ -855,7 +872,7 @@ where
                     if !above_pivot.is_zero() {
                         // warn: for integer, division is non-accuracy, can use rational number
                         let factor = above_pivot.clone().ndiv(pivot.clone())?;
-                        let p_add = Matrix::p_add(self.row(), index, above, -factor)?;
+                        let p_add: Matrix<T> = Matrix::p_add(self.row(), index, above, -factor)?;
                         l_all = p_add.clone().times(l_all)?;
                         reduced = p_add.times(reduced)?;
                     }
@@ -930,7 +947,7 @@ where
             } else {
                 // make pivot to one
                 // warn: for integer, division is non-accuracy, can use rational number
-                let p_smul = Matrix::p_muls(
+                let p_smul: Matrix<T> = Matrix::p_muls(
                     self.row(),
                     index,
                     T::one().ndiv(reduced.get_element(index, index + col)?.clone())?,
@@ -944,7 +961,7 @@ where
                             .get_element(j, index + col)?
                             .clone()
                             .ndiv(reduced.get_element(index, index + col)?.clone())?;
-                        let p_add = Matrix::p_add(self.row(), index, j, -p)?;
+                        let p_add: Matrix<T> = Matrix::p_add(self.row(), index, j, -p)?;
                         p_all = p_add.clone().times(p_all)?;
                         reduced = p_add.times(reduced)?;
                     }
@@ -977,7 +994,7 @@ where
 }
 
 /// the simplest format print
-impl<T> std::fmt::Display for Matrix<T>
+impl<T, S> std::fmt::Display for Matrix<T, S>
 where
     T: Clone + std::fmt::Display,
 {
@@ -1006,7 +1023,7 @@ where
 }
 
 /// a matrix equals to itself
-impl<T> std::cmp::PartialEq for Matrix<T>
+impl<T, S> std::cmp::PartialEq for Matrix<T, S>
 where
     T: Clone + Equal,
 {
