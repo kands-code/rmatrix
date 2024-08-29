@@ -13,14 +13,11 @@ use crate::num::number::Number;
 use crate::num::number::One;
 use crate::num::number::Zero;
 
-#[cfg(feature = "serde_mat")]
-use serde::{Deserialize, Serialize};
-
 use super::number::Equal;
 
 /// rational number
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde_mat", derive(Serialize, Deserialize))]
+#[derive(std::clone::Clone, std::cmp::PartialEq, std::fmt::Debug)]
+#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Rational<T: Integeral> {
     pub numerator: T,
     pub denominator: T,

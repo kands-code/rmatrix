@@ -7,7 +7,6 @@ use crate::matrix::Matrix;
 use crate::num::number::Equal;
 use crate::num::number::{Number, One, Zero};
 use crate::utils::common::points;
-use crate::utils::state::SMatrix;
 
 /// predicate whether a matrix is ​​square
 ///
@@ -76,7 +75,7 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn is_upper_triangle_matrix<T, S>(mat: &Matrix<T, S>) -> bool
+pub fn is_upper_triangle_matrix<T>(mat: &Matrix<T>) -> bool
 where
     T: Clone + Zero,
 {
@@ -283,6 +282,6 @@ where
 {
     Ok(mat
         .clone()
-        .times::<SMatrix, SMatrix>(mat.conjugate_transpose::<SMatrix>()?)?
-        .equal(&mat.conjugate_transpose::<SMatrix>()?.times(mat.clone())?))
+        .times(mat.conjugate_transpose()?)?
+        .equal(&mat.conjugate_transpose()?.times(mat.clone())?))
 }

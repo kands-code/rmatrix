@@ -51,10 +51,10 @@ where
     if mat.row() != rhs.row() {
         Err(IError::IncompatibleShape(
             (mat.row(), rhs.column()),
-            rhs.dim,
+            rhs.dimension,
         ))
     } else {
-        let mut hmat = Matrix::zeros(mat.row(), mat.column() + rhs.column())?;
+        let mut hmat = Matrix::defaults(mat.row(), mat.column() + rhs.column())?;
         for r in 1..=mat.row() {
             for c1 in 1..=mat.column() {
                 hmat.set_element(r, c1, mat.get_element(r, c1)?.clone())?;

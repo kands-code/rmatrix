@@ -11,14 +11,11 @@ use crate::num::number::Number;
 use crate::num::number::One;
 use crate::num::number::Zero;
 
-#[cfg(feature = "serde_mat")]
-use serde::{Deserialize, Serialize};
-
 use super::number::Equal;
 
 /// complex number
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde_mat", derive(Serialize, Deserialize))]
+#[derive(std::clone::Clone, std::cmp::PartialEq, std::fmt::Debug)]
+#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Complex<T: Number> {
     pub real: T,
     pub imag: T,
@@ -57,8 +54,7 @@ impl<T: Number> Complex<T> {
     where
         T: Fractional,
     {
-        (self.real.clone() * self.real.clone() + self.imag.clone() * self.imag.clone())
-            .nsqrt()
+        (self.real.clone() * self.real.clone() + self.imag.clone() * self.imag.clone()).nsqrt()
     }
 }
 
@@ -178,12 +174,10 @@ impl<T: Number> Number for Complex<T> {
         if rhs.is_zero() {
             Err(IError::DividedByZero)
         } else {
-            let under = rhs.real.clone() * rhs.real.clone()
-                + rhs.imag.clone() * rhs.imag.clone();
+            let under = rhs.real.clone() * rhs.real.clone() + rhs.imag.clone() * rhs.imag.clone();
             Ok(Complex::create(
-                (self.real.clone() * rhs.real.clone()
-                    + self.imag.clone() * rhs.imag.clone())
-                .ndiv(under.clone())?,
+                (self.real.clone() * rhs.real.clone() + self.imag.clone() * rhs.imag.clone())
+                    .ndiv(under.clone())?,
                 (self.imag * rhs.real - self.real * rhs.imag).ndiv(under)?,
             ))
         }
@@ -214,8 +208,7 @@ impl<T: Fractional> Fractional for Complex<T> {
             let imag = self.imag;
             let sqrt_two = (T::one() + T::one()).nsqrt()?;
             let aux = (real.clone()
-                + (real.clone() * real.clone() + imag.clone() * imag.clone())
-                    .nsqrt()?)
+                + (real.clone() * real.clone() + imag.clone() * imag.clone()).nsqrt()?)
             .nsqrt()?;
             let sqrt_real = aux.clone().ndiv(sqrt_two.clone())?;
             let sqrt_imag = (-sqrt_two.clone() * real.clone() * aux.clone()

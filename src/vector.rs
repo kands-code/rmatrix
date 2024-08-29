@@ -13,14 +13,12 @@ use crate::num::number::Fractional;
 use crate::num::number::Number;
 use crate::num::number::One;
 use crate::num::number::Zero;
-use crate::utils::state::SColumn;
-use crate::utils::state::SRow;
 
 /// type alias for row vector
-pub type RowVector<T> = Matrix<T, SRow>;
+pub type RowVector<T> = Matrix<T>;
 
 /// type alias for column vector
-pub type ColumnVector<T> = Matrix<T, SColumn>;
+pub type ColumnVector<T> = Matrix<T>;
 
 /// get the row en
 ///
@@ -43,7 +41,7 @@ pub fn identity_vector_row<T>(col: usize, index: usize) -> IResult<RowVector<T>>
 where
     T: Clone + Zero + One,
 {
-    let mut vector = RowVector::zeros(1, col)?;
+    let mut vector = RowVector::defaults(1, col)?;
     vector.set_element(1, index, T::one())?;
     Ok(vector)
 }
@@ -69,7 +67,7 @@ pub fn identity_vector_column<T>(row: usize, index: usize) -> IResult<ColumnVect
 where
     T: Clone + Zero + One,
 {
-    let mut vector = ColumnVector::zeros(row, 1)?;
+    let mut vector = ColumnVector::defaults(row, 1)?;
     vector.set_element(index, 1, T::one())?;
     Ok(vector)
 }
@@ -164,7 +162,7 @@ where
     T: Number,
 {
     let edge: usize = vec1.row() + vec2.row() - 1;
-    let mut conv: ColumnVector<T> = ColumnVector::zeros(edge, 1)?;
+    let mut conv: ColumnVector<T> = ColumnVector::defaults(edge, 1)?;
 
     for k in 1..=edge {
         for i in 1..=(k.min(vec1.row())) {

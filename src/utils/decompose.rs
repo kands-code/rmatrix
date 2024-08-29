@@ -57,6 +57,7 @@ where
 /// ```rust
 /// # use rmatrix_ks::error::IResult;
 /// # use rmatrix_ks::matrix::Matrix;
+/// # use rmatrix_ks::num::number::Equal;
 /// # use rmatrix_ks::utils::decompose::qr_decomposition;
 /// # fn main() -> IResult<()> {
 /// let mat = Matrix::<f32>::create(3, 3, vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
@@ -119,6 +120,7 @@ where
 /// ```rust
 /// # use rmatrix_ks::error::IResult;
 /// # use rmatrix_ks::matrix::Matrix;
+/// # use rmatrix_ks::num::number::Equal;
 /// # use rmatrix_ks::utils::decompose::qr_decomposition_reduced;
 /// # fn main() -> IResult<()> {
 /// let mat = Matrix::<f32>::create(3, 2, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])?;
@@ -134,8 +136,8 @@ where
     T: Clone + Fractional + std::cmp::PartialOrd,
 {
     let (q, r) = qr_decomposition(mat)?;
-    let mut reduced_r = Matrix::zeros(r.rank()?, r.column())?;
-    let mut reduced_q = Matrix::zeros(reduced_r.row(), q.column())?;
+    let mut reduced_r = Matrix::defaults(r.rank()?, r.column())?;
+    let mut reduced_q = Matrix::defaults(reduced_r.row(), q.column())?;
     // remove zero rows
     for row in 1..=reduced_r.row() {
         for col in 1..=reduced_r.column() {
@@ -157,6 +159,7 @@ where
 /// ```rust
 /// # use rmatrix_ks::error::IResult;
 /// # use rmatrix_ks::matrix::Matrix;
+/// # use rmatrix_ks::num::number::Equal;
 /// # use rmatrix_ks::utils::decompose::qr_decomposition_gs;
 /// # fn main() -> IResult<()> {
 /// let mat = Matrix::<f32>::create(3, 3, vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
@@ -212,8 +215,8 @@ where
         let ei = ui.divs(norm)?;
         en.push(ei);
     }
-    let mut q = Matrix::zeros(mrow, mcol)?;
-    let mut r = Matrix::zeros(mcol, mcol)?;
+    let mut q = Matrix::defaults(mrow, mcol)?;
+    let mut r = Matrix::defaults(mcol, mcol)?;
 
     for row in 1..=mrow {
         for col in 1..=mcol {
