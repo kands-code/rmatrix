@@ -4,8 +4,8 @@
 
 use crate::error::IResult;
 use crate::matrix::Matrix;
-use crate::num::number::Equal;
-use crate::num::number::{Number, One, Zero};
+use crate::num::number::IEqual;
+use crate::num::number::{INumber, IOne, IZero};
 use crate::utils::common::points;
 
 /// predicate whether a matrix is ​​square
@@ -45,7 +45,7 @@ where
 /// ```
 pub fn is_symmetric_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
-    T: Clone + Equal,
+    T: Clone + IEqual,
 {
     if is_square_matrix(mat) {
         let mut is_symmetric = true;
@@ -77,7 +77,7 @@ where
 /// ```
 pub fn is_upper_triangle_matrix<T>(mat: &Matrix<T>) -> bool
 where
-    T: Clone + Zero,
+    T: Clone + IZero,
 {
     points(|r, c| (r, c), mat.row(), mat.column())
         .iter()
@@ -104,7 +104,7 @@ where
 /// ```
 pub fn is_lower_triangle_matrix<T>(mat: &Matrix<T>) -> bool
 where
-    T: Clone + Zero,
+    T: Clone + IZero,
 {
     points(|r, c| (r, c), mat.row(), mat.column())
         .iter()
@@ -131,7 +131,7 @@ where
 /// ```
 pub fn is_diagonal_matrix<T>(mat: &Matrix<T>) -> bool
 where
-    T: Clone + Zero,
+    T: Clone + IZero,
 {
     points(|r, c| (r, c), mat.row(), mat.column())
         .iter()
@@ -158,7 +158,7 @@ where
 /// ```
 pub fn is_identity_matrix<T>(mat: &Matrix<T>) -> bool
 where
-    T: Clone + Zero + One,
+    T: Clone + IZero + IOne,
 {
     points(|r, c| (r, c), mat.row(), mat.column())
         .iter()
@@ -193,7 +193,7 @@ where
 /// ```
 pub fn is_orthogonal_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
-    T: Number,
+    T: INumber,
 {
     let transposed: Matrix<T> = mat.transpose()?;
 
@@ -224,7 +224,7 @@ where
 /// ```
 pub fn is_unitary_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
-    T: Number,
+    T: INumber,
 {
     let transposed: Matrix<T> = mat.conjugate_transpose()?;
 
@@ -256,7 +256,7 @@ where
 /// ```
 pub fn is_hermitian_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
-    T: Number,
+    T: INumber,
 {
     Ok(mat.equal(&mat.conjugate_transpose()?))
 }
@@ -278,7 +278,7 @@ where
 /// ```
 pub fn is_normal_matrix<T>(mat: &Matrix<T>) -> IResult<bool>
 where
-    T: Number,
+    T: INumber,
 {
     Ok(mat
         .clone()

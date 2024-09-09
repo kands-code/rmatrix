@@ -8,8 +8,8 @@
 
 use crate::error::IError;
 use crate::error::IResult;
-use crate::num::number::Equal;
-use crate::num::number::Number;
+use crate::num::number::IEqual;
+use crate::num::number::INumber;
 use crate::utils::predicate::is_square_matrix;
 use crate::utils::predicate::is_upper_triangle_matrix;
 use crate::vector::times_v;
@@ -146,8 +146,12 @@ impl<T> Matrix<T> {
     }
 
     /// convert index into inner index
-    pub(crate) const fn to_inner_index(mcol: usize, row: usize, col: usize) -> usize {
-        (row - 1) * mcol + col - 1
+    pub(crate) const fn to_inner_index(
+        matrix_column: usize,
+        row_index: usize,
+        column_index: usize,
+    ) -> usize {
+        (row_index - 1) * matrix_column + column_index - 1
     }
 
     /// get the inner data of the matrix
@@ -155,7 +159,7 @@ impl<T> Matrix<T> {
     /// ```rust
     /// # use rmatrix_ks::error::IResult;
     /// # use rmatrix_ks::matrix::Matrix;
-    /// use rmatrix_ks::num::number::Equal;
+    /// use rmatrix_ks::num::number::IEqual;
     /// # fn main() -> IResult<()> {
     /// let v = vec![1.2f32, 0.9f32, 0.7f32, 0.5f32];
     /// let m = Matrix::<f32>::create(2, 2, v.clone())?;
@@ -179,16 +183,16 @@ impl<T> Matrix<T> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_element(&self, row: usize, col: usize) -> IResult<&T> {
-        if row == 0 || col == 0 {
-            Err(IError::OutOfBoundary(row, col))
+    pub fn get_element(&self, row_index: usize, column_index: usize) -> IResult<&T> {
+        if row_index == 0 || column_index == 0 {
+            Err(IError::OutOfBoundary(row_index, column_index))
         } else {
             match self
                 .get_inner()
-                .nth(Self::to_inner_index(self.column(), row, col))
+                .nth(Self::to_inner_index(self.column(), row_index, column_index))
             {
                 Some(element) => Ok(element),
-                None => Err(IError::OutOfBoundary(row, col)),
+                None => Err(IError::OutOfBoundary(row_index, column_index)),
             }
         }
     }
@@ -206,17 +210,25 @@ impl<T> Matrix<T> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn set_element(&mut self, row: usize, col: usize, replace: T) -> IResult<()> {
-        if row == 0 || col == 0 {
-            Err(IError::OutOfBoundary(row, col))
+    pub fn set_element(
+        &mut self,
+        row_index: usize,
+        column_index: usize,
+        replace: T,
+    ) -> IResult<()> {
+        if row_index == 0 || column_index == 0 {
+            Err(IError::OutOfBoundary(row_index, column_index))
         } else {
-            let mcol = self.column();
-            match self.inner.get_mut(Self::to_inner_index(mcol, row, col)) {
+            let matrix_column = self.column();
+            match self
+                .inner
+                .get_mut(Self::to_inner_index(matrix_column, row_index, column_index))
+            {
                 Some(element) => {
                     *element = replace;
                     Ok(())
                 }
-                None => Err(IError::OutOfBoundary(row, col)),
+                None => Err(IError::OutOfBoundary(row_index, column_index)),
             }
         }
     }
@@ -234,13 +246,13 @@ impl<T> Matrix<T> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_row(&self, row: usize) -> IResult<RowVector<&T>> {
-        if row > self.row() {
-            Err(IError::OutOfBoundary(row, 1))
+    pub fn get_row(&self, row_index: usize) -> IResult<RowVector<&T>> {
+        if row_index > self.row() {
+            Err(IError::OutOfBoundary(row_index, 1))
         } else {
             let mut nth_row = Vec::with_capacity(self.column());
-            for c in 1..=self.column() {
-                nth_row.push(self.get_element(row, c)?);
+            for column_index in 1..=self.column() {
+                nth_row.push(self.get_element(row_index, column_index)?);
             }
             RowVector::<&T>::create(1, self.column(), nth_row)
         }
@@ -255,19 +267,19 @@ impl<T> Matrix<T> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
     /// // {{2i8, 5i8}}
-    /// let _ = mat.get_col(2)?;
+    /// let _ = mat.get_column(2)?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_col(&self, col: usize) -> IResult<ColumnVector<&T>> {
-        if col > self.column() {
-            Err(IError::OutOfBoundary(1, col))
+    pub fn get_column(&self, column_index: usize) -> IResult<ColumnVector<&T>> {
+        if column_index > self.column() {
+            Err(IError::OutOfBoundary(1, column_index))
         } else {
-            let mut nth_col = Vec::with_capacity(self.column());
-            for r in 1..=self.row() {
-                nth_col.push(self.get_element(r, col)?);
+            let mut nth_column = Vec::with_capacity(self.column());
+            for row_index in 1..=self.row() {
+                nth_column.push(self.get_element(row_index, column_index)?);
             }
-            ColumnVector::<&T>::create(self.row(), 1, nth_col)
+            ColumnVector::<&T>::create(self.row(), 1, nth_column)
         }
     }
 
@@ -278,25 +290,31 @@ impl<T> Matrix<T> {
     /// # use rmatrix_ks::error::IResult;
     /// # fn main() -> IResult<()> {
     /// // {{1i32, 0i32}, {0i32, 2i32}}
-    /// let _: Matrix<i32> = Matrix::diag(2, 2, vec![1, 2])?;
+    /// let _: Matrix<i32> = Matrix::diagonal(2, 2, vec![1, 2])?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn diag(row: usize, col: usize, data: Vec<T>) -> IResult<Self>
+    pub fn diagonal(row_size: usize, column_size: usize, data: Vec<T>) -> IResult<Self>
     where
         T: std::clone::Clone + std::default::Default,
     {
-        if data.len() < row.min(col) {
-            Err(IError::IncompatibleSizeError((row, col), data.len()))
+        if data.len() < row_size.min(column_size) {
+            Err(IError::IncompatibleSizeError(
+                (row_size, column_size),
+                data.len(),
+            ))
         } else {
-            let mut diag_mat = Self::defaults(row, col)?;
-            for index in 1..=row.min(col) {
+            let mut diagonal_matrix = Self::defaults(row_size, column_size)?;
+            for index in 1..=row_size.min(column_size) {
                 match data.get(index - 1) {
-                    Some(v) => diag_mat.set_element(index, index, v.clone()),
-                    None => Err(IError::IncompatibleSizeError((row, col), data.len())),
+                    Some(v) => diagonal_matrix.set_element(index, index, v.clone()),
+                    None => Err(IError::IncompatibleSizeError(
+                        (row_size, column_size),
+                        data.len(),
+                    )),
                 }?;
             }
-            Ok(diag_mat)
+            Ok(diagonal_matrix)
         }
     }
 
@@ -308,17 +326,17 @@ impl<T> Matrix<T> {
     /// # fn main() -> IResult<()> {
     /// // {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}
     /// let mat: Matrix<i8> = Matrix::create(2, 3, vec![1, 2, 3, 4, 5, 6])?;
-    /// assert_eq!(vec![&1i8, &5i8], mat.get_diag()?);
+    /// assert_eq!(vec![&1i8, &5i8], mat.get_diagonal()?);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_diag(&self) -> IResult<Vec<&T>> {
+    pub fn get_diagonal(&self) -> IResult<Vec<&T>> {
         let edge: usize = self.row().min(self.column());
-        let mut diag = Vec::with_capacity(edge);
-        for i in 1..=edge {
-            diag.push(self.get_element(i, i)?);
+        let mut diagonal = Vec::with_capacity(edge);
+        for index in 1..=edge {
+            diagonal.push(self.get_element(index, index)?);
         }
-        Ok(diag)
+        Ok(diagonal)
     }
 
     /// transpose a matrix
@@ -341,9 +359,9 @@ impl<T> Matrix<T> {
         T: std::clone::Clone,
     {
         let mut transposed = Vec::with_capacity(self.row() * self.column());
-        for c in 1..=self.column() {
-            for r in 1..=self.row() {
-                transposed.push(self.get_element(r, c)?.clone());
+        for column_index in 1..=self.column() {
+            for row_index in 1..=self.row() {
+                transposed.push(self.get_element(row_index, column_index)?.clone());
             }
         }
         Matrix::<T>::create(self.column(), self.row(), transposed)
@@ -378,7 +396,7 @@ impl<T> Matrix<T> {
 /// implementation for matrix which element type is a Number
 impl<T> Matrix<T>
 where
-    T: Number,
+    T: crate::num::number::INumber,
 {
     /// create an identity matrix with size row by col
     ///
@@ -391,10 +409,10 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn eyes(row: usize, col: usize) -> IResult<Self> {
-        let mut mat = Self::defaults(row, col)?;
-        for i in 1..=row.min(col) {
-            mat.set_element(i, i, T::one())?;
+    pub fn eyes(row_size: usize, column_size: usize) -> IResult<Self> {
+        let mut mat = Self::defaults(row_size, column_size)?;
+        for index in 1..=row_size.min(column_size) {
+            mat.set_element(index, index, T::one())?;
         }
         Ok(mat)
     }
@@ -412,16 +430,16 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn rand<R>(row: usize, col: usize, range: R) -> IResult<Self>
+    pub fn rand<R>(row_size: usize, column_size: usize, range: R) -> IResult<Self>
     where
         R: std::ops::RangeBounds<T> + SampleRange<T> + Clone,
-        T: Number + std::cmp::PartialOrd + SampleUniform,
+        T: std::cmp::PartialOrd + SampleUniform + crate::num::number::INumber,
         Standard: Distribution<T>,
     {
         Self::create(
-            row,
-            col,
-            (1..=row * col)
+            row_size,
+            column_size,
+            (1..=row_size * column_size)
                 .map(|_| rand::thread_rng().gen_range(range.clone()))
                 .collect(),
         )
@@ -446,12 +464,12 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_change(row: usize, i: usize, j: usize) -> IResult<Self> {
-        let mut mat = Self::eyes(row, row)?;
-        mat.set_element(i, i, T::zero())?;
-        mat.set_element(j, j, T::zero())?;
-        mat.set_element(i, j, T::one())?;
-        mat.set_element(j, i, T::one())?;
+    pub fn p_change(edge: usize, index_i: usize, index_j: usize) -> IResult<Self> {
+        let mut mat = Self::eyes(edge, edge)?;
+        mat.set_element(index_i, index_i, T::zero())?;
+        mat.set_element(index_j, index_j, T::zero())?;
+        mat.set_element(index_i, index_j, T::one())?;
+        mat.set_element(index_j, index_i, T::one())?;
         Ok(mat)
     }
 
@@ -474,9 +492,9 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_muls(row: usize, i: usize, k: T) -> IResult<Self> {
-        let mut mat = Self::eyes(row, row)?;
-        mat.set_element(i, i, k)?;
+    pub fn p_muls(edge: usize, index: usize, value: T) -> IResult<Self> {
+        let mut mat = Self::eyes(edge, edge)?;
+        mat.set_element(index, index, value)?;
         Ok(mat)
     }
 
@@ -500,9 +518,9 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn p_add(row: usize, i: usize, j: usize, k: T) -> IResult<Self> {
-        let mut mat = Self::eyes(row, row)?;
-        mat.set_element(j, i, k)?;
+    pub fn p_add(row_size: usize, index_i: usize, index_j: usize, value: T) -> IResult<Self> {
+        let mut mat = Self::eyes(row_size, row_size)?;
+        mat.set_element(index_j, index_i, value)?;
         Ok(mat)
     }
 
@@ -561,21 +579,21 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn times(self, rhs: Self) -> IResult<Self> {
+    pub fn times(self, rhs: Matrix<T>) -> IResult<Matrix<T>> {
         if self.column() != rhs.row() {
             Err(IError::IncompatibleShape(
                 (self.column(), rhs.column()),
                 (rhs.row(), rhs.column()),
             ))
         } else {
-            let mut product = Self::create(
+            let mut product = Matrix::<T>::create(
                 self.row(),
                 rhs.column(),
                 vec![T::zero(); self.row() * rhs.column()],
             )?;
             for c in 1..=self.column() {
                 product = product.plus(times_v(
-                    self.get_col(c)?.map(&mut |e| e.clone())?,
+                    self.get_column(c)?.map(&mut |e| e.clone())?,
                     rhs.get_row(c)?.map(&mut |e| e.clone())?,
                 )?)?;
             }
@@ -672,7 +690,7 @@ where
 /// Matrix operations
 impl<T> Matrix<T>
 where
-    T: Number,
+    T: INumber,
 {
     /// get the trace of a matrix
     ///
@@ -691,7 +709,7 @@ where
             self.get_inner().fold(T::zero(), |acc, e| acc + e.clone())
         } else {
             // else m.trace() = m.diag().sum()
-            self.get_diag()?
+            self.get_diagonal()?
                 .iter()
                 .fold(T::zero(), |acc, &e| acc + e.clone())
         };
@@ -735,16 +753,16 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    pub fn submatrix(&self, row: usize, col: usize) -> IResult<Self> {
+    pub fn submatrix(&self, row_index: usize, column_index: usize) -> IResult<Self> {
         let mut submat = Matrix::defaults(self.row() - 1, self.column() - 1)?;
-        let mut row_index = 1;
-        for r in (1..=self.row()).filter(|e| e != &row) {
-            let mut col_index = 1;
-            for c in (1..=self.column()).filter(|e| e != &col) {
-                submat.set_element(row_index, col_index, self.get_element(r, c)?.clone())?;
-                col_index = col_index + 1;
+        let mut row = 1;
+        for r in (1..=self.row()).filter(|e| e != &row_index) {
+            let mut column = 1;
+            for c in (1..=self.column()).filter(|e| e != &column_index) {
+                submat.set_element(row, column, self.get_element(r, c)?.clone())?;
+                column = column + 1;
             }
-            row_index = row_index + 1;
+            row = row + 1;
         }
         Ok(submat)
     }
@@ -770,13 +788,13 @@ where
     pub fn adjugate(&self) -> IResult<Self> {
         if is_square_matrix(self) {
             let mut mat = Self::defaults(self.row(), self.column())?;
-            for row in 1..=self.row() {
-                for col in 1..=self.column() {
+            for row_index in 1..=self.row() {
+                for column_index in 1..=self.column() {
                     mat.set_element(
-                        row,
-                        col,
-                        self.submatrix(row, col)?.determinant()?
-                            * if (row + col) & 1 == 1 {
+                        row_index,
+                        column_index,
+                        self.submatrix(row_index, column_index)?.determinant()?
+                            * if (row_index + column_index) & 1 == 1 {
                                 -T::one()
                             } else {
                                 T::one()
@@ -974,7 +992,7 @@ where
 /// the simplest format print
 impl<T> std::fmt::Display for Matrix<T>
 where
-    T: Clone + std::fmt::Display,
+    T: std::clone::Clone + std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", "\u{007b}")?;
@@ -1000,15 +1018,15 @@ where
     }
 }
 
-impl<T> crate::num::number::Equal for Matrix<T>
+impl<T> crate::num::number::IEqual for Matrix<T>
 where
-    T: crate::num::number::Equal,
+    T: crate::num::number::IEqual,
 {
     /// equlity check for matrix
     ///
     /// ```rust
     /// # use rmatrix_ks::error::IResult;
-    /// use rmatrix_ks::num::number::Equal;
+    /// use rmatrix_ks::num::number::IEqual;
     /// # use rmatrix_ks::matrix::Matrix;
     /// # fn main() -> IResult<()> {
     /// let m1 = Matrix::<f32>::create(2, 2, vec![1.2f32, 0.9f32, 0.7f32, 0.5f32])?;
@@ -1031,7 +1049,7 @@ where
 /// a matrix equals to itself
 impl<T> std::cmp::PartialEq for Matrix<T>
 where
-    T: crate::num::number::Equal,
+    T: crate::num::number::IEqual,
 {
     fn eq(&self, rhs: &Self) -> bool {
         self.equal(rhs)

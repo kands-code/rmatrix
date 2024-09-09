@@ -8,22 +8,22 @@
 
 use crate::error::IError;
 use crate::error::IResult;
-use crate::num::number::Integeral;
-use crate::num::number::Number;
-use crate::num::number::One;
-use crate::num::number::Zero;
+use crate::num::number::IIntegeral;
+use crate::num::number::INumber;
+use crate::num::number::IOne;
+use crate::num::number::IZero;
 
-use super::number::Equal;
+use super::number::IEqual;
 
 /// rational number
 #[derive(std::clone::Clone, std::cmp::PartialEq, std::fmt::Debug)]
 #[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
-pub struct Rational<T: Integeral> {
+pub struct Rational<T: IIntegeral> {
     pub numerator: T,
     pub denominator: T,
 }
 
-impl<T: Integeral> Rational<T> {
+impl<T: IIntegeral> Rational<T> {
     /// create a rational number
     ///
     /// ```rust
@@ -83,7 +83,7 @@ macro_rules! rat {
     };
 }
 
-impl<T: Integeral> std::fmt::Display for Rational<T> {
+impl<T: IIntegeral> std::fmt::Display for Rational<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // 0/0 means nan
         let refined = match self.refine() {
@@ -94,7 +94,7 @@ impl<T: Integeral> std::fmt::Display for Rational<T> {
     }
 }
 
-impl<T: Integeral> std::ops::Neg for Rational<T> {
+impl<T: IIntegeral> std::ops::Neg for Rational<T> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -102,7 +102,7 @@ impl<T: Integeral> std::ops::Neg for Rational<T> {
     }
 }
 
-impl<T: Integeral> std::ops::Add for Rational<T> {
+impl<T: IIntegeral> std::ops::Add for Rational<T> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -113,13 +113,13 @@ impl<T: Integeral> std::ops::Add for Rational<T> {
     }
 }
 
-impl<T: Integeral> std::iter::Sum for Rational<T> {
+impl<T: IIntegeral> std::iter::Sum for Rational<T> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Self::zero(), |acc, e| acc + e)
     }
 }
 
-impl<T: Integeral> std::ops::Sub for Rational<T> {
+impl<T: IIntegeral> std::ops::Sub for Rational<T> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -130,7 +130,7 @@ impl<T: Integeral> std::ops::Sub for Rational<T> {
     }
 }
 
-impl<T: Integeral> std::ops::Mul for Rational<T> {
+impl<T: IIntegeral> std::ops::Mul for Rational<T> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -140,7 +140,7 @@ impl<T: Integeral> std::ops::Mul for Rational<T> {
     }
 }
 
-impl<T: Integeral> Default for Rational<T> {
+impl<T: IIntegeral> Default for Rational<T> {
     fn default() -> Self {
         Self {
             numerator: T::zero(),
@@ -149,7 +149,7 @@ impl<T: Integeral> Default for Rational<T> {
     }
 }
 
-impl<T: Integeral> Equal for Rational<T> {
+impl<T: IIntegeral> IEqual for Rational<T> {
     fn equal(&self, rhs: &Self) -> bool {
         let self_refined = match self.refine() {
             Ok(v) => v,
@@ -165,13 +165,13 @@ impl<T: Integeral> Equal for Rational<T> {
     }
 }
 
-impl<T: Integeral> Zero for Rational<T> {
+impl<T: IIntegeral> IZero for Rational<T> {
     fn is_zero(&self) -> bool {
         self.numerator.is_zero() && !self.denominator.is_zero()
     }
 }
 
-impl<T: Integeral> One for Rational<T> {
+impl<T: IIntegeral> IOne for Rational<T> {
     fn one() -> Self {
         Self::create(T::one(), T::one())
     }
@@ -182,7 +182,7 @@ impl<T: Integeral> One for Rational<T> {
 }
 
 /// rational number is a  number
-impl<T: Integeral> Number for Rational<T> {
+impl<T: IIntegeral> INumber for Rational<T> {
     fn abs(self) -> Self {
         Self::create(self.numerator.abs(), self.denominator.abs())
     }

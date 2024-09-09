@@ -5,7 +5,7 @@
 use crate::error::IError;
 use crate::error::IResult;
 use crate::matrix::Matrix;
-use crate::num::number::Zero;
+use crate::num::number::IZero;
 
 /// generate points of matrix
 ///
@@ -46,7 +46,7 @@ pub fn points<T, R>(
 /// ```
 pub fn horizontal_concat<T>(mat: &Matrix<T>, rhs: &Matrix<T>) -> IResult<Matrix<T>>
 where
-    T: Clone + Zero,
+    T: Clone + IZero,
 {
     if mat.row() != rhs.row() {
         Err(IError::IncompatibleShape(

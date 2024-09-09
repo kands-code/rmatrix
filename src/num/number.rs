@@ -6,13 +6,13 @@ use crate::error::IError;
 use crate::error::IResult;
 
 /// concept of equality
-pub trait Equal {
+pub trait IEqual {
     /// check whether two element are EQUAL
     fn equal(&self, rhs: &Self) -> bool;
 }
 
 /// concept of zero
-pub trait Zero
+pub trait IZero
 where
     Self: Default,
 {
@@ -26,7 +26,7 @@ where
 }
 
 /// concept of one
-pub trait One {
+pub trait IOne {
     /// the ONE of the number type
     fn one() -> Self;
 
@@ -39,37 +39,31 @@ pub trait One {
 /// # Example
 ///
 /// ```rust,ignore
-/// impl Equal for f32 {
+/// impl IEqual for f32 {
 ///     fn equal(&self, rhs: &Self) -> bool {
 ///         (self - rhs).is_zero()
 ///     }
 /// }
-///
-/// impl Zero for f32 {
+/// impl IZero for f32 {
 ///     fn is_zero(&self) -> bool {
 ///         self.abs() < f32::EPSILON
 ///     }
 /// }
-///
-/// impl One for f32 {
+/// impl IOne for f32 {
 ///     fn one() -> Self {
 ///         1.0f32
 ///     }
-///
 ///     fn is_one(&self) -> bool {
 ///         (self - Self::one()).is_zero()
 ///     }
 /// }
-///
-/// impl Number for f32 {
+/// impl INumber for f32 {
 ///     fn abs(self) -> Self {
 ///         f32::abs(self)
 ///     }
-///
 ///     fn conjugate(self) -> Self {
 ///         self
 ///     }
-///
 ///     fn ndiv(self, rhs: Self) -> Result<Self> {
 ///         if rhs.is_zero() {
 ///             Err(Error::DividedByZero)
@@ -79,7 +73,7 @@ pub trait One {
 ///     }
 /// }
 /// ```
-pub trait Number: Equal + Zero + One
+pub trait INumber: IEqual + IZero + IOne
 where
     Self: std::clone::Clone
         + std::default::Default
@@ -101,19 +95,20 @@ where
     fn ndiv(self, rhs: Self) -> IResult<Self>;
 }
 
-impl Equal for i32 {
+/// implementation of equal trait for i32
+impl IEqual for i32 {
     fn equal(&self, rhs: &Self) -> bool {
         self == rhs
     }
 }
-
-impl Zero for i32 {
+/// implementation of zero trait for i32
+impl IZero for i32 {
     fn is_zero(&self) -> bool {
         self == &0i32
     }
 }
-
-impl One for i32 {
+/// implementation of one trait for i32
+impl IOne for i32 {
     fn one() -> Self {
         1i32
     }
@@ -122,8 +117,8 @@ impl One for i32 {
         self == &1i32
     }
 }
-
-impl Number for i32 {
+/// implementation of number trait for i32
+impl INumber for i32 {
     fn abs(self) -> Self {
         i32::abs(self)
     }
@@ -141,31 +136,31 @@ impl Number for i32 {
     }
 }
 
-impl Equal for f32 {
+/// implementation of equal trait for f32
+impl IEqual for f32 {
     fn equal(&self, rhs: &Self) -> bool {
         (self - rhs).is_zero()
     }
 }
-
-impl Zero for f32 {
+/// implementation of zero trait for f32
+impl IZero for f32 {
     /// if a f32 number smaller than sqrt(eps),
     /// then we can say it is zero
     fn is_zero(&self) -> bool {
         self.abs() < f32::EPSILON.sqrt()
     }
 }
-
-impl One for f32 {
+/// implementation of one trait for f32
+impl IOne for f32 {
     fn one() -> Self {
         1.0f32
     }
-
     fn is_one(&self) -> bool {
         (self - Self::one()).is_zero()
     }
 }
-
-impl Number for f32 {
+/// implementation of number trait for f32
+impl INumber for f32 {
     fn abs(self) -> Self {
         f32::abs(self)
     }
@@ -184,9 +179,9 @@ impl Number for f32 {
 }
 
 /// concept for integeral number
-pub trait Integeral
+pub trait IIntegeral: INumber
 where
-    Self: Number + std::cmp::PartialOrd + std::ops::Rem<Output = Self>,
+    Self: std::cmp::PartialOrd + std::ops::Rem<Output = Self>,
 {
     /// greatest common divisor
     fn gcd(&self, rhs: &Self) -> Self {
@@ -208,13 +203,10 @@ where
     }
 }
 
-impl Integeral for i32 {}
+impl IIntegeral for i32 {}
 
 /// concept for floating point number
-pub trait Fractional
-where
-    Self: Number,
-{
+pub trait IFractional: INumber {
     /// square root for fractional
     fn nsqrt(self) -> IResult<Self>;
 
@@ -222,7 +214,7 @@ where
     fn from_usize(size: usize) -> Self;
 }
 
-impl Fractional for f32 {
+impl IFractional for f32 {
     fn nsqrt(self) -> IResult<Self> {
         Ok(self.sqrt())
     }

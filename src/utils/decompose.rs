@@ -5,8 +5,8 @@
 use crate::error::IError;
 use crate::error::IResult;
 use crate::matrix::Matrix;
-use crate::num::number::Fractional;
-use crate::num::number::Number;
+use crate::num::number::IFractional;
+use crate::num::number::INumber;
 use crate::utils::predicate::is_upper_triangle_matrix;
 use crate::vector::euclid_norm;
 use crate::vector::identity_vector_column;
@@ -35,10 +35,10 @@ use crate::vector::ColumnVector;
 /// ```
 pub fn plu_decomposition<T>(mat: Matrix<T>) -> IResult<(Matrix<T>, Matrix<T>, Matrix<T>)>
 where
-    T: Number,
+    T: INumber,
 {
     let eliminates = mat.row_eliminate()?;
-    if eliminates.2.get_diag()?.iter().any(|e| e.is_zero()) {
+    if eliminates.2.get_diagonal()?.iter().any(|e| e.is_zero()) {
         Err(IError::SingularMatrix)
     } else {
         let (p, l, _, _) = eliminates.0.times(eliminates.1)?.row_eliminate()?;
@@ -57,7 +57,7 @@ where
 /// ```rust
 /// # use rmatrix_ks::error::IResult;
 /// # use rmatrix_ks::matrix::Matrix;
-/// # use rmatrix_ks::num::number::Equal;
+/// # use rmatrix_ks::num::number::IEqual;
 /// # use rmatrix_ks::utils::decompose::qr_decomposition;
 /// # fn main() -> IResult<()> {
 /// let mat = Matrix::<f32>::create(3, 3, vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
@@ -69,7 +69,7 @@ where
 /// ```
 pub fn qr_decomposition<T>(mat: Matrix<T>) -> IResult<(Matrix<T>, Matrix<T>)>
 where
-    T: Fractional + std::cmp::PartialOrd,
+    T: IFractional + std::cmp::PartialOrd,
 {
     let mrow = mat.row();
     let mcol = mat.column();
@@ -79,7 +79,7 @@ where
 
     for index in 1..=mcol.min(mrow) {
         // an is sub-column-vector for mat
-        let mut an = r.get_col(index)?.map(&mut |e| e.clone())?;
+        let mut an = r.get_column(index)?.map(&mut |e| e.clone())?;
         let ann = r.get_element(index, index)?.clone();
         // remove element over index
         for row in 1..=((index - 1).min(mrow)) {
@@ -120,7 +120,7 @@ where
 /// ```rust
 /// # use rmatrix_ks::error::IResult;
 /// # use rmatrix_ks::matrix::Matrix;
-/// # use rmatrix_ks::num::number::Equal;
+/// # use rmatrix_ks::num::number::IEqual;
 /// # use rmatrix_ks::utils::decompose::qr_decomposition_reduced;
 /// # fn main() -> IResult<()> {
 /// let mat = Matrix::<f32>::create(3, 2, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])?;
@@ -133,7 +133,7 @@ where
 /// ```
 pub fn qr_decomposition_reduced<T>(mat: Matrix<T>) -> IResult<(Matrix<T>, Matrix<T>)>
 where
-    T: Clone + Fractional + std::cmp::PartialOrd,
+    T: Clone + IFractional + std::cmp::PartialOrd,
 {
     let (q, r) = qr_decomposition(mat)?;
     let mut reduced_r = Matrix::defaults(r.rank()?, r.column())?;
@@ -159,7 +159,7 @@ where
 /// ```rust
 /// # use rmatrix_ks::error::IResult;
 /// # use rmatrix_ks::matrix::Matrix;
-/// # use rmatrix_ks::num::number::Equal;
+/// # use rmatrix_ks::num::number::IEqual;
 /// # use rmatrix_ks::utils::decompose::qr_decomposition_gs;
 /// # fn main() -> IResult<()> {
 /// let mat = Matrix::<f32>::create(3, 3, vec![1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0])?;
@@ -170,13 +170,13 @@ where
 /// ```
 pub fn qr_decomposition_gs<T>(mat: Matrix<T>) -> IResult<(Matrix<T>, Matrix<T>)>
 where
-    T: Fractional,
+    T: IFractional,
 {
     let mrow = mat.row();
     let mcol = mat.column();
     let mut an = Vec::with_capacity(mcol);
     for col in 1..=mcol {
-        an.push(mat.get_col(col)?);
+        an.push(mat.get_column(col)?);
     }
     let mut un: Vec<ColumnVector<T>> = Vec::with_capacity(mcol);
     let mut en: Vec<ColumnVector<T>> = Vec::with_capacity(mcol);

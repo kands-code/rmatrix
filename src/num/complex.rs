@@ -6,22 +6,22 @@
 
 use crate::error::IError;
 use crate::error::IResult;
-use crate::num::number::Fractional;
-use crate::num::number::Number;
-use crate::num::number::One;
-use crate::num::number::Zero;
+use crate::num::number::IFractional;
+use crate::num::number::INumber;
+use crate::num::number::IOne;
+use crate::num::number::IZero;
 
-use super::number::Equal;
+use super::number::IEqual;
 
 /// complex number
 #[derive(std::clone::Clone, std::cmp::PartialEq, std::fmt::Debug)]
 #[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
-pub struct Complex<T: Number> {
+pub struct Complex<T: INumber> {
     pub real: T,
     pub imag: T,
 }
 
-impl<T: Number> Complex<T> {
+impl<T: INumber> Complex<T> {
     /// create a complex number
     ///
     /// ```rust
@@ -52,7 +52,7 @@ impl<T: Number> Complex<T> {
     /// ```
     pub fn norm(&self) -> IResult<T>
     where
-        T: Fractional,
+        T: IFractional,
     {
         (self.real.clone() * self.real.clone() + self.imag.clone() * self.imag.clone()).nsqrt()
     }
@@ -66,13 +66,13 @@ macro_rules! cmplx {
     };
 }
 
-impl<T: Number> std::fmt::Display for Complex<T> {
+impl<T: INumber> std::fmt::Display for Complex<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "<{}, {}>", self.real, self.imag)
     }
 }
 
-impl<T: Number> std::ops::Neg for Complex<T> {
+impl<T: INumber> std::ops::Neg for Complex<T> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -80,7 +80,7 @@ impl<T: Number> std::ops::Neg for Complex<T> {
     }
 }
 
-impl<T: Number> std::ops::Add for Complex<T> {
+impl<T: INumber> std::ops::Add for Complex<T> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -88,13 +88,13 @@ impl<T: Number> std::ops::Add for Complex<T> {
     }
 }
 
-impl<T: Number> std::iter::Sum for Complex<T> {
+impl<T: INumber> std::iter::Sum for Complex<T> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Self::zero(), |acc, e| acc + e)
     }
 }
 
-impl<T: Number> std::ops::Sub for Complex<T> {
+impl<T: INumber> std::ops::Sub for Complex<T> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -102,7 +102,7 @@ impl<T: Number> std::ops::Sub for Complex<T> {
     }
 }
 
-impl<T: Number> std::ops::Mul for Complex<T> {
+impl<T: INumber> std::ops::Mul for Complex<T> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -113,7 +113,7 @@ impl<T: Number> std::ops::Mul for Complex<T> {
     }
 }
 
-impl<T: Number> Default for Complex<T> {
+impl<T: INumber> Default for Complex<T> {
     fn default() -> Self {
         Self {
             real: T::zero(),
@@ -122,19 +122,19 @@ impl<T: Number> Default for Complex<T> {
     }
 }
 
-impl<T: Number> Equal for Complex<T> {
+impl<T: INumber> IEqual for Complex<T> {
     fn equal(&self, rhs: &Self) -> bool {
         self.real.equal(&rhs.real) && self.imag.equal(&rhs.imag)
     }
 }
 
-impl<T: Number> Zero for Complex<T> {
+impl<T: INumber> IZero for Complex<T> {
     fn is_zero(&self) -> bool {
         self.real.is_zero() && self.imag.is_zero()
     }
 }
 
-impl<T: Number> One for Complex<T> {
+impl<T: INumber> IOne for Complex<T> {
     fn one() -> Self {
         Self::create(T::one(), T::zero())
     }
@@ -145,7 +145,7 @@ impl<T: Number> One for Complex<T> {
 }
 
 /// complex number is a  number
-impl<T: Number> Number for Complex<T> {
+impl<T: INumber> INumber for Complex<T> {
     /// absolute value for complex number
     ///
     /// not the norm of complex number
@@ -160,7 +160,7 @@ impl<T: Number> Number for Complex<T> {
     /// ```rust
     /// # use rmatrix_ks::cmplx;
     /// # use rmatrix_ks::num::complex::Complex;
-    /// # use rmatrix_ks::num::number::Number;
+    /// # use rmatrix_ks::num::number::INumber;
     /// # fn main() {
     /// let c = Complex::create(3.0f32, 4.0f32); // 3 + 4I
     /// assert_eq!(cmplx!(3.0f32, -4.0f32), c.conjugate());
@@ -184,13 +184,13 @@ impl<T: Number> Number for Complex<T> {
     }
 }
 
-impl<T: Fractional> Fractional for Complex<T> {
+impl<T: IFractional> IFractional for Complex<T> {
     /// one of the numeric value of sqrt(c)
     ///
     /// ```rust
     /// # use rmatrix_ks::error::IResult;
     /// # use rmatrix_ks::num::complex::Complex;
-    /// # use crate::rmatrix_ks::num::number::Fractional;
+    /// # use crate::rmatrix_ks::num::number::IFractional;
     /// # fn main() -> IResult<()> {
     /// let c = Complex::create(3.0f32, 4.0f32); // 3 + 4I
     /// // sqrt(3 + 4I) = 2 + 1I
@@ -199,9 +199,7 @@ impl<T: Fractional> Fractional for Complex<T> {
     /// # }
     /// ```
     fn nsqrt(self) -> IResult<Self> {
-        if self.real.is_zero() {
-            Ok(Complex::create(T::zero(), self.imag.nsqrt()?))
-        } else if self.imag.is_zero() {
+        if self.imag.is_zero() {
             Ok(Complex::create(self.real.nsqrt()?, T::zero()))
         } else {
             let real = self.real;

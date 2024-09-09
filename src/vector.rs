@@ -9,10 +9,6 @@
 use crate::error::IError;
 use crate::error::IResult;
 use crate::matrix::Matrix;
-use crate::num::number::Fractional;
-use crate::num::number::Number;
-use crate::num::number::One;
-use crate::num::number::Zero;
 
 /// type alias for row vector
 pub type RowVector<T> = Matrix<T>;
@@ -37,11 +33,11 @@ pub type ColumnVector<T> = Matrix<T>;
 /// # Ok(())
 /// # }
 /// ```
-pub fn identity_vector_row<T>(col: usize, index: usize) -> IResult<RowVector<T>>
+pub fn identity_vector_row<T>(column_size: usize, index: usize) -> IResult<RowVector<T>>
 where
-    T: Clone + Zero + One,
+    T: std::clone::Clone + std::default::Default + crate::num::number::IOne,
 {
-    let mut vector = RowVector::defaults(1, col)?;
+    let mut vector = RowVector::defaults(1, column_size)?;
     vector.set_element(1, index, T::one())?;
     Ok(vector)
 }
@@ -63,11 +59,11 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn identity_vector_column<T>(row: usize, index: usize) -> IResult<ColumnVector<T>>
+pub fn identity_vector_column<T>(row_size: usize, index: usize) -> IResult<ColumnVector<T>>
 where
-    T: Clone + Zero + One,
+    T: std::clone::Clone + std::default::Default + crate::num::number::IOne,
 {
-    let mut vector = ColumnVector::defaults(row, 1)?;
+    let mut vector = ColumnVector::defaults(row_size, 1)?;
     vector.set_element(index, 1, T::one())?;
     Ok(vector)
 }
@@ -87,25 +83,25 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn times_c<T>(vec1: ColumnVector<T>, vec2: ColumnVector<T>) -> IResult<ColumnVector<T>>
+pub fn times_c<T>(vector_a: ColumnVector<T>, vector_b: ColumnVector<T>) -> IResult<ColumnVector<T>>
 where
-    T: Number,
+    T: crate::num::number::INumber,
 {
-    if vec1.row() != 3 {
-        Err(IError::IncompatibleShape((3, 1), (vec1.row(), 1)))
-    } else if vec2.row() != 3 {
-        Err(IError::IncompatibleShape((3, 1), (vec2.row(), 1)))
+    if vector_a.row() != 3 {
+        Err(IError::IncompatibleShape((3, 1), (vector_a.row(), 1)))
+    } else if vector_b.row() != 3 {
+        Err(IError::IncompatibleShape((3, 1), (vector_b.row(), 1)))
     } else {
         ColumnVector::create(
             3,
             1,
             vec![
-                vec1.get_element(2, 1)?.clone() * vec2.get_element(3, 1)?.clone()
-                    - vec1.get_element(3, 1)?.clone() * vec2.get_element(2, 1)?.clone(),
-                vec1.get_element(3, 1)?.clone() * vec2.get_element(1, 1)?.clone()
-                    - vec1.get_element(1, 1)?.clone() * vec2.get_element(3, 1)?.clone(),
-                vec1.get_element(1, 1)?.clone() * vec2.get_element(2, 1)?.clone()
-                    - vec1.get_element(2, 1)?.clone() * vec2.get_element(1, 1)?.clone(),
+                vector_a.get_element(2, 1)?.clone() * vector_b.get_element(3, 1)?.clone()
+                    - vector_a.get_element(3, 1)?.clone() * vector_b.get_element(2, 1)?.clone(),
+                vector_a.get_element(3, 1)?.clone() * vector_b.get_element(1, 1)?.clone()
+                    - vector_a.get_element(1, 1)?.clone() * vector_b.get_element(3, 1)?.clone(),
+                vector_a.get_element(1, 1)?.clone() * vector_b.get_element(2, 1)?.clone()
+                    - vector_a.get_element(2, 1)?.clone() * vector_b.get_element(1, 1)?.clone(),
             ],
         )
     }
@@ -125,19 +121,19 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn times_d<T>(vec1: RowVector<T>, vec2: ColumnVector<T>) -> IResult<T>
+pub fn times_d<T>(vector_a: RowVector<T>, vector_b: ColumnVector<T>) -> IResult<T>
 where
-    T: Number,
+    T: crate::num::number::INumber,
 {
-    if vec1.column() != vec2.row() {
+    if vector_a.column() != vector_b.row() {
         Err(IError::IncompatibleShape(
-            (vec1.column(), 1),
-            (vec2.row(), 1),
+            (vector_a.column(), 1),
+            (vector_b.row(), 1),
         ))
     } else {
-        Ok(vec1
+        Ok(vector_a
             .get_inner()
-            .zip(vec2.get_inner())
+            .zip(vector_b.get_inner())
             .map(|(e1, e2)| e1.clone() * e2.clone())
             .sum())
     }
@@ -157,23 +153,26 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn convolution<T>(vec1: ColumnVector<T>, vec2: ColumnVector<T>) -> IResult<ColumnVector<T>>
+pub fn convolution<T>(
+    vector_a: ColumnVector<T>,
+    vector_b: ColumnVector<T>,
+) -> IResult<ColumnVector<T>>
 where
-    T: Number,
+    T: crate::num::number::INumber,
 {
-    let edge: usize = vec1.row() + vec2.row() - 1;
+    let edge: usize = vector_a.row() + vector_b.row() - 1;
     let mut conv: ColumnVector<T> = ColumnVector::defaults(edge, 1)?;
 
     for k in 1..=edge {
-        for i in 1..=(k.min(vec1.row())) {
+        for i in 1..=(k.min(vector_a.row())) {
             // k + 1 = i + j
             let j = k + 1 - i;
-            if (1..=vec2.row()).contains(&j) {
+            if (1..=vector_b.row()).contains(&j) {
                 conv.set_element(
                     k,
                     1,
                     conv.get_element(k, 1)?.clone()
-                        + vec1.get_element(i, 1)?.clone() * vec2.get_element(j, 1)?.clone(),
+                        + vector_a.get_element(i, 1)?.clone() * vector_b.get_element(j, 1)?.clone(),
                 )?;
             }
         }
@@ -204,7 +203,7 @@ where
 /// ```
 pub fn times_v<T>(vector_c: ColumnVector<T>, vector_r: RowVector<T>) -> IResult<Matrix<T>>
 where
-    T: Number,
+    T: crate::num::number::INumber,
 {
     let mut mat = Matrix::<T>::create(
         vector_c.row(),
@@ -237,11 +236,11 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn euclid_norm<T>(vc: ColumnVector<T>) -> IResult<T>
+pub fn euclid_norm<T>(column_vector: ColumnVector<T>) -> IResult<T>
 where
-    T: Fractional,
+    T: crate::num::number::IFractional,
 {
-    times_d(vc.conjugate_transpose()?, vc)?.nsqrt()
+    times_d(column_vector.conjugate_transpose()?, column_vector)?.nsqrt()
 }
 
 /// root mean square for a vector
@@ -256,10 +255,10 @@ where
 /// # Ok(())
 /// # }
 /// ```
-pub fn root_mean_square<T>(vc: ColumnVector<T>) -> IResult<T>
+pub fn root_mean_square<T>(column_vector: ColumnVector<T>) -> IResult<T>
 where
-    T: Fractional,
+    T: crate::num::number::IFractional,
 {
-    let row = vc.row();
-    euclid_norm(vc)?.ndiv(T::from_usize(row).nsqrt()?)
+    let row = column_vector.row();
+    euclid_norm(column_vector)?.ndiv(T::from_usize(row).nsqrt()?)
 }
