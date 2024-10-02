@@ -1,5 +1,7 @@
 #![feature(doc_cfg)]
 
+//! # rmatrix_ks
+//!
 //! [![github]](https://github.com/kands-code/rmatrix)
 //! [![crates-io]](https://crates.io/crates/rmatrix_ks)
 //! [![docs-rs]](https://docs.rs/rmatrix_ks)
@@ -8,24 +10,14 @@
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs
 //!
+//! This library is used for numerical computing,
+//! mainly matrix operations as well as numerical ordinary differential equations
+//! and some optimization problems.
+//!
 //! ## Warning
 //!
-//! used unstable features
-//! - `doc_cfg`
-//!
-//! # Description
-//!
-//! This library is for matrix computation,
-//! just for learning and self using.
-//!
-//! There are some optional features
-//! - rand_mat: randomly generated matrices
-//! - serde_mat: ability to read matrices using a specific file format
-//!
-//! By default, `rand_mat` feature is enabled.
+//! Unstable features used:
+//! - doc_cfg
 
-pub mod error;
 pub mod matrix;
-pub mod num;
-pub mod utils;
-pub mod vector;
+pub mod number;

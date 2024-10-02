@@ -1,7 +1,10 @@
-use rmatrix_ks::{cmplx, error::IResult, num::complex::Complex, num::number::IFractional};
-fn main() -> IResult<()> {
-    let x = cmplx!(1.0f32, 0.0f32);
-    println!("{}", x.nsqrt()?);
+use rmatrix_ks::number::{instances::integer::Integer, traits::zero::Zero};
 
-    Ok(())
+fn main() {
+    let a = Integer::zero();
+    assert!(a.is_zero());
+    let Some(b) = Integer::of(true, &[1, 6]) else {
+        unreachable!();
+    };
+    assert!(!b.is_zero());
 }
