@@ -14,6 +14,7 @@ use crate::number::traits::zero::Zero;
 use crate::number::utils::{from_integeral, gcd};
 
 #[derive(Clone)]
+#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Ratio<I: Integral> {
     pub numerator: I,
     pub denominator: I,
