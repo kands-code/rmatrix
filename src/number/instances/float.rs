@@ -33,7 +33,7 @@ impl Zero for Float {
     }
 
     fn is_zero(&self) -> bool {
-        self.inner <= f32::EPSILON
+        self.inner.abs() <= f32::EPSILON
     }
 }
 
@@ -43,7 +43,7 @@ impl One for Float {
     }
 
     fn is_one(&self) -> bool {
-        self.inner - 1.0f32 <= f32::EPSILON
+        (self.clone() - Self::one()).is_zero()
     }
 }
 

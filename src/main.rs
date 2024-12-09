@@ -4,6 +4,6 @@ use rmatrix_ks::number::{
 };
 
 fn main() {
-    let cplx = Complex::of(Double::of(1.0f64), Double::of(2.0f64));
-    println!("{}", cplx.clone().arc_hyperbolic_sine());
+    let cplx = Complex::<Double>::of_str("-2 :+ -4").unwrap();
+    println!("{}", cplx.clone().arc_tangent());
 }

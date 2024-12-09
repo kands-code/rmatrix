@@ -33,7 +33,7 @@ impl Zero for Double {
     }
 
     fn is_zero(&self) -> bool {
-        self.inner <= f64::EPSILON
+        self.inner.abs() <= f64::EPSILON
     }
 }
 
@@ -43,7 +43,7 @@ impl One for Double {
     }
 
     fn is_one(&self) -> bool {
-        self.inner - 1.0f64 <= f64::EPSILON
+        (self.clone() - Self::one()).is_zero()
     }
 }
 

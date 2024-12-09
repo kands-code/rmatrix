@@ -174,10 +174,9 @@ impl<F: RealFloat> Floating for Complex<F> {
     }
 
     fn logarithmic(self) -> Self {
-        let n = self.clone().norm();
         Self {
-            real: n.logarithmic(),
-            imaginary: (self.imaginary / self.real).arc_tangent(),
+            real: self.clone().norm().logarithmic(),
+            imaginary: F::arc_tangent_2(self.imaginary, self.real),
         }
     }
 
@@ -214,7 +213,13 @@ impl<F: RealFloat> Floating for Complex<F> {
     }
 
     fn arc_tangent(self) -> Self {
-        todo!()
+        let i = Self {
+            real: F::zero(),
+            imaginary: F::one(),
+        };
+        let two = Self::one() + Self::one();
+        Self::one() / (two * i.clone())
+            * ((Self::one() + i.clone() * self.clone()) / (Self::one() - i * self)).logarithmic()
     }
 
     fn hyperbolic_sine(self) -> Self {
@@ -226,15 +231,15 @@ impl<F: RealFloat> Floating for Complex<F> {
     }
 
     fn arc_hyperbolic_sine(self) -> Self {
-        todo!()
+        (self.clone() + (Self::one() + self.clone() * self).square_root()).logarithmic()
     }
 
     fn arc_hyperbolic_cosine(self) -> Self {
-        todo!()
+        (self.clone() + (self.clone() * self - Self::one()).square_root()).logarithmic()
     }
 
     fn arc_hyperbolic_tangent(self) -> Self {
-        todo!()
+        Self::half() * ((Self::one() + self.clone()) / (Self::one() - self)).logarithmic()
     }
 }
 

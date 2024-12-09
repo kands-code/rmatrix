@@ -119,10 +119,12 @@ pub trait RealFloat: RealFrac + Floating {
         if x > Self::zero() {
             (y / x).arc_tangent()
         } else if x.is_zero() && y > Self::zero() {
-            Self::PI / (Self::one() + Self::one())
-        } else if x <= Self::zero() && y < Self::zero()
-            || x < Self::zero() && y.is_negative_zero()
-            || x.is_negative_zero() && y.is_negative_zero()
+            Self::PI * Self::half()
+        } else if x < Self::zero() && y > Self::zero() {
+            Self::PI + (y / x).arc_tangent()
+        } else if (x <= Self::zero() && y < Self::zero())
+            || (x < Self::zero() && y.is_negative_zero())
+            || (x.is_negative_zero() && y.is_negative_zero())
         {
             -Self::arc_tangent_2(-y, x)
         } else if y.is_zero() && (x < Self::zero() || x.is_negative_zero()) {
