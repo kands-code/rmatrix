@@ -1,4 +1,6 @@
+#![allow(incomplete_features)]
 #![feature(doc_cfg)]
+#![feature(generic_const_exprs)]
 
 //! # rmatrix_ks
 //!
@@ -18,6 +20,7 @@
 //!
 //! Unstable features used:
 //! - doc_cfg
+//! - generic_const_exprs
 
 pub mod matrix;
 pub mod number;

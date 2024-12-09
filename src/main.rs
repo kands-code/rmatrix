@@ -1,9 +1,6 @@
-use rmatrix_ks::number::{
-    instances::{complex::Complex, double::Double},
-    traits::floating::Floating,
-};
+use rmatrix_ks::matrix::matrix::Matrix;
 
 fn main() {
-    let cplx = Complex::<Double>::of_str("-2 :+ -4").unwrap();
-    println!("{}", cplx.clone().arc_tangent());
+    let mat: Matrix<u8, 2, 2> = Matrix::of(&[1, 2, 3, 4]).unwrap();
+    println!("{}", mat);
 }

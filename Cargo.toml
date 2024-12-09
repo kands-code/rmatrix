@@ -24,12 +24,12 @@ crate-type = ["rlib"]
 
 [dependencies]
 # for pattern validate
-regex = "^1.11.0"
+regex = "^1.11.1"
 # for random matrix and random number
 rand = { version = "^0.8.5", optional = true }
 # for data dump and restore
-serde = { version = "^1.0.210", features = ["derive"], optional = true }
-serde_json = { version = "^1.0.128", optional = true }
+serde = { version = "^1.0.215", features = ["derive"], optional = true }
+serde_json = { version = "^1.0.133", optional = true }
 
 [features]
 default = ["rand_mat"]
