@@ -8,7 +8,7 @@ matrix and some algebra in Rust
 
 **_just a toy_**
 
-> todo: eigen_values & eigen_system & linear_solve
+> todo: eigen_values & eigen_system & linear_solve & complex number system
 
 [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
 [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust

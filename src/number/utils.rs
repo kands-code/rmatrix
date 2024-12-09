@@ -2,11 +2,10 @@
 //!
 //! some useful tools
 
-use crate::number::instances::int::Int;
-use crate::number::traits::fractional::Fractional;
-use crate::number::traits::integeral::Integral;
-use crate::number::traits::number::Number;
-use crate::number::traits::real::Real;
+use crate::number::{
+    instances::int::Int,
+    traits::{fractional::Fractional, integeral::Integral, number::Number, real::Real},
+};
 
 /// division and modulus for i8
 ///
@@ -85,7 +84,7 @@ pub fn non_negative_integral_power<N: Number, I: Integral>(base: N, exponents: I
     if exponents < I::zero() {
         // integeral exponents cannot handle negative exponents
         eprintln!(
-            "Error[non_negative_integral_power]: negative exponents {}",
+            "Error[utils::non_negative_integral_power]: negative exponents {}",
             exponents
         );
         None

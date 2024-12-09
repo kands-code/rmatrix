@@ -2,8 +2,7 @@
 //!
 //! A type that implements this trait is a integeral number.
 
-use crate::number::instances::integer::Integer;
-use crate::number::traits::real::Real;
+use crate::number::{instances::integer::Integer, traits::real::Real};
 
 /// Integeral
 pub trait Integral: Real {

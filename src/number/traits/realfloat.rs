@@ -2,18 +2,11 @@
 //!
 //! Floating point number for [Real].
 
-use crate::number::instances::int::Int;
-use crate::number::instances::integer::Integer;
-use crate::number::traits::floating::Floating;
-use crate::number::traits::realfrac::RealFrac;
-use crate::number::utils::clamp;
-use crate::number::utils::from_integeral;
-use crate::number::utils::integeral_power;
-use crate::number::utils::non_negative_integral_power;
-
-use super::integeral::Integral;
-use super::one::One;
-use super::zero::Zero;
+use crate::number::{
+    instances::{int::Int, integer::Integer},
+    traits::{floating::Floating, integeral::Integral, one::One, realfrac::RealFrac, zero::Zero},
+    utils::{clamp, from_integeral, integeral_power, non_negative_integral_power},
+};
 
 /// RealFloat
 pub trait RealFloat: RealFrac + Floating {

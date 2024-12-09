@@ -2,9 +2,10 @@
 //!
 //! A type that implements this trait is a number.
 
-use crate::number::instances::integer::Integer;
-use crate::number::traits::one::One;
-use crate::number::traits::zero::Zero;
+use crate::number::{
+    instances::integer::Integer,
+    traits::{one::One, zero::Zero},
+};
 
 /// Number
 ///
@@ -25,7 +26,7 @@ where
         + std::ops::Add<Output = Self>
         + std::ops::Sub<Output = Self>
         + std::ops::Mul<Output = Self>
-        + std::str::FromStr,
+        + std::str::FromStr<Err = String>,
 {
     /// absolute value
     fn absolute_value(&self) -> Self;

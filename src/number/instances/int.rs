@@ -2,13 +2,10 @@
 //!
 //! i32 wrapper.
 
-use crate::number::instances::integer::Integer;
-use crate::number::instances::ratio::Rational;
-use crate::number::traits::integeral::Integral;
-use crate::number::traits::number::Number;
-use crate::number::traits::one::One;
-use crate::number::traits::real::Real;
-use crate::number::traits::zero::Zero;
+use crate::number::{
+    instances::{integer::Integer, ratio::Rational},
+    traits::{integeral::Integral, number::Number, one::One, real::Real, zero::Zero},
+};
 
 /// Int
 #[derive(Clone, PartialEq, PartialOrd)]
@@ -116,15 +113,10 @@ impl Number for Int {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let integer_value = integer_number
-                .digits()
-                .iter()
-                .map(|&v| (v + '0' as u8) as char)
-                .collect::<String>()
-                .parse::<i32>().expect("Error[Int::from<Integer>]: Integer::digits() should be a reasonable numeric string");
-            Self {
-                inner: integer_value * if integer_number.sign { 1i32 } else { -1i32 },
-            }
+            let inner = format!("{}", integer_number)
+                .parse::<i32>()
+                .expect("Error[Int::from<Integer>]: integer_number should be a proper i32 number");
+            Self { inner }
         }
     }
 }

@@ -2,13 +2,11 @@
 //!
 //! Integer of arbitrary length.
 
-use crate::number::instances::ratio::Rational;
-use crate::number::traits::integeral::Integral;
-use crate::number::traits::number::Number;
-use crate::number::traits::one::One;
-use crate::number::traits::real::Real;
-use crate::number::traits::zero::Zero;
-use crate::number::utils::i8_div_mod;
+use crate::number::{
+    instances::ratio::Rational,
+    traits::{integeral::Integral, number::Number, one::One, real::Real, zero::Zero},
+    utils::i8_div_mod,
+};
 
 /// Integer
 #[derive(Clone, PartialEq)]
@@ -55,8 +53,7 @@ impl Integer {
                 Some(Self { sign, inner })
             } else {
                 eprintln!(
-                    "Error[rmatrix_ks::number::instances::integer::Integer::of]: \
-                    every digits should be in [0, 10) {:?}",
+                    "Error[Integer::of]: every digits should be in [0, 10) {:?}",
                     digits,
                 );
                 None
@@ -122,10 +119,8 @@ impl Integer {
                 carry = factor / 10;
             }
             sum.reverse();
-            Self::of(true, &sum).expect(
-                "Error[rmatrix_ks::number::instances::integer::Integer::integer_add]: \
-                every digits should be in [0, 10)",
-            )
+            Self::of(true, &sum)
+                .expect("Error[Integer::integer_add]: every digits should be in [0, 10)")
         }
     }
 
@@ -157,10 +152,8 @@ impl Integer {
                 .map(|&digit| digit as u8)
                 // .map(|&digit| digit as u8)
                 .collect::<Vec<u8>>();
-            Self::of(sign, &digits).expect(
-                "Error[rmatrix_ks::number::instances::integer::Integer::integer_sub]: \
-                every digits should be in [0, 10)",
-            )
+            Self::of(sign, &digits)
+                .expect("Error[Integer::integer_sub]: every digits should be in [0, 10)")
         }
     }
 }
@@ -347,10 +340,8 @@ impl std::ops::Mul for Integer {
                 carry = factor / 10u8;
             }
             product.reverse();
-            Self::of(self.sign == rhs.sign, &product).expect(
-                "Error[rmatrix_ks::number::instances::integer::Integer::mul]: \
-                every digits should be in [0, 10)",
-            )
+            Self::of(self.sign == rhs.sign, &product)
+                .expect("Error[Integer::mul]: every digits should be in [0, 10)")
         }
     }
 }
@@ -391,10 +382,7 @@ impl Integral for Integer {
             (Self::one(), Self::zero())
         } else if rhs.is_zero() {
             // x / 0 => error
-            panic!(
-                "Error[rmatrix_ks::number::instances::integer::Integer::quot_rem]: \
-                divide by zero"
-            );
+            panic!("Error[Integer::quot_rem]: divide by zero");
         } else if self.is_zero() {
             // 0 / x => 0 ... 0
             (Self::zero(), Self::zero())
@@ -413,8 +401,7 @@ impl Integral for Integer {
                 let mut rem_buffer = rem_digits.clone();
                 rem_buffer.extend(self_digits[head..(head + expand)].iter());
                 let buffer = Self::of(true, &rem_buffer).expect(&format!(
-                    "Error[rmatrix_ks::number::instances::integer::Integer::quot_rem]: \
-                        out of boundary ({}, {})",
+                    "Error[Integer::quot_rem]: out of boundary ({}, {})",
                     head,
                     head + expand,
                 ));
@@ -439,10 +426,7 @@ impl Integral for Integer {
             }
             Self::of(self.sign == rhs.sign, &quot_digits)
                 .zip(Self::of(self.sign, &rem_digits))
-                .expect(
-                    "Error[rmatrix_ks::number::instances::integer::Integer::quot_rem]: \
-                    every digits should be in [0, 10)",
-                )
+                .expect("Error[Integer::quot_rem]: every digits should be in [0, 10)")
         }
     }
 
@@ -492,7 +476,7 @@ impl std::fmt::Debug for Integer {
 }
 
 impl std::str::FromStr for Integer {
-    type Err = ();
+    type Err = String;
 
     /// convert string literal to Integer
     ///
@@ -519,6 +503,9 @@ impl std::str::FromStr for Integer {
                     None
                 }
             })
-            .ok_or(())
+            .ok_or(format!(
+                "Error[Ineteger::from_str]: parse {} failed!",
+                trimmed_s
+            ))
     }
 }

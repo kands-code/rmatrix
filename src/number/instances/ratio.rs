@@ -3,15 +3,14 @@
 //! For any [Integeral] type number x and y,
 //! a Ratio type based on this type is x / y.
 
-use crate::number::instances::integer::Integer;
-use crate::number::traits::fractional::Fractional;
-use crate::number::traits::integeral::Integral;
-use crate::number::traits::number::Number;
-use crate::number::traits::one::One;
-use crate::number::traits::real::Real;
-use crate::number::traits::realfrac::RealFrac;
-use crate::number::traits::zero::Zero;
-use crate::number::utils::{from_integeral, gcd};
+use crate::number::{
+    instances::integer::Integer,
+    traits::{
+        fractional::Fractional, integeral::Integral, number::Number, one::One, real::Real,
+        realfrac::RealFrac, zero::Zero,
+    },
+    utils::{from_integeral, gcd},
+};
 
 #[derive(Clone)]
 #[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
@@ -59,7 +58,10 @@ impl<I: Integral> Ratio<I> {
 
 impl<I: Integral> One for Ratio<I> {
     fn one() -> Self {
-        Self::of(I::one(), I::one())
+        Self {
+            numerator: I::one(),
+            denominator: I::one(),
+        }
     }
 
     fn is_one(&self) -> bool {
@@ -69,7 +71,10 @@ impl<I: Integral> One for Ratio<I> {
 }
 impl<I: Integral> Zero for Ratio<I> {
     fn zero() -> Self {
-        Self::of(I::zero(), I::one())
+        Self {
+            numerator: I::zero(),
+            denominator: I::one(),
+        }
     }
 
     fn is_zero(&self) -> bool {

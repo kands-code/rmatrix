@@ -2,9 +2,7 @@
 //!
 //! Extracting components of fractions.
 
-use crate::number::traits::fractional::Fractional;
-use crate::number::traits::integeral::Integral;
-use crate::number::traits::real::Real;
+use crate::number::traits::{fractional::Fractional, integeral::Integral, real::Real};
 
 /// RealFrac
 pub trait RealFrac: Real + Fractional {

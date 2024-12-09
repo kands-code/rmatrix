@@ -24,7 +24,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 # for pattern validate
-regex = "^1.10.6"
+regex = "^1.11.0"
 # for random matrix and random number
 rand = { version = "^0.8.5", optional = true }
 # for data dump and restore

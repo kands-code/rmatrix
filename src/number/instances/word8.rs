@@ -1,27 +1,27 @@
-//! # Number Type :: Int8
+//! # Number Type :: Word8
 //!
-//! i8 wrapper.
+//! u8 wrapper.
 
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
     traits::{integeral::Integral, number::Number, one::One, real::Real, zero::Zero},
 };
 
-/// Int8
+/// Word8
 #[derive(Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
-pub struct Int8 {
-    inner: i8,
+pub struct Word8 {
+    inner: u8,
 }
 
-impl Int8 {
-    pub const fn of(num: i8) -> Self {
+impl Word8 {
+    pub const fn of(num: u8) -> Self {
         Self { inner: num }
     }
 
-    // create Int8 from &str
-    pub fn of_str(int8_number: &str) -> Result<Self, String> {
-        std::str::FromStr::from_str(int8_number)
+    // create Word8 from &str
+    pub fn of_str(uint8_number: &str) -> Result<Self, String> {
+        std::str::FromStr::from_str(uint8_number)
     }
 
     pub fn digits(&self) -> Vec<u8> {
@@ -33,35 +33,37 @@ impl Int8 {
     }
 }
 
-impl Zero for Int8 {
+impl Zero for Word8 {
     fn zero() -> Self {
-        Self { inner: 0i8 }
+        Self { inner: 0u8 }
     }
 
     fn is_zero(&self) -> bool {
-        self.inner == 0i8
+        self.inner == 0u8
     }
 }
 
-impl One for Int8 {
+impl One for Word8 {
     fn one() -> Self {
-        Self { inner: 1i8 }
+        Self { inner: 1u8 }
     }
 
     fn is_one(&self) -> bool {
-        self.inner == 1i8
+        self.inner == 1u8
     }
 }
 
-impl std::ops::Neg for Int8 {
+impl std::ops::Neg for Word8 {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Self { inner: -self.inner }
+        Self {
+            inner: u8::MAX - self.inner,
+        }
     }
 }
 
-impl std::ops::Add for Int8 {
+impl std::ops::Add for Word8 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -71,17 +73,21 @@ impl std::ops::Add for Int8 {
     }
 }
 
-impl std::ops::Sub for Int8 {
+impl std::ops::Sub for Word8 {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self {
-            inner: self.inner - rhs.inner,
+            inner: if self.inner > rhs.inner {
+                self.inner - rhs.inner
+            } else {
+                u8::MAX - rhs.inner + self.inner
+            },
         }
     }
 }
 
-impl std::ops::Mul for Int8 {
+impl std::ops::Mul for Word8 {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -91,20 +97,16 @@ impl std::ops::Mul for Int8 {
     }
 }
 
-impl Number for Int8 {
+impl Number for Word8 {
     fn absolute_value(&self) -> Self {
-        Self {
-            inner: self.inner.abs(),
-        }
+        Self { inner: self.inner }
     }
 
     fn sign_number(&self) -> Self {
-        if self.inner == 0i8 {
+        if self.inner == 0u8 {
             Self::zero()
-        } else if self.inner > 0 {
-            Self::one()
         } else {
-            -Self::one()
+            Self::one()
         }
     }
 
@@ -113,14 +115,14 @@ impl Number for Int8 {
             Self::zero()
         } else {
             let inner = format!("{}", integer_number)
-                .parse::<i8>()
-                .expect("Error[Int8::from<Integer>]: integer_number should be a proper i8 number");
+                .parse::<u8>()
+                .expect("Error[Word8::from<Integer>]: integer_number should be a proper u8 number");
             Self { inner }
         }
     }
 }
 
-impl Real for Int8 {
+impl Real for Word8 {
     fn to_rational(self) -> Rational
     where
         Self: crate::number::traits::integeral::Integral,
@@ -129,7 +131,7 @@ impl Real for Int8 {
     }
 }
 
-impl Integral for Int8 {
+impl Integral for Word8 {
     fn quot_rem(self, rhs: Self) -> (Self, Self) {
         (
             Self {
@@ -157,28 +159,28 @@ impl Integral for Int8 {
     }
 }
 
-impl std::fmt::Display for Int8 {
+impl std::fmt::Display for Word8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
-impl std::fmt::Debug for Int8 {
+impl std::fmt::Debug for Word8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:+}", self.inner)
     }
 }
 
-impl std::str::FromStr for Int8 {
+impl std::str::FromStr for Word8 {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let trimmed_s = s.trim();
-        if let Ok(num) = trimmed_s.parse::<i8>() {
+        if let Ok(num) = trimmed_s.parse::<u8>() {
             Ok(Self { inner: num })
         } else {
             Err(format!(
-                "Error[Int8::from_str]: {} is not a valid integer",
+                "Error[Word8::from_str]: {} is not a valid integer",
                 trimmed_s
             ))
         }

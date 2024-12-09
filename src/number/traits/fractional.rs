@@ -2,8 +2,7 @@
 //!
 //! A type that implements this trait is a fractional number.
 
-use crate::number::instances::ratio::Rational;
-use crate::number::traits::number::Number;
+use crate::number::{instances::ratio::Rational, traits::number::Number};
 
 /// Fractional
 pub trait Fractional: Number
