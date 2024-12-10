@@ -64,6 +64,12 @@ impl<F: RealFloat> One for Complex<F> {
     }
 }
 
+impl<F: RealFloat> std::default::Default for Complex<F> {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl<F: RealFloat> std::ops::Neg for Complex<F> {
     type Output = Self;
 

@@ -53,6 +53,12 @@ impl One for Word8 {
     }
 }
 
+impl std::default::Default for Word8 {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl std::ops::Neg for Word8 {
     type Output = Self;
 

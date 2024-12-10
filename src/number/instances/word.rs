@@ -54,6 +54,12 @@ impl One for Word {
     }
 }
 
+impl std::default::Default for Word {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl std::ops::Neg for Word {
     type Output = Self;
 

@@ -19,6 +19,7 @@ pub trait Number: One + Zero
 where
     Self: std::marker::Sized
         + std::clone::Clone
+        + std::default::Default
         + std::fmt::Debug
         + std::fmt::Display
         + std::cmp::PartialEq

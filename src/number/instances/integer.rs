@@ -246,6 +246,12 @@ impl One for Integer {
     }
 }
 
+impl std::default::Default for Integer {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl std::cmp::PartialOrd for Integer {
     /// compare two integers
     ///

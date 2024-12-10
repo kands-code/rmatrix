@@ -54,6 +54,12 @@ impl One for Int {
     }
 }
 
+impl std::default::Default for Int {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl std::ops::Neg for Int {
     type Output = Self;
 

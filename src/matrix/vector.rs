@@ -1,4 +1,4 @@
-//! Vector
+//! # Vector
 //!
 //! Row vector and column vector definations and operations.
 
@@ -38,4 +38,21 @@ where
         - index_c(&v1, 2).clone() * index_c(&v2, 1).clone();
 
     VectorC { inner }
+}
+
+pub fn layer_product<N, const R: usize, const C: usize>(
+    v1: VectorC<N, R>,
+    v2: VectorR<N, C>,
+) -> Matrix<N, R, C>
+where
+    N: Number,
+{
+    let mut inner = Vec::with_capacity(R * C);
+    for row_index in 1..=R {
+        for column_index in 1..=C {
+            inner[Matrix::<N, R, C>::index_to_position(row_index, column_index)] =
+                index_c(&v1, row_index).clone() * index_r(&v2, column_index).clone();
+        }
+    }
+    Matrix { inner }
 }

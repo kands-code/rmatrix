@@ -1,0 +1,3 @@
+//! # Math
+//!
+//! Some math functions.

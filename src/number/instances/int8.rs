@@ -53,6 +53,12 @@ impl One for Int8 {
     }
 }
 
+impl std::default::Default for Int8 {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl std::ops::Neg for Int8 {
     type Output = Self;
 

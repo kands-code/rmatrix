@@ -47,6 +47,12 @@ impl One for Double {
     }
 }
 
+impl std::default::Default for Double {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl std::ops::Neg for Double {
     type Output = Self;
 

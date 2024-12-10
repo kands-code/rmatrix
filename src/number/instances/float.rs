@@ -47,6 +47,12 @@ impl One for Float {
     }
 }
 
+impl std::default::Default for Float {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl std::ops::Neg for Float {
     type Output = Self;
 

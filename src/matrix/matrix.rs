@@ -2,7 +2,11 @@
 //!
 //! Basic matrix type.
 
-use super::vector::{VectorC, VectorR};
+use crate::{
+    matrix::utils::map,
+    matrix::vector::{layer_product, VectorC, VectorR},
+    number::traits::number::Number,
+};
 
 #[derive(Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
@@ -11,16 +15,8 @@ pub struct Matrix<N, const R: usize, const C: usize> {
 }
 
 impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
-    pub(crate) const fn index_to_position(row_index: usize, column_index: usize) -> usize {
+    pub(crate) fn index_to_position(row_index: usize, column_index: usize) -> usize {
         (row_index - 1) * C + column_index - 1
-    }
-
-    pub(crate) const fn get_diagonal_length() -> usize {
-        if R > C {
-            C
-        } else {
-            R
-        }
     }
 
     pub fn of(data: &[N]) -> Option<Self>
@@ -35,7 +31,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
             );
             None
         } else {
-            Some(Matrix {
+            Some(Self {
                 inner: Vec::from(&data[..R * C]),
             })
         }
@@ -43,6 +39,14 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
 
     pub const fn dimension() -> (usize, usize) {
         (R, C)
+    }
+
+    pub const fn get_diagonal_length() -> usize {
+        if R > C {
+            C
+        } else {
+            R
+        }
     }
 
     pub fn linear_iter(&self) -> std::slice::Iter<'_, N> {
@@ -58,7 +62,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
             None
         } else {
             let position = Self::index_to_position(row_index, column_index);
-            self.inner.get(position)
+            self.linear_iter().nth(position)
         }
     }
 
@@ -104,6 +108,97 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
             }
             Some(VectorC { inner })
         }
+    }
+
+    pub fn get_diagonal(&self) -> VectorC<&N, { Self::get_diagonal_length() }> {
+        let length = Self::get_diagonal_length();
+        let mut inner = Vec::with_capacity(length);
+        for index in 1..=length {
+            inner[index] = &self[(index, index)];
+        }
+        return VectorC { inner };
+    }
+}
+
+impl<N, const R: usize, const C: usize> std::ops::Neg for Matrix<N, R, C>
+where
+    N: Number,
+{
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        let inner = self.linear_iter().map(|e1| -e1.clone()).collect();
+        Self { inner }
+    }
+}
+
+impl<N, const R: usize, const C: usize> std::ops::Add for Matrix<N, R, C>
+where
+    N: Number,
+{
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let inner = self
+            .linear_iter()
+            .zip(rhs.linear_iter())
+            .map(|(e1, e2)| e1.clone() + e2.clone())
+            .collect();
+        Self { inner }
+    }
+}
+
+impl<N, const R: usize, const C: usize> std::ops::Sub for Matrix<N, R, C>
+where
+    N: Number,
+{
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self + (-rhs)
+    }
+}
+
+impl<N, const R: usize, const C: usize> std::ops::Mul<N> for Matrix<N, R, C>
+where
+    N: Number,
+{
+    type Output = Self;
+
+    fn mul(self, rhs: N) -> Self::Output {
+        let inner = self
+            .linear_iter()
+            .map(|e| e.clone() * rhs.clone())
+            .collect();
+        Self { inner }
+    }
+}
+
+impl<N, const R: usize, const K: usize, const C: usize> std::ops::Mul<Matrix<N, K, C>>
+    for Matrix<N, R, K>
+where
+    N: Number,
+{
+    type Output = Matrix<N, R, C>;
+
+    fn mul(self, rhs: Matrix<N, K, C>) -> Self::Output {
+        let mut product = Matrix::default();
+        for k_index in 1..=K {
+            let v1 = map(
+                &self
+                    .get_column(k_index)
+                    .expect("Error[Matrix::mul]: k_index should be valid index"),
+                |e| e.clone(),
+            );
+            let v2 = map(
+                &rhs.get_row(k_index)
+                    .expect("Error[Matrix::mul]: k_index should be valid index"),
+                |e| e.clone(),
+            );
+            let layer = layer_product(v1, v2);
+            product = product + layer;
+        }
+        product
     }
 }
 

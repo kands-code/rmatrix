@@ -82,6 +82,12 @@ impl<I: Integral> Zero for Ratio<I> {
     }
 }
 
+impl<I: Integral> std::default::Default for Ratio<I> {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
 impl<I: Integral> std::cmp::PartialEq for Ratio<I> {
     fn eq(&self, rhs: &Self) -> bool {
         let refined_lhs = self.clone().refine();
