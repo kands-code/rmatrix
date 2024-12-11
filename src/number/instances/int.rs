@@ -4,7 +4,13 @@
 
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
-    traits::{integeral::Integral, number::Number, one::One, real::Real, zero::Zero},
+    traits::{integral::Integral, number::Number, one::One, real::Real, zero::Zero},
+};
+
+#[cfg(feature = "rand_mat")]
+use rand::{
+    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
+    Rng,
 };
 
 /// Int
@@ -130,7 +136,7 @@ impl Number for Int {
 impl Real for Int {
     fn to_rational(self) -> Rational
     where
-        Self: crate::number::traits::integeral::Integral,
+        Self: crate::number::traits::integral::Integral,
     {
         Rational::of(self.to_integer(), Integer::one())
     }
@@ -190,4 +196,45 @@ impl std::str::FromStr for Int {
             ))
         }
     }
+}
+
+#[cfg(feature = "rand_mat")]
+#[doc(cfg(feature = "rand_mat"))]
+/// Uniform for Int
+pub struct UniformI32(UniformInt<i32>);
+
+#[cfg(feature = "rand_mat")]
+impl UniformSampler for UniformI32 {
+    type X = Int;
+
+    fn new<B1, B2>(low: B1, high: B2) -> Self
+    where
+        B1: SampleBorrow<Self::X> + Sized,
+        B2: SampleBorrow<Self::X> + Sized,
+    {
+        Self(UniformInt::<i32>::new(
+            low.borrow().inner,
+            high.borrow().inner,
+        ))
+    }
+
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Self
+    where
+        B1: SampleBorrow<Self::X> + Sized,
+        B2: SampleBorrow<Self::X> + Sized,
+    {
+        Self(UniformInt::<i32>::new_inclusive(
+            low.borrow().inner,
+            high.borrow().inner,
+        ))
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
+        Self::X::of(self.0.sample(rng))
+    }
+}
+
+#[cfg(feature = "rand_mat")]
+impl SampleUniform for Int {
+    type Sampler = UniformI32;
 }

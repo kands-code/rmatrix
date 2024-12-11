@@ -1,10 +1,10 @@
 //! # Number Trait :: RealFloat
 //!
-//! Floating point number for [Real].
+//! Floating point number for Real.
 
 use crate::number::{
     instances::{int::Int, integer::Integer},
-    traits::{floating::Floating, integeral::Integral, one::One, realfrac::RealFrac, zero::Zero},
+    traits::{floating::Floating, integral::Integral, one::One, realfrac::RealFrac, zero::Zero},
     utils::{clamp, from_integeral, integeral_power, non_negative_integral_power},
 };
 
@@ -15,7 +15,7 @@ pub trait RealFloat: RealFrac + Floating {
     /// by default is 2-based
     const FLOAT_RADIX: Int = Int::of(2);
 
-    /// the number of digits of [FLOAT_RADIX] in the significand
+    /// the number of digits of `FLOAT_RADIX` in the significand
     const FLOAT_DIGITS: Int;
 
     /// the lowest and highest values the exponent may assume
@@ -66,14 +66,14 @@ pub trait RealFloat: RealFrac + Floating {
         (modified_significand, modified_exponent)
     }
 
-    /// inverse of [decode_float]
+    /// inverse of decode_float
     fn encode_float(significand: Integer, exponent: Int) -> Self {
         integeral_power(from_integeral(Self::FLOAT_RADIX), exponent)
             .map(|p: Self| p * Self::from_integer(significand))
             .expect("Error[RealFloat::encode_float]: should get the right results")
     }
 
-    /// corresponds to the second component of [decode_float]
+    /// corresponds to the second component of decode_float
     ///
     /// In Haskell, it defines like:
     ///
@@ -85,7 +85,7 @@ pub trait RealFloat: RealFrac + Floating {
         self.decode_float().1 + Self::FLOAT_DIGITS
     }
 
-    /// corresponds to the first component of [decodeFloat]
+    /// corresponds to the first component of decode_float
     fn significand(self) -> Self {
         Self::encode_float(self.decode_float().0, -Self::FLOAT_DIGITS)
     }

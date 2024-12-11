@@ -5,10 +5,16 @@
 use crate::number::{
     instances::{int::Int, integer::Integer, ratio::Rational},
     traits::{
-        floating::Floating, fractional::Fractional, integeral::Integral, number::Number, one::One,
+        floating::Floating, fractional::Fractional, integral::Integral, number::Number, one::One,
         real::Real, realfloat::RealFloat, realfrac::RealFrac, zero::Zero,
     },
     utils::from_integeral,
+};
+
+#[cfg(feature = "rand_mat")]
+use rand::{
+    distributions::uniform::{SampleBorrow, SampleUniform, UniformFloat, UniformSampler},
+    Rng,
 };
 
 #[derive(Clone, PartialEq, PartialOrd)]
@@ -322,4 +328,45 @@ impl std::str::FromStr for Double {
             ))
         }
     }
+}
+
+#[cfg(feature = "rand_mat")]
+#[doc(cfg(feature = "rand_mat"))]
+/// Uniform for Double
+pub struct UniformF64(UniformFloat<f64>);
+
+#[cfg(feature = "rand_mat")]
+impl UniformSampler for UniformF64 {
+    type X = Double;
+
+    fn new<B1, B2>(low: B1, high: B2) -> Self
+    where
+        B1: SampleBorrow<Self::X> + Sized,
+        B2: SampleBorrow<Self::X> + Sized,
+    {
+        Self(UniformFloat::<f64>::new(
+            low.borrow().inner,
+            high.borrow().inner,
+        ))
+    }
+
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Self
+    where
+        B1: SampleBorrow<Self::X> + Sized,
+        B2: SampleBorrow<Self::X> + Sized,
+    {
+        Self(UniformFloat::<f64>::new_inclusive(
+            low.borrow().inner,
+            high.borrow().inner,
+        ))
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
+        Self::X::of(self.0.sample(rng))
+    }
+}
+
+#[cfg(feature = "rand_mat")]
+impl SampleUniform for Double {
+    type Sampler = UniformF64;
 }

@@ -4,7 +4,7 @@
 
 use crate::number::{
     instances::int::Int,
-    traits::{fractional::Fractional, integeral::Integral, number::Number, real::Real},
+    traits::{fractional::Fractional, integral::Integral, number::Number, real::Real},
 };
 
 /// division and modulus for i8

@@ -4,7 +4,7 @@
 
 pub mod floating;
 pub mod fractional;
-pub mod integeral;
+pub mod integral;
 pub mod number;
 pub mod one;
 pub mod real;

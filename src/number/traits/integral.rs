@@ -1,4 +1,4 @@
-//! # Number Trait :: Integeral
+//! # Number Trait :: Integral
 //!
 //! A type that implements this trait is a integeral number.
 

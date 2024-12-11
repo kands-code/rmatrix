@@ -4,7 +4,7 @@
 
 use crate::number::{
     instances::ratio::Rational,
-    traits::{integeral::Integral, number::Number, one::One, real::Real, zero::Zero},
+    traits::{integral::Integral, number::Number, one::One, real::Real, zero::Zero},
     utils::i8_div_mod,
 };
 

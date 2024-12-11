@@ -29,7 +29,7 @@ pub fn cross_product<N>(v1: VectorC<N, 3>, v2: VectorC<N, 3>) -> VectorC<N, 3>
 where
     N: Number,
 {
-    let mut inner = Vec::with_capacity(3);
+    let mut inner = vec![N::zero(); 3];
     inner[0] = index_c(&v1, 2).clone() * index_c(&v2, 3).clone()
         - index_c(&v1, 3).clone() * index_c(&v2, 2).clone();
     inner[1] = index_c(&v1, 3).clone() * index_c(&v2, 1).clone()
@@ -50,8 +50,7 @@ where
     let mut inner = Vec::with_capacity(R * C);
     for row_index in 1..=R {
         for column_index in 1..=C {
-            inner[Matrix::<N, R, C>::index_to_position(row_index, column_index)] =
-                index_c(&v1, row_index).clone() * index_r(&v2, column_index).clone();
+            inner.push(index_c(&v1, row_index).clone() * index_r(&v2, column_index).clone());
         }
     }
     Matrix { inner }

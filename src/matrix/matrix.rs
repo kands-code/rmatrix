@@ -3,10 +3,15 @@
 //! Basic matrix type.
 
 use crate::{
-    matrix::utils::map,
-    matrix::vector::{layer_product, VectorC, VectorR},
+    matrix::{
+        utils::map,
+        vector::{layer_product, VectorC, VectorR},
+    },
     number::traits::number::Number,
 };
+
+#[cfg(feature = "rand_mat")]
+use rand::distributions::{uniform::SampleUniform, Distribution, Uniform};
 
 #[derive(Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
@@ -17,6 +22,18 @@ pub struct Matrix<N, const R: usize, const C: usize> {
 impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     pub(crate) fn index_to_position(row_index: usize, column_index: usize) -> usize {
         (row_index - 1) * C + column_index - 1
+    }
+
+    pub const fn dimension() -> (usize, usize) {
+        (R, C)
+    }
+
+    pub const fn get_diagonal_length() -> usize {
+        if R > C {
+            C
+        } else {
+            R
+        }
     }
 
     pub fn of(data: &[N]) -> Option<Self>
@@ -37,16 +54,27 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         }
     }
 
-    pub const fn dimension() -> (usize, usize) {
-        (R, C)
+    pub fn eyes() -> Self
+    where
+        N: Number,
+    {
+        let mut id_mat = Self::default();
+        for index in 1..=Self::get_diagonal_length() {
+            id_mat[(index, index)] = N::one();
+        }
+
+        id_mat
     }
 
-    pub const fn get_diagonal_length() -> usize {
-        if R > C {
-            C
-        } else {
-            R
-        }
+    #[cfg(feature = "rand_mat")]
+    pub fn rand(lb: N, ub: N) -> Self
+    where
+        N: Number + SampleUniform,
+    {
+        let range = Uniform::new(lb, ub);
+        let mut rng = rand::thread_rng();
+        let inner = range.sample_iter(&mut rng).take(R * C).collect();
+        Self { inner }
     }
 
     pub fn linear_iter(&self) -> std::slice::Iter<'_, N> {
@@ -88,7 +116,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         } else {
             let mut inner = Vec::with_capacity(C);
             for column_index in 1..=C {
-                inner[column_index - 1] = &self[(row_index, column_index)];
+                inner.push(&self[(row_index, column_index)]);
             }
             Some(VectorR { inner })
         }
@@ -104,7 +132,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         } else {
             let mut inner = Vec::with_capacity(R);
             for row_index in 1..=R {
-                inner[row_index - 1] = &self[(row_index, column_index)];
+                inner.push(&self[(row_index, column_index)]);
             }
             Some(VectorC { inner })
         }
@@ -114,9 +142,22 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         let length = Self::get_diagonal_length();
         let mut inner = Vec::with_capacity(length);
         for index in 1..=length {
-            inner[index] = &self[(index, index)];
+            inner.push(&self[(index, index)]);
         }
         return VectorC { inner };
+    }
+
+    pub fn transpose(self) -> Matrix<N, C, R>
+    where
+        N: Clone,
+    {
+        let mut inner = Vec::with_capacity(R * C);
+        for row_index in 1..=C {
+            for column_index in 1..=R {
+                inner.push(self[(column_index, row_index)].clone());
+            }
+        }
+        Matrix { inner }
     }
 }
 

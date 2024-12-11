@@ -1,12 +1,12 @@
 //! # Number Type :: Ratio
 //!
-//! For any [Integeral] type number x and y,
+//! For any Integral type number x and y,
 //! a Ratio type based on this type is x / y.
 
 use crate::number::{
     instances::integer::Integer,
     traits::{
-        fractional::Fractional, integeral::Integral, number::Number, one::One, real::Real,
+        fractional::Fractional, integral::Integral, number::Number, one::One, real::Real,
         realfrac::RealFrac, zero::Zero,
     },
     utils::{from_integeral, gcd},

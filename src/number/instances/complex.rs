@@ -10,6 +10,15 @@ use crate::number::{
     },
 };
 
+#[cfg(feature = "rand_mat")]
+use rand::{
+    distributions::{
+        uniform::{SampleBorrow, SampleUniform, Uniform, UniformSampler},
+        Distribution,
+    },
+    Rng,
+};
+
 #[derive(Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Complex<F: RealFloat> {
@@ -300,4 +309,51 @@ impl<F: RealFloat> std::str::FromStr for Complex<F> {
             Ok(Self { real, imaginary })
         }
     }
+}
+
+#[cfg(feature = "rand_mat")]
+#[doc(cfg(feature = "rand_mat"))]
+/// Uniform for Complex
+pub struct UniformComplex<F: RealFloat + SampleUniform>(Uniform<F>, Uniform<F>);
+
+#[cfg(feature = "rand_mat")]
+impl<F: RealFloat + SampleUniform> UniformSampler for UniformComplex<F> {
+    type X = Complex<F>;
+
+    fn new<B1, B2>(low: B1, high: B2) -> Self
+    where
+        B1: SampleBorrow<Self::X> + Sized,
+        B2: SampleBorrow<Self::X> + Sized,
+    {
+        Self(
+            Uniform::<F>::new(low.borrow().real.clone(), high.borrow().real.clone()),
+            Uniform::<F>::new(
+                low.borrow().imaginary.clone(),
+                high.borrow().imaginary.clone(),
+            ),
+        )
+    }
+
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Self
+    where
+        B1: SampleBorrow<Self::X> + Sized,
+        B2: SampleBorrow<Self::X> + Sized,
+    {
+        Self(
+            Uniform::<F>::new_inclusive(low.borrow().real.clone(), high.borrow().real.clone()),
+            Uniform::<F>::new_inclusive(
+                low.borrow().imaginary.clone(),
+                high.borrow().imaginary.clone(),
+            ),
+        )
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
+        Self::X::of(self.0.sample(rng), self.1.sample(rng))
+    }
+}
+
+#[cfg(feature = "rand_mat")]
+impl<F: RealFloat + SampleUniform> SampleUniform for Complex<F> {
+    type Sampler = UniformComplex<F>;
 }
