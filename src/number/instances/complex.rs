@@ -140,8 +140,8 @@ impl<F: RealFloat> std::ops::Div for Complex<F> {
 impl<F: RealFloat> Number for Complex<F> {
     fn absolute_value(&self) -> Self {
         Self {
-            real: self.real.absolute_value(),
-            imaginary: self.imaginary.absolute_value(),
+            real: self.clone().norm(),
+            imaginary: F::zero(),
         }
     }
 

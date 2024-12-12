@@ -2,21 +2,14 @@
 #![feature(generic_const_exprs)]
 
 use rmatrix_ks::{
-    matrix::{
-        matrix::Matrix,
-        utils::{horizontal_concat, vertical_concat},
-    },
-    number::instances::int::Int,
+    matrix::{math::is_square_matrix, matrix::Matrix},
+    number::instances::word8::Word8,
 };
 
 fn main() {
-    let m1: Matrix<Int, 3, 3> = Matrix::rand(Int::of(-10), Int::of(10));
-    let p = Matrix::<Int, 3, 3>::p_add(2, 1, Int::of(-1));
-    let smal = p * m1.clone();
-    let vcat = vertical_concat(&m1, &smal);
-    let hcat = horizontal_concat(&m1, &smal);
-    println!("{}", m1);
-    println!("{}", smal);
-    println!("{}", vcat);
-    println!("{}", hcat);
+    let m1 = Matrix::<Word8, 2, 2>::of(&[Word8::of(1), Word8::of(2), Word8::of(2), Word8::of(1)])
+        .unwrap();
+    let m2 = Matrix::<Word8, 2, 1>::of(&[Word8::of(1), Word8::of(3)]).unwrap();
+    assert!(is_square_matrix(&m1));
+    assert!(!is_square_matrix(&m2));
 }

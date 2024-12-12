@@ -1,20 +1,102 @@
 //! # Vector
 //!
-//! Row vector and column vector definations and operations.
+//! Definitions of column vectors and row vectors,
+//! along with related functions.
+//!
+//! Default vectors are column vectors,
+//! so most functions are implemented only for column vectors.
+//! For row vectors, you can first transpose them into column vectors
+//! and then use the corresponding functions.
 
-use crate::{matrix::matrix::Matrix, number::traits::number::Number};
+use crate::{
+    matrix::matrix::Matrix,
+    number::{
+        instances::integer::Integer,
+        traits::{floating::Floating, number::Number},
+    },
+};
 
+/// A row vector is a matrix with a single row.
 pub type VectorR<N, const C: usize> = Matrix<N, 1, C>;
+
+/// A column vector is a matrix with a single column.
 pub type VectorC<N, const R: usize> = Matrix<N, R, 1>;
 
+/// Used to obtain a reference to the element
+/// at the corresponding position in the column vector.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{index_c, VectorC},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let v1: VectorC<Word8, 3> = VectorC::of(&[Word8::of(1), Word8::of(2), Word8::of(3)]).unwrap();
+///     assert_eq!(index_c(&v1, 2), &Word8::of(2));
+/// }
+/// ```
 pub fn index_c<N, const R: usize>(v: &VectorC<N, R>, row_index: usize) -> &N {
     &v[(row_index, 1)]
 }
 
+/// Used to obtain a reference to the element
+/// at the corresponding position in the row vector.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{index_r, VectorR},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let v1: VectorR<Word8, 3> = VectorR::of(&[Word8::of(1), Word8::of(2), Word8::of(3)]).unwrap();
+///     assert_eq!(index_r(&v1, 2), &Word8::of(2));
+/// }
+/// ```
 pub fn index_r<N, const C: usize>(v: &VectorR<N, C>, column_index: usize) -> &N {
     &v[(1, column_index)]
 }
 
+/// Used to obtain the basis vector.
+///
+/// The `index` represents the index of the basis vector.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{basis_vector, VectorC},
+///     number::instances::int8::Int8,
+/// };
+///
+/// pub fn main() {
+///     let e1_a: VectorC<Int8, 3> = VectorC::of(&[Int8::of(0), Int8::of(1), Int8::of(0)]).unwrap();
+///     let e1_b = basis_vector::<Int8, 3>(2);
+///     assert_eq!(e1_a, e1_b);
+/// }
+/// ```
+pub fn basis_vector<N, const R: usize>(index: usize) -> VectorC<N, R>
+where
+    N: Number,
+{
+    let mut basis = VectorC::<N, R>::default();
+    basis[(index, 1)] = N::one();
+    basis
+}
+
+/// Calculate the dot product of two column vectors.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{dot_product, VectorC},
+///     number::instances::int8::Int8,
+/// };
+///
+/// fn main() {
+///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+///     let v2: VectorC<Int8, 3> = VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+///     assert_eq!(dot_product(v1, v2), Int8::of(32));
+/// }
+/// ```
 pub fn dot_product<N, const R: usize>(v1: VectorC<N, R>, v2: VectorC<N, R>) -> N
 where
     N: Number,
@@ -25,6 +107,23 @@ where
         .fold(N::zero(), |acc, e| acc + e)
 }
 
+/// Calculate the cross product of two three-dimensional column vectors.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{cross_product, VectorC},
+///     number::instances::int8::Int8,
+/// };
+///
+/// fn main() {
+///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+///     let v2: VectorC<Int8, 3> = VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+///     assert_eq!(
+///         cross_product(v1, v2),
+///         VectorC::of(&[Int8::of(-3), Int8::of(6), Int8::of(-3)]).unwrap()
+///     );
+/// }
+/// ```
 pub fn cross_product<N>(v1: VectorC<N, 3>, v2: VectorC<N, 3>) -> VectorC<N, 3>
 where
     N: Number,
@@ -40,6 +139,32 @@ where
     VectorC { inner }
 }
 
+/// Construct a matrix using one column vector and one row vector.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         matrix::Matrix,
+///         vector::{layer_product, VectorC, VectorR},
+///     },
+///     number::instances::int8::Int8,
+/// };
+///
+/// fn main() {
+///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+///     let v2: VectorR<Int8, 3> = VectorR::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+///     let data = [
+///         4i8, 5i8, 6i8, // row1
+///         8i8, 10i8, 12i8, // row2
+///         12i8, 15i8, 18i8, // row3
+///     ]
+///     .iter()
+///     .map(|&e| Int8::of(e))
+///     .collect::<Vec<Int8>>();
+///     let m = Matrix::<Int8, 3, 3>::of(&data).unwrap();
+///     assert_eq!(layer_product(v1, v2), m);
+/// }
+/// ```
 pub fn layer_product<N, const R: usize, const C: usize>(
     v1: VectorC<N, R>,
     v2: VectorR<N, C>,
@@ -54,4 +179,105 @@ where
         }
     }
     Matrix { inner }
+}
+
+/// Calculate the convolution of two column vectors.
+///
+/// ```rust
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::vector::{convolution, VectorC},
+///     number::instances::int8::Int8,
+/// };
+///
+/// fn main() {
+///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+///     let v2: VectorC<Int8, 2> = VectorC::of(&[Int8::of(4), Int8::of(5)]).unwrap();
+///     let cv = VectorC::of(&[Int8::of(4), Int8::of(13), Int8::of(22), Int8::of(15)]).unwrap();
+///     assert_eq!(convolution(v1, v2), cv);
+/// }
+/// ```
+pub fn convolution<N, const R1: usize, const R2: usize>(
+    v1: VectorC<N, R1>,
+    v2: VectorC<N, R2>,
+) -> VectorC<N, { R1 + R2 - 1 }>
+where
+    N: Number,
+{
+    let mut inner = Vec::with_capacity(R1 + R2 - 1);
+    for index in 1..=(R1 + R2 - 1) {
+        let mut sum = N::zero();
+        for p in 1..=R1.min(index) {
+            let q = index + 1 - p;
+            if (1..=R2).contains(&q) {
+                sum = sum + index_c(&v1, p).clone() * index_c(&v2, q).clone();
+            }
+        }
+        inner.push(sum);
+    }
+    VectorC { inner }
+}
+
+/// Calculate the Euclidean norm.
+///
+/// aka L2-norm
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{euclidean_norm, VectorC},
+///     number::{
+///         instances::float::Float,
+///         traits::{floating::Floating, zero::Zero},
+///     },
+/// };
+///
+/// fn main() {
+///     let v: VectorC<Float, 3> =
+///         VectorC::of(&[Float::of(1.0), Float::of(2.0), Float::of(3.0)]).unwrap();
+///     assert!((euclidean_norm(&v) - Float::of(14.0).square_root()).is_zero());
+/// }
+/// ```
+pub fn euclidean_norm<N, const R: usize>(v: &VectorC<N, R>) -> N
+where
+    N: Floating,
+{
+    v.linear_iter()
+        .map(|e| e.clone() * e.clone())
+        .fold(N::zero(), |acc, e| acc + e)
+        .square_root()
+}
+
+/// Calculate the root mean square of the column vector.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{root_mean_square, VectorC},
+///     number::{
+///         instances::float::Float,
+///         traits::{floating::Floating, zero::Zero},
+///     },
+/// };
+///
+/// fn main() {
+///     let v: VectorC<Float, 3> =
+///         VectorC::of(&[Float::of(1.0), Float::of(2.0), Float::of(3.0)]).unwrap();
+///     assert!(
+///         (root_mean_square(&v) - Float::of(14.0).square_root() / Float::of(3.0).square_root())
+///             .is_zero()
+///     );
+/// }
+/// ```
+pub fn root_mean_square<N, const R: usize>(v: &VectorC<N, R>) -> N
+where
+    N: Floating,
+{
+    let l2_norm = euclidean_norm(v);
+    let r_sqrt = N::from_integer(
+        Integer::of_str(&format!("{}", R))
+            .expect("Error[vector::root_mean_square]: convert from usize to integer failed"),
+    )
+    .square_root();
+    l2_norm / r_sqrt
 }

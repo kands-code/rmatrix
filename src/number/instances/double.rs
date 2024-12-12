@@ -128,7 +128,7 @@ impl Number for Double {
             Self::zero()
         } else {
             let inner = format!("{}", integer_number).parse::<f64>().expect(
-                "Error[Double::from<Integer>]: integer_number should be a proper f64 number",
+                "Error[Double::from<Integer>]: integer_number should be a valid f64 number",
             );
             Self { inner }
         }
@@ -162,7 +162,7 @@ impl RealFrac for Double {
         (
             from_integeral(
                 Integer::of_str(&format!("{}", self.inner.trunc() as i64))
-                    .expect("Error[Double::proper_fraction]: should be a proper i64 number"),
+                    .expect("Error[Double::proper_fraction]: should be a valid i64 number"),
             ),
             Self::of(self.inner.fract()),
         )
@@ -173,7 +173,7 @@ impl Real for Double {
     fn to_rational(self) -> Rational {
         if self.is_not_a_number() || self.is_infinite_number() {
             panic!(
-                "Error[Float::to_rational]: {} is not a proper floating number",
+                "Error[Float::to_rational]: {} is not a valid floating number",
                 self
             );
         } else if self.is_zero() {

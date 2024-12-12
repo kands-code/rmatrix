@@ -127,9 +127,9 @@ impl Number for Float {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{}", integer_number).parse::<f32>().expect(
-                "Error[Float::from<Integer>]: integer_number should be a proper f32 number",
-            );
+            let inner = format!("{}", integer_number)
+                .parse::<f32>()
+                .expect("Error[Float::from<Integer>]: integer_number should be a valid f32 number");
             Self { inner }
         }
     }
@@ -170,7 +170,7 @@ impl Real for Float {
     fn to_rational(self) -> Rational {
         if self.is_not_a_number() || self.is_infinite_number() {
             panic!(
-                "Error[Float::to_rational]: {} is not a proper floating number",
+                "Error[Float::to_rational]: {} is not a valid floating number",
                 self
             );
         } else if self.is_zero() {
