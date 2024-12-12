@@ -14,7 +14,7 @@ use rand::{
 };
 
 /// Int
-#[derive(Clone, PartialEq, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Int {
     inner: i32,
 }

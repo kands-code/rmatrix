@@ -9,7 +9,7 @@ use crate::number::{
 };
 
 /// Integer
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Integer {
     pub sign: bool,
     inner: Vec<u8>,
@@ -288,6 +288,13 @@ impl std::cmp::PartialOrd for Integer {
             }
             Some(std::cmp::Ordering::Equal)
         }
+    }
+}
+
+impl std::cmp::Ord for Integer {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other)
+            .expect("Error[Integer::cmp]: integers can be compared regardless")
     }
 }
 

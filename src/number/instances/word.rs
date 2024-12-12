@@ -14,7 +14,7 @@ use rand::{
 };
 
 /// Word
-#[derive(Clone, PartialEq, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Word {
     inner: u32,
 }

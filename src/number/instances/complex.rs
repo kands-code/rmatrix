@@ -19,7 +19,7 @@ use rand::{
     Rng,
 };
 
-#[derive(Clone, PartialEq, PartialOrd)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Complex<F: RealFloat> {
     pub real: F,
     pub imaginary: F,

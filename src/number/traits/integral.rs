@@ -5,7 +5,10 @@
 use crate::number::{instances::integer::Integer, traits::real::Real};
 
 /// Integeral
-pub trait Integral: Real {
+pub trait Integral: Real
+where
+    Self: std::cmp::Ord,
+{
     /// integer division truncated toward zero
     fn quotient(self, rhs: Self) -> Self {
         self.quot_rem(rhs).0

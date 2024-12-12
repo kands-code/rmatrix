@@ -12,7 +12,7 @@ use crate::{
     matrix::matrix::Matrix,
     number::{
         instances::integer::Integer,
-        traits::{floating::Floating, number::Number},
+        traits::{floating::Floating, number::Number, real::Real},
     },
 };
 
@@ -247,6 +247,34 @@ where
         .map(|e| e.clone() * e.clone())
         .fold(N::zero(), |acc, e| acc + e)
         .square_root()
+}
+
+/// Calculate the maximum norm.
+///
+/// aka L_inf-norm
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{maximum_norm, VectorC},
+///     number::instances::int8::Int8,
+/// };
+///
+/// fn main() {
+///     let v = VectorC::<Int8, 3>::of(&[Int8::of(2), Int8::of(-5), Int8::of(3)]).unwrap();
+///     assert_eq!(maximum_norm(&v), Int8::of(5))
+/// }
+/// ```
+pub fn maximum_norm<N, const R: usize>(v: &VectorC<N, R>) -> N
+where
+    N: Real,
+{
+    let mut norm = N::zero();
+    for e in v.linear_iter().map(|e| e.absolute_value()) {
+        if e > norm {
+            norm = e;
+        }
+    }
+    norm
 }
 
 /// Calculate the root mean square of the column vector.
