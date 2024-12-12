@@ -291,10 +291,7 @@ where
 /// fn main() {
 ///     let v: VectorC<Float, 3> =
 ///         VectorC::of(&[Float::of(1.0), Float::of(2.0), Float::of(3.0)]).unwrap();
-///     assert!(
-///         (root_mean_square(&v) - Float::of(14.0).square_root() / Float::of(3.0).square_root())
-///             .is_zero()
-///     );
+///     assert!((root_mean_square(&v) - Float::of(14.0 / 3.0).square_root()).is_zero());
 /// }
 /// ```
 pub fn root_mean_square<N, const R: usize>(v: &VectorC<N, R>) -> N

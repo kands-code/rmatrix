@@ -2,11 +2,15 @@
 #![feature(generic_const_exprs)]
 
 use rmatrix_ks::{
-    matrix::vector::{maximum_norm, VectorC},
-    number::instances::int8::Int8,
+    matrix::vector::{root_mean_square, VectorC},
+    number::{
+        instances::float::Float,
+        traits::{floating::Floating, zero::Zero},
+    },
 };
 
 fn main() {
-    let v = VectorC::<Int8, 3>::of(&[Int8::of(2), Int8::of(-5), Int8::of(3)]).unwrap();
-    assert_eq!(maximum_norm(&v), Int8::of(5))
+    let v: VectorC<Float, 3> =
+        VectorC::of(&[Float::of(1.0), Float::of(2.0), Float::of(3.0)]).unwrap();
+    assert!((root_mean_square(&v) - Float::of(14.0 / 3.0).square_root()).is_zero());
 }

@@ -17,7 +17,7 @@ use rand::{
     Rng,
 };
 
-#[derive(Clone, PartialEq, PartialOrd)]
+#[derive(Clone, PartialOrd)]
 pub struct Float {
     inner: f32,
 }
@@ -38,7 +38,8 @@ impl Zero for Float {
     }
 
     fn is_zero(&self) -> bool {
-        self.inner.abs() <= f32::EPSILON
+        // Use half-precision to avoid certain floating-point precision errors.
+        self.inner.abs() <= f32::EPSILON * 2.0f32
     }
 }
 
@@ -103,6 +104,12 @@ impl std::ops::Div for Float {
         Self {
             inner: self.inner / rhs.inner,
         }
+    }
+}
+
+impl std::cmp::PartialEq for Float {
+    fn eq(&self, other: &Self) -> bool {
+        (self.clone() - other.clone()).is_zero()
     }
 }
 
