@@ -6,5 +6,6 @@
 
 pub mod math;
 pub mod matrix;
+pub mod serde;
 pub mod utils;
 pub mod vector;

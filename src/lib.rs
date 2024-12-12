@@ -1,6 +1,7 @@
 #![allow(incomplete_features)]
 #![feature(doc_cfg)]
 #![feature(generic_const_exprs)]
+#![windows_subsystem = "windows"]
 
 //! # rmatrix_ks
 //!
@@ -21,6 +22,8 @@
 //! Unstable features used:
 //! - doc_cfg
 //! - generic_const_exprs
+//!
+//! Please add `#![feature(generic_const_exprs)]` if you want to use this library.
 
 pub mod matrix;
 pub mod number;

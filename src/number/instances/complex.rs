@@ -20,7 +20,6 @@ use rand::{
 };
 
 #[derive(Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Complex<F: RealFloat> {
     pub real: F,
     pub imaginary: F,

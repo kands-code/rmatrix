@@ -15,7 +15,6 @@ use rand::{
 
 /// Int8
 #[derive(Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Int8 {
     inner: i8,
 }

@@ -7,14 +7,13 @@ use crate::{
         utils::map,
         vector::{layer_product, VectorC, VectorR},
     },
-    number::traits::number::Number,
+    number::traits::{fractional::Fractional, number::Number},
 };
 
 #[cfg(feature = "rand_mat")]
 use rand::distributions::{uniform::SampleUniform, Distribution, Uniform};
 
 #[derive(Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Matrix<N, const R: usize, const C: usize> {
     pub(crate) inner: Vec<N>,
 }
@@ -22,10 +21,6 @@ pub struct Matrix<N, const R: usize, const C: usize> {
 impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     pub(crate) fn index_to_position(row_index: usize, column_index: usize) -> usize {
         (row_index - 1) * C + column_index - 1
-    }
-
-    pub const fn dimension() -> (usize, usize) {
-        (R, C)
     }
 
     pub const fn get_diagonal_length() -> usize {
@@ -62,8 +57,68 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         for index in 1..=Self::get_diagonal_length() {
             id_mat[(index, index)] = N::one();
         }
-
         id_mat
+    }
+
+    pub fn diagonal(data: &[N]) -> Option<Self>
+    where
+        N: Clone + Default,
+    {
+        let length = Self::get_diagonal_length();
+        if data.len() < length {
+            eprintln!(
+                "Error[Matrix::diagonal]: data length {} is less than matrix require {}",
+                data.len(),
+                length
+            );
+            None
+        } else {
+            let mut diag = Self::default();
+            for index in 1..=Self::get_diagonal_length() {
+                diag[(index, index)] = data[index - 1].clone();
+            }
+            Some(diag)
+        }
+    }
+
+    pub fn p_change(
+        row: usize,
+        column: usize,
+    ) -> Matrix<N, { Self::get_diagonal_length() }, { Self::get_diagonal_length() }>
+    where
+        N: Number,
+    {
+        let mut p_mat = Matrix::eyes();
+        p_mat[(row, row)] = N::zero();
+        p_mat[(column, column)] = N::zero();
+        p_mat[(row, column)] = N::one();
+        p_mat[(column, row)] = N::one();
+        p_mat
+    }
+
+    pub fn p_muls(
+        row: usize,
+        scalar: N,
+    ) -> Matrix<N, { Self::get_diagonal_length() }, { Self::get_diagonal_length() }>
+    where
+        N: Number,
+    {
+        let mut p_mat = Matrix::eyes();
+        p_mat[(row, row)] = scalar;
+        p_mat
+    }
+
+    pub fn p_add(
+        from: usize,
+        to: usize,
+        scalar: N,
+    ) -> Matrix<N, { Self::get_diagonal_length() }, { Self::get_diagonal_length() }>
+    where
+        N: Number,
+    {
+        let mut p_mat = Matrix::eyes();
+        p_mat[(to, from)] = scalar;
+        p_mat
     }
 
     #[cfg(feature = "rand_mat")]
@@ -75,6 +130,10 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         let mut rng = rand::thread_rng();
         let inner = range.sample_iter(&mut rng).take(R * C).collect();
         Self { inner }
+    }
+
+    pub fn dimension(&self) -> (usize, usize) {
+        (R, C)
     }
 
     pub fn linear_iter(&self) -> std::slice::Iter<'_, N> {
@@ -147,14 +206,18 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         return VectorC { inner };
     }
 
-    pub fn transpose(self) -> Matrix<N, C, R>
+    pub fn submatrix(&self, row: usize, column: usize) -> Matrix<N, { R - 1 }, { C - 1 }>
     where
         N: Clone,
     {
-        let mut inner = Vec::with_capacity(R * C);
-        for row_index in 1..=C {
-            for column_index in 1..=R {
-                inner.push(self[(column_index, row_index)].clone());
+        let mut inner = Vec::with_capacity((R - 1) * (C - 1));
+        for row_index in 1..=R {
+            for column_index in 1..=C {
+                if row_index == row || column_index == column {
+                    continue;
+                } else {
+                    inner.push(self[(row_index, column_index)].clone());
+                }
             }
         }
         Matrix { inner }
@@ -170,6 +233,32 @@ where
     fn neg(self) -> Self::Output {
         let inner = self.linear_iter().map(|e1| -e1.clone()).collect();
         Self { inner }
+    }
+}
+
+impl<N, const R: usize, const C: usize> std::ops::Add<N> for Matrix<N, R, C>
+where
+    N: Number,
+{
+    type Output = Self;
+
+    fn add(self, rhs: N) -> Self::Output {
+        let inner = self
+            .linear_iter()
+            .map(|e| e.clone() + rhs.clone())
+            .collect();
+        Self { inner }
+    }
+}
+
+impl<N, const R: usize, const C: usize> std::ops::Sub<N> for Matrix<N, R, C>
+where
+    N: Number,
+{
+    type Output = Self;
+
+    fn sub(self, rhs: N) -> Self::Output {
+        self + (-rhs)
     }
 }
 
@@ -240,6 +329,17 @@ where
             product = product + layer;
         }
         product
+    }
+}
+
+impl<N, const R: usize, const C: usize> std::ops::Div<N> for Matrix<N, R, C>
+where
+    N: Fractional,
+{
+    type Output = Self;
+
+    fn div(self, rhs: N) -> Self::Output {
+        map(&self, |e| e / rhs.clone())
     }
 }
 

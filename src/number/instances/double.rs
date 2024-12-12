@@ -18,7 +18,6 @@ use rand::{
 };
 
 #[derive(Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Double {
     inner: f64,
 }

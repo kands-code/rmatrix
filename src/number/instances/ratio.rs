@@ -13,7 +13,6 @@ use crate::number::{
 };
 
 #[derive(Clone)]
-#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Ratio<I: Integral> {
     pub numerator: I,
     pub denominator: I,

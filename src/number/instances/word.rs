@@ -15,7 +15,6 @@ use rand::{
 
 /// Word
 #[derive(Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Word {
     inner: u32,
 }

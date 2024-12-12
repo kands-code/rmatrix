@@ -10,7 +10,6 @@ use crate::number::{
 
 /// Integer
 #[derive(Clone, PartialEq)]
-#[cfg_attr(feature = "serde_mat", derive(serde::Deserialize, serde::Serialize))]
 pub struct Integer {
     pub sign: bool,
     inner: Vec<u8>,
