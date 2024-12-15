@@ -25,6 +25,8 @@ pub type VectorC<N, const R: usize> = Matrix<N, R, 1>;
 /// Used to obtain a reference to the element
 /// at the corresponding position in the column vector.
 ///
+/// # Examples
+///
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::vector::{index_c, VectorC},
@@ -42,6 +44,8 @@ pub fn index_c<N, const R: usize>(v: &VectorC<N, R>, row_index: usize) -> &N {
 
 /// Used to obtain a reference to the element
 /// at the corresponding position in the row vector.
+///
+/// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
@@ -61,6 +65,8 @@ pub fn index_r<N, const C: usize>(v: &VectorR<N, C>, column_index: usize) -> &N 
 /// Used to obtain the basis vector.
 ///
 /// The `index` represents the index of the basis vector.
+///
+/// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
@@ -85,6 +91,8 @@ where
 
 /// Calculate the dot product of two column vectors.
 ///
+/// # Examples
+///
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::vector::{dot_product, VectorC},
@@ -108,6 +116,8 @@ where
 }
 
 /// Calculate the cross product of two three-dimensional column vectors.
+///
+/// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
@@ -140,6 +150,8 @@ where
 }
 
 /// Construct a matrix using one column vector and one row vector.
+///
+/// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
@@ -183,6 +195,8 @@ where
 
 /// Calculate the convolution of two column vectors.
 ///
+/// # Examples
+///
 /// ```rust
 /// #![allow(incomplete_features)]
 /// #![feature(generic_const_exprs)]
@@ -224,6 +238,8 @@ where
 ///
 /// aka L2-norm
 ///
+/// # Examples
+///
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::vector::{euclidean_norm, VectorC},
@@ -253,6 +269,8 @@ where
 ///
 /// aka L_inf-norm
 ///
+/// # Examples
+///
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::vector::{maximum_norm, VectorC},
@@ -278,6 +296,8 @@ where
 }
 
 /// Calculate the root mean square of the column vector.
+///
+/// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
@@ -305,4 +325,49 @@ where
     )
     .square_root();
     l2_norm / r_sqrt
+}
+
+/// Calculate the angle between two vectors.
+///
+/// expressed in radians
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{angle_between, VectorC},
+///     number::{instances::double::Double, traits::zero::Zero},
+/// };
+///
+/// fn main() {
+///     let v1: VectorC<Double, 3> =
+///         VectorC::of(&[Double::of(1.0), Double::of(5.0), Double::of(4.0)]).unwrap();
+///     let v2: VectorC<Double, 3> =
+///         VectorC::of(&[Double::of(8.0), Double::of(-4.0), Double::of(3.0)]).unwrap();
+///     let angle = angle_between(&v1, &v2);
+///     assert!(angle.is_some());
+///     assert!((angle.unwrap() - Double::of(core::f64::consts::PI / 2.0)).is_zero());
+///
+///     // angle between a vector and itself is zero
+///     let self_angle = angle_between(&v1, &v1);
+///     assert!(self_angle.is_some());
+///     assert!(self_angle.unwrap().is_zero());
+///
+///     // zero-vector has no angle with any other vector
+///     let v3 = VectorC::of(&[Double::zero(), Double::zero(), Double::zero()]).unwrap();
+///     assert!(angle_between(&v1, &v3).is_none());
+/// }
+/// ```
+pub fn angle_between<N, const R: usize>(v1: &VectorC<N, R>, v2: &VectorC<N, R>) -> Option<N>
+where
+    N: Floating,
+{
+    let v1_norm = euclidean_norm(v1);
+    let v2_norm = euclidean_norm(v2);
+    if v1_norm.is_zero() || v2_norm.is_zero() {
+        eprintln!("Error[vector::angle_between]: zero-vector has no angle with any other vector");
+        None
+    } else {
+        Some((dot_product(v1.clone(), v2.clone()) / (v1_norm * v2_norm)).arc_cosine())
+    }
 }

@@ -8,6 +8,8 @@ use crate::matrix::matrix::Matrix;
 
 /// Validate whether a matrix is a square matrix.
 ///
+/// # Examples
+///
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{math::is_square_matrix, matrix::Matrix},
@@ -27,6 +29,8 @@ pub const fn is_square_matrix<N, const R: usize, const C: usize>(_: &Matrix<N, R
 }
 
 /// Validate whether a matrix is a symmetric matrix.
+///
+/// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
