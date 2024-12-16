@@ -4,7 +4,9 @@
 //! such as matrix validation, matrix simplification,
 //! and determinant calculation, etc.
 
-use crate::matrix::matrix::Matrix;
+use crate::{matrix::matrix::Matrix, number::traits::number::Number};
+
+use super::utils::points_2d;
 
 /// Validate whether a matrix is a square matrix.
 ///
@@ -52,12 +54,102 @@ where
     N: PartialEq,
 {
     is_square_matrix(m)
-        && (2..=R)
-            .map(|row| {
-                (1..row)
-                    .map(|column| (&m[(row, column)], &m[(column, row)]))
-                    .collect::<Vec<(&N, &N)>>()
-            })
-            .flatten()
+        && points_2d((1, R), (1, C), Some(|x, y| x < y))
+            .iter()
+            .cloned()
+            .map(|(x, y)| (&m[(x, y)], &m[(y, x)]))
             .all(|(e1, e2)| e1 == e2)
+}
+
+/// Validate whether a matrix is an upper triangular matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::is_upper_triangular_matrix, matrix::Matrix},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let m1: Matrix<Word8, 2, 2> =
+///         Matrix::of(&[Word8::of(1), Word8::of(1), Word8::of(0), Word8::of(1)]).unwrap();
+///     assert!(is_upper_triangular_matrix(&m1));
+///
+///     let m2: Matrix<Word8, 2, 2> =
+///         Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(1), Word8::of(1)]).unwrap();
+///     assert!(!is_upper_triangular_matrix(&m2));
+/// }
+/// ```
+pub fn is_upper_triangular_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+where
+    N: Number,
+{
+    points_2d((1, R), (1, C), Some(|x, y| x > y))
+        .iter()
+        .cloned()
+        .map(|(x, y)| &m[(x, y)])
+        .all(|e| e.is_zero())
+}
+
+/// Validate whether a matrix is a lower triangular matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::is_lower_triangular_matrix, matrix::Matrix},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let m1: Matrix<Word8, 2, 2> =
+///         Matrix::of(&[Word8::of(1), Word8::of(1), Word8::of(0), Word8::of(1)]).unwrap();
+///     assert!(!is_lower_triangular_matrix(&m1));
+///
+///     let m2: Matrix<Word8, 2, 2> =
+///         Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(1), Word8::of(1)]).unwrap();
+///     assert!(is_lower_triangular_matrix(&m2));
+/// }
+/// ```
+pub fn is_lower_triangular_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+where
+    N: Number,
+{
+    points_2d((1, R), (1, C), Some(|x, y| x < y))
+        .iter()
+        .cloned()
+        .map(|(x, y)| &m[(x, y)])
+        .all(|e| e.is_zero())
+}
+
+/// Validate whether a matrix is a diagonal matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::is_diagonal_matrix, matrix::Matrix},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let m1: Matrix<Word8, 2, 2> =
+///         Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(0), Word8::of(2)]).unwrap();
+///     assert!(is_diagonal_matrix(&m1));
+///
+///     let m2: Matrix<Word8, 2, 2> =
+///         Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(1), Word8::of(1)]).unwrap();
+///     assert!(!is_diagonal_matrix(&m2));
+/// }
+/// ```
+pub fn is_diagonal_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+where
+    N: Number,
+{
+    points_2d((1, R), (1, C), Some(|x, y| x != y))
+        .iter()
+        .cloned()
+        .map(|(x, y)| &m[(x, y)])
+        .all(|e| e.is_zero())
 }

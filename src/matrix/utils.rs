@@ -10,6 +10,33 @@ use crate::{
     },
 };
 
+pub fn points_2d<F>(
+    (x_lb, x_ub): (usize, usize),
+    (y_lb, y_ub): (usize, usize),
+    predicate: Option<F>,
+) -> Vec<(usize, usize)>
+where
+    F: Fn(usize, usize) -> bool,
+{
+    if x_lb >= x_ub || y_lb >= y_ub {
+        Vec::new()
+    } else {
+        let mut all_points = Vec::with_capacity((x_ub - x_lb) * (y_ub - y_lb));
+        for x in x_lb..=x_ub {
+            for y in y_lb..=y_ub {
+                if if let Some(ref p) = predicate {
+                    p(x, y)
+                } else {
+                    true
+                } {
+                    all_points.push((x, y));
+                }
+            }
+        }
+        all_points
+    }
+}
+
 pub fn trace<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
 where
     N: Number,
