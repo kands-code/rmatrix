@@ -39,7 +39,7 @@ impl Zero for Double {
 
     fn is_zero(&self) -> bool {
         // Use half-precision to avoid certain floating-point precision errors.
-        self.inner.abs() <= f64::EPSILON * 2.0f64
+        self.inner.abs() <= core::f64::EPSILON.sqrt()
     }
 }
 

@@ -236,7 +236,7 @@ where
 
 /// Calculate the Euclidean norm.
 ///
-/// aka L2-norm
+/// Aka L2-norm.
 ///
 /// # Examples
 ///
@@ -267,7 +267,7 @@ where
 
 /// Calculate the maximum norm.
 ///
-/// aka L_inf-norm
+/// Aka L_inf-norm.
 ///
 /// # Examples
 ///
@@ -329,7 +329,7 @@ where
 
 /// Calculate the angle between two vectors.
 ///
-/// expressed in radians
+/// Expressed in radians.
 ///
 /// # Examples
 ///

@@ -39,7 +39,7 @@ impl Zero for Float {
 
     fn is_zero(&self) -> bool {
         // Use half-precision to avoid certain floating-point precision errors.
-        self.inner.abs() <= f32::EPSILON * 2.0f32
+        self.inner.abs() <= core::f32::EPSILON.sqrt()
     }
 }
 

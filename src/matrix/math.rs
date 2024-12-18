@@ -373,7 +373,7 @@ where
 
 /// Calculate the row-reduced form of the matrix.
 ///
-/// # returns
+/// # Returns
 ///
 /// - Times of row swaps
 /// - Row swap matrix
@@ -391,9 +391,9 @@ where
 /// fn main() {
 ///     let m = Matrix::<Double, 3, 3>::of(
 ///         &[
-///             2.0, 1.0, -1.0, // r1
+///             2.0, 1.0, -1.0,  // r1
 ///             -3.0, -1.0, 2.0, // r2
-///             -2.0, 1.0, 2.0, // r3
+///             -2.0, 1.0, 2.0,  // r3
 ///         ]
 ///         .map(|e| Double::of(e)),
 ///     )
@@ -402,9 +402,9 @@ where
 ///     assert!((reduced
 ///         - Matrix::<Double, 3, 3>::of(
 ///             &[
-///                 2.0, 1.0, -1.0, //r1
-///                 0.0, 0.5, 0.5, // r2
-///                 0.0, 0.0, -1.0 // r3
+///                 2.0, 1.0, -1.0, // r1
+///                 0.0, 0.5, 0.5,  // r2
+///                 0.0, 0.0, -1.0  // r3
 ///             ]
 ///             .map(|e| Double::of(e))
 ///         )
@@ -475,12 +475,147 @@ where
     (t, p, lt, reduced)
 }
 
+/// Calculate the row-eliminate form of the matrix (inner).
+///
+/// This transformation matrix is the inverse of the matrix itself,
+/// provided that the matrix is invertible.
+///
+/// # Returns
+///
+/// - Transform matrix
+/// - Row-eliminated matrix
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::row_eliminate, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Double, 3, 3>::of(
+///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     let (_, eliminated) = row_eliminate(&m);
+///     assert_eq!(eliminated, Matrix::<Double, 3, 3>::eyes());
+/// }
+/// ```
+fn row_eliminate_inner<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> (Matrix<N, R, R>, Matrix<N, R, C>)
+where
+    N: Fractional,
+{
+    let (_, p, lt, mut eliminate) = row_reduce(&m);
+    // Record the elimination process.
+    let mut trans = p * lt;
+    for row in (1..=R).rev() {
+        let mut column = 1;
+        // Find the pivot of this row.
+        while column <= C && eliminate[(row, column)].is_zero() {
+            column = column + 1;
+        }
+        if column == C + 1 {
+            // Skip the row that is all zeros.
+            continue;
+        } else {
+            let pivot = eliminate[(row, column)].clone();
+            // Start elimination from the bottom of the matrix.
+            for prev in (1..row).rev() {
+                let prev_pivot = eliminate[(prev, column)].clone();
+                if !prev_pivot.is_zero() {
+                    let factor = prev_pivot / pivot.clone();
+                    let add = Matrix::<N, R, R>::p_add(row, prev, -factor);
+                    trans = add.clone() * trans;
+                    eliminate = add * eliminate;
+                }
+            }
+            // Make the pivot to ONE.
+            let mul = Matrix::<N, R, R>::p_muls(row, N::one() / pivot);
+            trans = mul.clone() * trans;
+            eliminate = mul * eliminate;
+        }
+    }
+    // returns
+    (trans, eliminate)
+}
+
+/// Calculate the row-eliminate form of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::row_eliminate, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Double, 3, 3>::of(
+///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     let eliminated = row_eliminate(&m);
+///     assert_eq!(eliminated, Matrix::<Double, 3, 3>::eyes());
+/// }
+/// ```
+pub fn row_eliminate<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Matrix<N, R, C>
+where
+    N: Fractional,
+{
+    row_eliminate_inner(m).1
+}
+
+/// Calculate the inverse of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::inverse, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Double, 3, 3>::of(
+///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     let inv = inverse(&m).unwrap();
+///     assert_eq!(inv * m, Matrix::<Double, 3, 3>::eyes());
+/// }
+/// ```
+pub fn inverse<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<Matrix<N, R, R>>
+where
+    N: Fractional,
+{
+    let det = determinant(m);
+    if det.is_none_or(|e| e.is_zero()) {
+        None
+    } else {
+        Some(row_eliminate_inner(m).0)
+    }
+}
+
 /// Calculate the rank of the matrix.
 ///
 /// # Examples
 ///
 /// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::rank, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
 ///
+/// fn main() {
+///     let m = Matrix::<Double, 3, 3>::of(
+///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     assert_eq!(rank(&m), 3);
+/// }
 /// ```
 pub fn rank<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> usize
 where
@@ -500,4 +635,117 @@ where
         })
         .filter(|&p| p)
         .count()
+}
+
+/// Calculate the determinant of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::determinant, matrix::Matrix},
+///     number::{instances::double::Double, traits::zero::Zero},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Double, 4, 4>::of(
+///         &[
+///             2.0, 1.0, 3.0, 4.0, // r1
+///             1.0, 0.0, 2.0, 3.0, // r2
+///             0.0, 1.0, 1.0, 1.0, // r3
+///             3.0, 4.0, 0.0, 2.0, // r4
+///         ]
+///         .map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     let det = determinant(&m).unwrap();
+///     assert!((det - Double::of(-8.0)).is_zero());
+/// }
+/// ```
+pub fn determinant<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<N>
+where
+    N: Fractional,
+{
+    if is_square_matrix(m) {
+        let (t, _, _, reduced) = row_reduce(m);
+        Some(
+            (1..=R)
+                .map(|index| reduced[(index, index)].clone())
+                .fold(N::one(), |acc, e| acc * e.clone())
+                * if t & 1 == 0 { N::one() } else { -N::one() },
+        )
+    } else {
+        None
+    }
+}
+/// Calculate the adjugate matrix of the matrix.
+///
+/// adj(m) * m = det(m) * I
+///
+/// # Examples
+///
+/// ```rust
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::{
+///         math::{adjugate_matrix, determinant},
+///         matrix::Matrix,
+///     },
+///     number::instances::double::Double,
+/// };
+/// fn main() {
+///     let m = Matrix::<Double, 3, 3>::of(
+///         &[
+///             -3.0, 2.0, -5.0, // r1
+///             -1.0, 0.0, -2.0, // r2
+///             3.0, -4.0, 1.0, // r3
+///         ]
+///         .map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     let adj = adjugate_matrix(&m).unwrap();
+///     let expect = Matrix::<Double, 3, 3>::of(
+///         &[
+///             -8.0, 18.0, -4.0, // r1
+///             -5.0, 12.0, -1.0, // r2
+///             4.0, -6.0, 2.0, // r3
+///         ]
+///         .map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     let det = determinant(&m).unwrap();
+///     assert!(adj.equals(&expect));
+///     // adj(m) * m = det(m) * I
+///     assert!((adj.clone() * m.clone()).equals(&(Matrix::eyes() * det)));
+///     // adj(m) * m = m * adj(m)
+///     assert!((adj.clone() * m.clone()).equals(&(m * adj)))
+/// }
+/// ```
+pub fn adjugate_matrix<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> Option<Matrix<N, R, R>>
+where
+    N: Fractional,
+    [(); R - 1]:,
+    [(); C - 1]:,
+{
+    if is_square_matrix(m) {
+        let mut adjugate = Matrix::<N, R, R>::default();
+        for row in 1..=R {
+            for column in 1..=C {
+                adjugate[(row, column)] = determinant(&m.submatrix(column, row)).expect(
+                    "Error[matrix::adjugate_matrix]: get the determinant of submatrix failed",
+                ) * if (row + column) & 1 == 0 {
+                    N::one()
+                } else {
+                    -N::one()
+                }
+            }
+        }
+        Some(adjugate)
+    } else {
+        None
+    }
 }

@@ -186,6 +186,15 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
             Some(VectorC { inner })
         }
     }
+    pub fn equals(&self, rhs: &Self) -> bool
+    where
+        N: Number,
+    {
+        self.linear_iter()
+            .take(R * C)
+            .zip(rhs.linear_iter().take(R * C))
+            .all(|(e1, e2)| (e1.clone() - e2.clone()).is_zero())
+    }
 
     pub fn get_diagonal(&self) -> VectorC<&N, { Self::get_diagonal_length() }> {
         let length = Self::get_diagonal_length();
@@ -217,7 +226,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
 impl<N, const R1: usize, const C1: usize, const R2: usize, const C2: usize>
     std::cmp::PartialEq<Matrix<N, R2, C2>> for Matrix<N, R1, C1>
 where
-    N: PartialEq,
+    N: std::cmp::PartialEq,
 {
     fn eq(&self, other: &Matrix<N, R2, C2>) -> bool {
         R1 == R2
