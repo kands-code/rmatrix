@@ -2,16 +2,31 @@
 #![feature(generic_const_exprs)]
 
 use rmatrix_ks::{
-    matrix::{math::is_lower_triangular_matrix, matrix::Matrix},
-    number::instances::word8::Word8,
+    matrix::{math::row_reduce, matrix::Matrix},
+    number::{instances::double::Double, traits::zero::Zero},
 };
 
 fn main() {
-    let m1: Matrix<Word8, 2, 2> =
-        Matrix::of(&[Word8::of(1), Word8::of(1), Word8::of(0), Word8::of(1)]).unwrap();
-    assert!(!is_lower_triangular_matrix(&m1));
-
-    let m2: Matrix<Word8, 2, 2> =
-        Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(1), Word8::of(1)]).unwrap();
-    assert!(is_lower_triangular_matrix(&m2));
+    let m = Matrix::<Double, 3, 3>::of(
+        &[
+            2.0, 1.0, -1.0, // r1
+            -3.0, -1.0, 2.0, // r2
+            -2.0, 1.0, 2.0, // r3
+        ]
+        .map(|e| Double::of(e)),
+    )
+    .unwrap();
+    let (_, _, _, reduced) = row_reduce(&m);
+    assert!((reduced
+        - Matrix::<Double, 3, 3>::of(
+            &[
+                2.0, 1.0, -1.0, //r1
+                0.0, 0.5, 0.5, // r2
+                0.0, 0.0, -1.0 // r3
+            ]
+            .map(|e| Double::of(e))
+        )
+        .unwrap())
+    .linear_iter()
+    .all(|e| e.is_zero()));
 }

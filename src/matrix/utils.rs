@@ -11,28 +11,26 @@ use crate::{
 };
 
 pub fn points_2d<F>(
-    (x_lb, x_ub): (usize, usize),
-    (y_lb, y_ub): (usize, usize),
-    predicate: Option<F>,
+    (row_lb, row_ub): (usize, usize),
+    (col_lb, col_ub): (usize, usize),
+    pred: F,
 ) -> Vec<(usize, usize)>
 where
     F: Fn(usize, usize) -> bool,
 {
-    if x_lb >= x_ub || y_lb >= y_ub {
+    if row_lb > row_ub || col_lb > col_ub {
         Vec::new()
     } else {
-        let mut all_points = Vec::with_capacity((x_ub - x_lb) * (y_ub - y_lb));
-        for x in x_lb..=x_ub {
-            for y in y_lb..=y_ub {
-                if if let Some(ref p) = predicate {
-                    p(x, y)
-                } else {
-                    true
-                } {
-                    all_points.push((x, y));
+        let mut all_points = Vec::with_capacity((row_ub - row_lb + 1) * (col_ub - col_lb + 1));
+        for row in row_lb..=row_ub {
+            for col in col_lb..=col_ub {
+                if pred(row, col) {
+                    all_points.push((row, col));
                 }
             }
         }
+        // used to save a certain amount of space
+        all_points.shrink_to_fit();
         all_points
     }
 }

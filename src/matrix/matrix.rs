@@ -13,7 +13,7 @@ use crate::{
 #[cfg(feature = "rand_mat")]
 use rand::distributions::{uniform::SampleUniform, Distribution, Uniform};
 
-#[derive(Clone, PartialEq, PartialOrd)]
+#[derive(Clone)]
 pub struct Matrix<N, const R: usize, const C: usize> {
     pub(crate) inner: Vec<N>,
 }
@@ -81,25 +81,19 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         }
     }
 
-    pub fn p_change(
-        row: usize,
-        column: usize,
-    ) -> Matrix<N, { Self::get_diagonal_length() }, { Self::get_diagonal_length() }>
+    pub fn p_change(row1: usize, row2: usize) -> Matrix<N, R, R>
     where
         N: Number,
     {
         let mut p_mat = Matrix::eyes();
-        p_mat[(row, row)] = N::zero();
-        p_mat[(column, column)] = N::zero();
-        p_mat[(row, column)] = N::one();
-        p_mat[(column, row)] = N::one();
+        p_mat[(row1, row1)] = N::zero();
+        p_mat[(row2, row2)] = N::zero();
+        p_mat[(row1, row2)] = N::one();
+        p_mat[(row2, row1)] = N::one();
         p_mat
     }
 
-    pub fn p_muls(
-        row: usize,
-        scalar: N,
-    ) -> Matrix<N, { Self::get_diagonal_length() }, { Self::get_diagonal_length() }>
+    pub fn p_muls(row: usize, scalar: N) -> Matrix<N, R, R>
     where
         N: Number,
     {
@@ -108,11 +102,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         p_mat
     }
 
-    pub fn p_add(
-        from: usize,
-        to: usize,
-        scalar: N,
-    ) -> Matrix<N, { Self::get_diagonal_length() }, { Self::get_diagonal_length() }>
+    pub fn p_add(from: usize, to: usize, scalar: N) -> Matrix<N, R, R>
     where
         N: Number,
     {
@@ -224,6 +214,22 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     }
 }
 
+impl<N, const R1: usize, const C1: usize, const R2: usize, const C2: usize>
+    std::cmp::PartialEq<Matrix<N, R2, C2>> for Matrix<N, R1, C1>
+where
+    N: PartialEq,
+{
+    fn eq(&self, other: &Matrix<N, R2, C2>) -> bool {
+        R1 == R2
+            && C1 == C2
+            && self
+                .linear_iter()
+                .take(R1 * C2)
+                .zip(other.linear_iter().take(R2 * C1))
+                .all(|(e1, e2)| e1 == e2)
+    }
+}
+
 impl<N, const R: usize, const C: usize> std::ops::Neg for Matrix<N, R, C>
 where
     N: Number,
@@ -314,18 +320,18 @@ where
     fn mul(self, rhs: Matrix<N, K, C>) -> Self::Output {
         let mut product = Matrix::default();
         for k_index in 1..=K {
-            let v1 = map(
+            let lhs_k_column = map(
                 &self
                     .get_column(k_index)
                     .expect("Error[Matrix::mul]: k_index should be valid index"),
                 |e| e.clone(),
-            );
-            let v2 = map(
+            ); // lhs[:, k]
+            let rhs_k_row = map(
                 &rhs.get_row(k_index)
                     .expect("Error[Matrix::mul]: k_index should be valid index"),
                 |e| e.clone(),
-            );
-            let layer = layer_product(v1, v2);
+            ); // rhs[k, :]
+            let layer = layer_product(lhs_k_column, rhs_k_row);
             product = product + layer;
         }
         product
