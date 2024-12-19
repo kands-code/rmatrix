@@ -11,7 +11,6 @@ use crate::number::{
     utils::from_integeral,
 };
 
-#[cfg(feature = "rand_mat")]
 use rand::{
     distributions::uniform::{SampleBorrow, SampleUniform, UniformFloat, UniformSampler},
     Rng,
@@ -27,8 +26,8 @@ impl Float {
         Self { inner: num }
     }
 
-    pub fn of_str(float_number: &str) -> Result<Self, String> {
-        std::str::FromStr::from_str(float_number)
+    pub fn of_str(float_number: &str) -> Option<Self> {
+        std::str::FromStr::from_str(float_number).ok()
     }
 }
 
@@ -136,7 +135,10 @@ impl Number for Float {
         } else {
             let inner = format!("{}", integer_number)
                 .parse::<f32>()
-                .expect("Error[Float::from<Integer>]: integer_number should be a valid f32 number");
+                .expect(&format!(
+                    "Error[Float::from_Integer]: ({}) should be a valid f32 number.",
+                    integer_number
+                ));
             Self { inner }
         }
     }
@@ -198,11 +200,11 @@ impl Real for Float {
                 .collect::<Vec<u8>>();
             Rational::of(
                 Integer::of(sign, &numerator).expect(&format!(
-                    "Error[Float::to_rational]: every digits should be in [0, 10) {:?}",
+                    "Error[Float::to_rational]: Each digit should be within the range [1, 9] ({:?}).",
                     numerator
                 )),
                 Integer::of(true, &denominator).expect(&format!(
-                    "Error[Float::to_rational]: every digits should be in [0, 10) {:?}",
+                    "Error[Float::to_rational]: Each digit should be within the range [1, 9] ({:?}).",
                     denominator
                 )),
             )
@@ -318,27 +320,25 @@ impl std::fmt::Debug for Float {
 }
 
 impl std::str::FromStr for Float {
-    type Err = String;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let trimmed_s = s.trim();
         if let Ok(num) = trimmed_s.parse::<f32>() {
             Ok(Self { inner: num })
         } else {
-            Err(format!(
-                "Error[Float::from_str]: {} is not a valid float number",
+            eprintln!(
+                "Error[Float::from_str]: ({}) is not a valid Float literal.",
                 trimmed_s
-            ))
+            );
+            Err(())
         }
     }
 }
 
-#[cfg(feature = "rand_mat")]
-#[doc(cfg(feature = "rand_mat"))]
 /// Uniform for Float
 pub struct UniformF32(UniformFloat<f32>);
 
-#[cfg(feature = "rand_mat")]
 impl UniformSampler for UniformF32 {
     type X = Float;
 
@@ -369,7 +369,6 @@ impl UniformSampler for UniformF32 {
     }
 }
 
-#[cfg(feature = "rand_mat")]
 impl SampleUniform for Float {
     type Sampler = UniformF32;
 }

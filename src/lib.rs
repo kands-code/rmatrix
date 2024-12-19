@@ -1,7 +1,6 @@
 #![allow(incomplete_features)]
 #![feature(doc_cfg)]
 #![feature(generic_const_exprs)]
-#![windows_subsystem = "windows"]
 
 //! # rmatrix_ks
 //!
@@ -20,10 +19,14 @@
 //! ## Warning
 //!
 //! Unstable features used:
-//! - doc_cfg
 //! - generic_const_exprs
 //!
 //! Please add `#![feature(generic_const_exprs)]` if you want to use this library.
+//!
+//! # Description
+//!
+//! This library is for matrix computation,
+//! just for learning and self using.
 
 pub mod matrix;
 pub mod number;

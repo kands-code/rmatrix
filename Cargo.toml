@@ -13,8 +13,7 @@ repository = "https://github.com/kands-code/rmatrix"
 documentation = "https://docs.rs/rmatrix_ks"
 
 [package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition"]
+rustdoc-args = ["--generate-link-to-definition"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -26,8 +25,6 @@ crate-type = ["rlib"]
 # for pattern validate
 regex = "^1.11.1"
 # for random matrix and random number
-rand = { version = "^0.8.5", optional = true }
-
-[features]
-default = ["rand_mat"]
-rand_mat = ["rand"]
+rand = "^0.8.5"
+# for optimize
+rayon = "^1.10.0"

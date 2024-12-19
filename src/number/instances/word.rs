@@ -7,7 +7,6 @@ use crate::number::{
     traits::{integral::Integral, number::Number, one::One, real::Real, zero::Zero},
 };
 
-#[cfg(feature = "rand_mat")]
 use rand::{
     distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
     Rng,
@@ -25,8 +24,8 @@ impl Word {
     }
 
     // create Word from &str
-    pub fn of_str(int_number: &str) -> Result<Self, String> {
-        std::str::FromStr::from_str(int_number)
+    pub fn of_str(int_number: &str) -> Option<Self> {
+        std::str::FromStr::from_str(int_number).ok()
     }
 
     pub fn digits(&self) -> Vec<u8> {
@@ -128,7 +127,10 @@ impl Number for Word {
         } else {
             let inner = format!("{}", integer_number)
                 .parse::<u32>()
-                .expect("Error[Word::from<Integer>]: integer_number should be a proper u32 number");
+                .expect(&format!(
+                    "Error[Word::from_Integer]: ({}) should be a valid u32 number.",
+                    integer_number
+                ));
             Self { inner }
         }
     }
@@ -166,8 +168,10 @@ impl Integral for Word {
     }
 
     fn to_integer(self) -> Integer {
-        let sign = !(self < Self::zero());
-        Integer::of(sign, &self.digits()).expect("")
+        Integer::of_str(&format!("{}", self)).expect(&format!(
+            "Error[Word::to_integer]: ({}) should be a valid Integer.",
+            self
+        ))
     }
 }
 
@@ -184,27 +188,25 @@ impl std::fmt::Debug for Word {
 }
 
 impl std::str::FromStr for Word {
-    type Err = String;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let trimmed_s = s.trim();
         if let Ok(num) = trimmed_s.parse::<u32>() {
             Ok(Self { inner: num })
         } else {
-            Err(format!(
-                "Error[Word::from_str]: {} is not a valid unsigned integer",
+            eprintln!(
+                "Error[Word::from_str]: ({}) is not a valid Word literal.",
                 trimmed_s
-            ))
+            );
+            Err(())
         }
     }
 }
 
-#[cfg(feature = "rand_mat")]
-#[doc(cfg(feature = "rand_mat"))]
 /// Uniform for Word
 pub struct UniformU32(UniformInt<u32>);
 
-#[cfg(feature = "rand_mat")]
 impl UniformSampler for UniformU32 {
     type X = Word;
 
@@ -235,7 +237,6 @@ impl UniformSampler for UniformU32 {
     }
 }
 
-#[cfg(feature = "rand_mat")]
 impl SampleUniform for Word {
     type Sampler = UniformU32;
 }

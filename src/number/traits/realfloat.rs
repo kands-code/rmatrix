@@ -47,10 +47,14 @@ pub trait RealFloat: RealFrac + Floating {
             integeral_power(from_integeral(Self::FLOAT_RADIX), modified_exponent.clone())
                 .map(|p| self.clone() / p)
                 .map(|p| p.to_rational().numerator)
-                .expect("Error[RealFloat::decode_float]: should get the right results");
+                .expect(
+                    "Error[RealFloat::decode_float]: Should be able to produce the correct result.",
+                );
         let significand_range =
             non_negative_integral_power(Self::FLOAT_RADIX, Self::FLOAT_DIGITS + Int::one())
-                .expect("Error[RealFloat::decode_float]: should get the right results")
+                .expect(
+                    "Error[RealFloat::decode_float]: Should be able to produce the correct result.",
+                )
                 .to_integer();
         let modified_significand = if modified_exponent.is_zero() {
             significand.modulus(
@@ -70,7 +74,7 @@ pub trait RealFloat: RealFrac + Floating {
     fn encode_float(significand: Integer, exponent: Int) -> Self {
         integeral_power(from_integeral(Self::FLOAT_RADIX), exponent)
             .map(|p: Self| p * Self::from_integer(significand))
-            .expect("Error[RealFloat::encode_float]: should get the right results")
+            .expect("Error[RealFloat::encode_float]: Should be able to produce the correct result.")
     }
 
     /// corresponds to the second component of decode_float

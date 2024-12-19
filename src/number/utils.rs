@@ -84,7 +84,7 @@ pub fn non_negative_integral_power<N: Number, I: Integral>(base: N, exponents: I
     if exponents < I::zero() {
         // integeral exponents cannot handle negative exponents
         eprintln!(
-            "Error[utils::non_negative_integral_power]: negative exponents {}",
+            "Error[number::utils::non_negative_integral_power]: Negative exponents {} are not allowed.",
             exponents
         );
         None

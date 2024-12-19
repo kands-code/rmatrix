@@ -1,6 +1,6 @@
-//! # Matrix
+//! # matrix::matrix
 //!
-//! Basic matrix type.
+//! Definition of the matrix along with related functions and implementations.
 
 use crate::{
     matrix::{
@@ -10,11 +10,15 @@ use crate::{
     number::traits::{fractional::Fractional, number::Number},
 };
 
-#[cfg(feature = "rand_mat")]
 use rand::distributions::{uniform::SampleUniform, Distribution, Uniform};
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
+};
 
+/// A matrix is a container of a single type that has two dimensions: rows and columns.
 #[derive(Clone)]
 pub struct Matrix<N, const R: usize, const C: usize> {
+    /// Internal container.
     pub(crate) inner: Vec<N>,
 }
 
@@ -37,7 +41,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     {
         if data.len() < R * C {
             eprintln!(
-                "Error[Matrix::of]: data length {} is less than matrix require {}",
+                "Error[Matrix::of]: The data length ({}) does not meet the required number of elements ({}) for the matrix.",
                 data.len(),
                 R * C
             );
@@ -67,7 +71,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         let length = Self::get_diagonal_length();
         if data.len() < length {
             eprintln!(
-                "Error[Matrix::diagonal]: data length {} is less than matrix require {}",
+                "Error[Matrix::diagonal]: The data length ({}) does not meet the required number of elements ({}) for the matrix.",
                 data.len(),
                 length
             );
@@ -111,7 +115,6 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         p_mat
     }
 
-    #[cfg(feature = "rand_mat")]
     pub fn rand(lb: N, ub: N) -> Self
     where
         N: Number + SampleUniform,
@@ -133,7 +136,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     pub fn get(&self, row_index: usize, column_index: usize) -> Option<&N> {
         if row_index == 0 || column_index == 0 || row_index > R || column_index > C {
             eprintln!(
-                "Error[Matrix::get]: index ({}, {}) is out of boundary",
+                "Error[Matrix::get]: Index ({}, {}) is out of bounds.",
                 row_index, column_index
             );
             None
@@ -146,7 +149,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     pub fn set(&mut self, row_index: usize, column_index: usize, value: N) {
         if row_index == 0 || column_index == 0 || row_index > R || column_index > C {
             eprintln!(
-                "Error[Matrix::set]: index ({}, {}) is out of boundary",
+                "Error[Matrix::set]: Index ({}, {}) is out of bounds.",
                 row_index, column_index
             );
         } else {
@@ -158,7 +161,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     pub fn get_row(&self, row_index: usize) -> Option<VectorR<&N, C>> {
         if row_index == 0 || row_index > R {
             eprintln!(
-                "Error[Matrix::get_row]: row index {} is out of boundary",
+                "Error[Matrix::get_row]: Index ({}) is out of bounds.",
                 row_index
             );
             None
@@ -174,7 +177,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     pub fn get_column(&self, column_index: usize) -> Option<VectorC<&N, R>> {
         if column_index == 0 || column_index > C {
             eprintln!(
-                "Error[Matrix::get_column]: column index {} is out of boundary",
+                "Error[Matrix::get_column]: Index ({}) is out of bounds.",
                 column_index
             );
             None
@@ -190,9 +193,9 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     where
         N: Number,
     {
-        self.linear_iter()
-            .take(R * C)
-            .zip(rhs.linear_iter().take(R * C))
+        self.inner
+            .par_iter()
+            .zip(rhs.inner.par_iter())
             .all(|(e1, e2)| (e1.clone() - e2.clone()).is_zero())
     }
 
@@ -226,15 +229,15 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
 impl<N, const R1: usize, const C1: usize, const R2: usize, const C2: usize>
     std::cmp::PartialEq<Matrix<N, R2, C2>> for Matrix<N, R1, C1>
 where
-    N: std::cmp::PartialEq,
+    N: std::cmp::PartialEq + std::marker::Sync,
 {
     fn eq(&self, other: &Matrix<N, R2, C2>) -> bool {
         R1 == R2
             && C1 == C2
             && self
-                .linear_iter()
-                .take(R1 * C2)
-                .zip(other.linear_iter().take(R2 * C1))
+                .inner
+                .par_iter()
+                .zip(other.inner.par_iter())
                 .all(|(e1, e2)| e1 == e2)
     }
 }
@@ -246,7 +249,7 @@ where
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        let inner = self.linear_iter().map(|e1| -e1.clone()).collect();
+        let inner = self.inner.par_iter().map(|e1| -e1.clone()).collect();
         Self { inner }
     }
 }
@@ -259,7 +262,8 @@ where
 
     fn add(self, rhs: N) -> Self::Output {
         let inner = self
-            .linear_iter()
+            .inner
+            .par_iter()
             .map(|e| e.clone() + rhs.clone())
             .collect();
         Self { inner }
@@ -273,7 +277,12 @@ where
     type Output = Self;
 
     fn sub(self, rhs: N) -> Self::Output {
-        self + (-rhs)
+        let inner = self
+            .inner
+            .par_iter()
+            .map(|e| e.clone() - rhs.clone())
+            .collect();
+        Self { inner }
     }
 }
 
@@ -285,8 +294,9 @@ where
 
     fn add(self, rhs: Self) -> Self::Output {
         let inner = self
-            .linear_iter()
-            .zip(rhs.linear_iter())
+            .inner
+            .par_iter()
+            .zip(rhs.inner.par_iter())
             .map(|(e1, e2)| e1.clone() + e2.clone())
             .collect();
         Self { inner }
@@ -300,7 +310,13 @@ where
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        self + (-rhs)
+        let inner = self
+            .inner
+            .par_iter()
+            .zip(rhs.inner.par_iter())
+            .map(|(e1, e2)| e1.clone() - e2.clone())
+            .collect();
+        Self { inner }
     }
 }
 
@@ -312,7 +328,8 @@ where
 
     fn mul(self, rhs: N) -> Self::Output {
         let inner = self
-            .linear_iter()
+            .inner
+            .par_iter()
             .map(|e| e.clone() * rhs.clone())
             .collect();
         Self { inner }
@@ -327,23 +344,24 @@ where
     type Output = Matrix<N, R, C>;
 
     fn mul(self, rhs: Matrix<N, K, C>) -> Self::Output {
-        let mut product = Matrix::default();
-        for k_index in 1..=K {
-            let lhs_k_column = map(
-                &self
-                    .get_column(k_index)
-                    .expect("Error[Matrix::mul]: k_index should be valid index"),
-                |e| e.clone(),
-            ); // lhs[:, k]
-            let rhs_k_row = map(
-                &rhs.get_row(k_index)
-                    .expect("Error[Matrix::mul]: k_index should be valid index"),
-                |e| e.clone(),
-            ); // rhs[k, :]
-            let layer = layer_product(lhs_k_column, rhs_k_row);
-            product = product + layer;
-        }
-        product
+        (1..=K)
+            .into_par_iter()
+            .map(|k_index| {
+                layer_product(
+                    map(
+                        &self
+                            .get_column(k_index)
+                            .expect("Error[Matrix::mul]: k_index should be a valid index."),
+                        |e| e.clone(),
+                    ), // lhs[:, k]
+                    map(
+                        &rhs.get_row(k_index)
+                            .expect("Error[Matrix::mul]: k_index should be a valid index."),
+                        |e| e.clone(),
+                    ), // rhs[k, :]
+                )
+            })
+            .reduce(|| Matrix::default(), |a, b| a + b)
     }
 }
 
@@ -406,7 +424,7 @@ impl<N, const R: usize, const C: usize> std::ops::Index<(usize, usize)> for Matr
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         self.get(index.0, index.1)
-            .expect("Error[Matrix::index]: index out of boundary")
+            .expect("Error[Matrix::index]: Index is out of bounds.")
     }
 }
 

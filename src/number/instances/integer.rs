@@ -52,7 +52,7 @@ impl Integer {
                 Some(Self { sign, inner })
             } else {
                 eprintln!(
-                    "Error[Integer::of]: every digits should be in [0, 10) {:?}",
+                    "Error[Integer::of]: Each digit of the integer should be within the range [0, 9] ({:?}).",
                     digits,
                 );
                 None
@@ -118,8 +118,9 @@ impl Integer {
                 carry = factor / 10;
             }
             sum.reverse();
-            Self::of(true, &sum)
-                .expect("Error[Integer::integer_add]: every digits should be in [0, 10)")
+            Self::of(true, &sum).expect(
+                "Error[Integer::integer_add]: Each digit should be within the range [1, 9].",
+            )
         }
     }
 
@@ -151,8 +152,9 @@ impl Integer {
                 .map(|&digit| digit as u8)
                 // .map(|&digit| digit as u8)
                 .collect::<Vec<u8>>();
-            Self::of(sign, &digits)
-                .expect("Error[Integer::integer_sub]: every digits should be in [0, 10)")
+            Self::of(sign, &digits).expect(
+                "Error[Integer::integer_sub]: Each digit should be within the range [1, 9].",
+            )
         }
     }
 }
@@ -294,7 +296,7 @@ impl std::cmp::PartialOrd for Integer {
 impl std::cmp::Ord for Integer {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.partial_cmp(other)
-            .expect("Error[Integer::cmp]: integers can be compared regardless")
+            .expect("Error[Integer::cmp]: Integer should be ordered.")
     }
 }
 
@@ -353,7 +355,7 @@ impl std::ops::Mul for Integer {
             }
             product.reverse();
             Self::of(self.sign == rhs.sign, &product)
-                .expect("Error[Integer::mul]: every digits should be in [0, 10)")
+                .expect("Error[Integer::mul]: Each digit should be within the range [1, 9].")
         }
     }
 }
@@ -413,7 +415,7 @@ impl Integral for Integer {
                 let mut rem_buffer = rem_digits.clone();
                 rem_buffer.extend(self_digits[head..(head + expand)].iter());
                 let buffer = Self::of(true, &rem_buffer).expect(&format!(
-                    "Error[Integer::quot_rem]: out of boundary ({}, {})",
+                    "Error[Integer::quot_rem]: ({}, {}) is out of bounds.",
                     head,
                     head + expand,
                 ));
@@ -438,7 +440,7 @@ impl Integral for Integer {
             }
             Self::of(self.sign == rhs.sign, &quot_digits)
                 .zip(Self::of(self.sign, &rem_digits))
-                .expect("Error[Integer::quot_rem]: every digits should be in [0, 10)")
+                .expect("Error[Integer::quot_rem]: Each digit should be within the range [1, 9].")
         }
     }
 
@@ -488,7 +490,7 @@ impl std::fmt::Debug for Integer {
 }
 
 impl std::str::FromStr for Integer {
-    type Err = String;
+    type Err = ();
 
     /// convert string literal to Integer
     ///
@@ -515,9 +517,11 @@ impl std::str::FromStr for Integer {
                     None
                 }
             })
-            .ok_or(format!(
-                "Error[Ineteger::from_str]: parse {} failed!",
-                trimmed_s
-            ))
+            .ok_or_else(|| {
+                eprintln!(
+                    "Error[Ineteger::from_str]: Failed to parse {} from the string.",
+                    trimmed_s
+                )
+            })
     }
 }

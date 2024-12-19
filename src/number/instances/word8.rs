@@ -7,7 +7,6 @@ use crate::number::{
     traits::{integral::Integral, number::Number, one::One, real::Real, zero::Zero},
 };
 
-#[cfg(feature = "rand_mat")]
 use rand::{
     distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
     Rng,
@@ -25,8 +24,8 @@ impl Word8 {
     }
 
     // create Word8 from &str
-    pub fn of_str(uint8_number: &str) -> Result<Self, String> {
-        std::str::FromStr::from_str(uint8_number)
+    pub fn of_str(uint8_number: &str) -> Option<Self> {
+        std::str::FromStr::from_str(uint8_number).ok()
     }
 
     pub fn digits(&self) -> Vec<u8> {
@@ -125,9 +124,10 @@ impl Number for Word8 {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{}", integer_number)
-                .parse::<u8>()
-                .expect("Error[Word8::from<Integer>]: integer_number should be a proper u8 number");
+            let inner = format!("{}", integer_number).parse::<u8>().expect(&format!(
+                "Error[Word8::from_Integer]: ({}) should be a valid u8 number.",
+                integer_number
+            ));
             Self { inner }
         }
     }
@@ -165,8 +165,10 @@ impl Integral for Word8 {
     }
 
     fn to_integer(self) -> Integer {
-        let sign = !(self < Self::zero());
-        Integer::of(sign, &self.digits()).expect("")
+        Integer::of_str(&format!("{}", self)).expect(&format!(
+            "Error[Word8::to_integer]: ({}) should be a valid Integer.",
+            self
+        ))
     }
 }
 
@@ -183,27 +185,25 @@ impl std::fmt::Debug for Word8 {
 }
 
 impl std::str::FromStr for Word8 {
-    type Err = String;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let trimmed_s = s.trim();
         if let Ok(num) = trimmed_s.parse::<u8>() {
             Ok(Self { inner: num })
         } else {
-            Err(format!(
-                "Error[Word8::from_str]: {} is not a valid integer",
+            eprintln!(
+                "Error[Word8::from_str]: ({}) is not a valid Word8 literal.",
                 trimmed_s
-            ))
+            );
+            Err(())
         }
     }
 }
 
-#[cfg(feature = "rand_mat")]
-#[doc(cfg(feature = "rand_mat"))]
 /// Uniform for Word8
 pub struct UniformU8(UniformInt<u8>);
 
-#[cfg(feature = "rand_mat")]
 impl UniformSampler for UniformU8 {
     type X = Word8;
 
@@ -234,7 +234,6 @@ impl UniformSampler for UniformU8 {
     }
 }
 
-#[cfg(feature = "rand_mat")]
 impl SampleUniform for Word8 {
     type Sampler = UniformU8;
 }

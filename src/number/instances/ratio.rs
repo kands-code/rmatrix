@@ -29,8 +29,8 @@ impl<I: Integral> Ratio<I> {
     }
 
     // create Ratio from &str
-    pub fn of_str(ratio_numbwe: &str) -> Result<Self, String> {
-        std::str::FromStr::from_str(ratio_numbwe)
+    pub fn of_str(ratio_numbwe: &str) -> Option<Self> {
+        std::str::FromStr::from_str(ratio_numbwe).ok()
     }
 
     pub fn refine(self) -> Self {
@@ -265,7 +265,7 @@ impl<I: Integral> std::fmt::Display for Ratio<I> {
 }
 
 impl<I: Integral> std::str::FromStr for Ratio<I> {
-    type Err = String;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // remove extra whitespaces
@@ -274,7 +274,7 @@ impl<I: Integral> std::str::FromStr for Ratio<I> {
         let searcher = regex::Regex::new(
             r"(?<numerator>([+-]?)([0-9_]+))([\s]*[%][\s]*)(?<denominator>([+-]?)([0-9_]+))",
         )
-        .expect("Error[Ratio::from_str]: should be a valid regex");
+        .expect("Error[Ratio::from_str]: Should be a valid regular expression.");
         if let Some(captures) = searcher.captures(trimmed_s) {
             let numerator_s = &captures["numerator"];
             let denominator_s = &captures["denominator"];
@@ -282,16 +282,20 @@ impl<I: Integral> std::str::FromStr for Ratio<I> {
             let denominator = std::str::FromStr::from_str(denominator_s);
             match (numerator, denominator) {
                 (Ok(n), Ok(d)) => Ok(Self::of(n, d)),
-                _ => Err(format!(
-                    "Error[Ratio::from_str]: {} or {} is not a valid Integeral",
-                    numerator_s, denominator_s
-                )),
+                _ => {
+                    eprintln!(
+                        "Error[Ratio::from_str]: ({}) or ({}) is not a valid Integeral literal.",
+                        numerator_s, denominator_s
+                    );
+                    Err(())
+                }
             }
         } else {
-            Err(format!(
-                "Error[Ratio::from_str]: {} is not a valid Ratio",
+            eprintln!(
+                "Error[Ratio::from_str]: ({}) is not a valid Ratio literal.",
                 trimmed_s
-            ))
+            );
+            Err(())
         }
     }
 }

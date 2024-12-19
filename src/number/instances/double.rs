@@ -11,7 +11,6 @@ use crate::number::{
     utils::from_integeral,
 };
 
-#[cfg(feature = "rand_mat")]
 use rand::{
     distributions::uniform::{SampleBorrow, SampleUniform, UniformFloat, UniformSampler},
     Rng,
@@ -27,8 +26,8 @@ impl Double {
         Self { inner: num }
     }
 
-    pub fn of_str(float_number: &str) -> Result<Self, String> {
-        std::str::FromStr::from_str(float_number)
+    pub fn of_str(float_number: &str) -> Option<Self> {
+        std::str::FromStr::from_str(float_number).ok()
     }
 }
 
@@ -134,9 +133,12 @@ impl Number for Double {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{}", integer_number).parse::<f64>().expect(
-                "Error[Double::from<Integer>]: integer_number should be a valid f64 number",
-            );
+            let inner = format!("{}", integer_number)
+                .parse::<f64>()
+                .expect(&format!(
+                    "Error[Double::from_Integer]: ({}) should be a valid f64 number.",
+                    integer_number
+                ));
             Self { inner }
         }
     }
@@ -169,7 +171,7 @@ impl RealFrac for Double {
         (
             from_integeral(
                 Integer::of_str(&format!("{}", self.inner.trunc() as i64))
-                    .expect("Error[Double::proper_fraction]: should be a valid i64 number"),
+                    .expect("Error[Double::proper_fraction]: Should be a valid i64 number."),
             ),
             Self::of(self.inner.fract()),
         )
@@ -201,11 +203,11 @@ impl Real for Double {
                 .collect::<Vec<u8>>();
             Rational::of(
                 Integer::of(sign, &numerator).expect(&format!(
-                    "Error[Double::to_rational]: every digits should be in [0, 10) {:?}",
+                    "Error[Double::to_rational]: Each digit should be within the range [1, 9] ({:?}).",
                     numerator
                 )),
                 Integer::of(true, &denominator).expect(&format!(
-                    "Error[Double::to_rational]: every digits should be in [0, 10) {:?}",
+                    "Error[Double::to_rational]: Each digit should be within the range [1, 9] ({:?}).",
                     denominator
                 )),
             )
@@ -321,27 +323,25 @@ impl std::fmt::Debug for Double {
 }
 
 impl std::str::FromStr for Double {
-    type Err = String;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let trimmed_s = s.trim();
         if let Ok(num) = trimmed_s.parse::<f64>() {
             Ok(Self { inner: num })
         } else {
-            Err(format!(
-                "Error[Double::from_str]: {} is not a valid float number",
+            eprintln!(
+                "Error[Double::from_str]: ({}) is not a valid Double literal.",
                 trimmed_s
-            ))
+            );
+            Err(())
         }
     }
 }
 
-#[cfg(feature = "rand_mat")]
-#[doc(cfg(feature = "rand_mat"))]
 /// Uniform for Double
 pub struct UniformF64(UniformFloat<f64>);
 
-#[cfg(feature = "rand_mat")]
 impl UniformSampler for UniformF64 {
     type X = Double;
 
@@ -372,7 +372,6 @@ impl UniformSampler for UniformF64 {
     }
 }
 
-#[cfg(feature = "rand_mat")]
 impl SampleUniform for Double {
     type Sampler = UniformF64;
 }

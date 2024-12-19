@@ -10,6 +10,8 @@ use crate::{
     },
 };
 
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 pub fn points_2d<F>(
     (row_lb, row_ub): (usize, usize),
     (col_lb, col_ub): (usize, usize),
@@ -41,19 +43,20 @@ where
     [(); Matrix::<N, R, C>::get_diagonal_length()]:,
 {
     m.get_diagonal()
-        .linear_iter()
+        .inner
+        .par_iter()
         .cloned()
-        .fold(N::default(), |acc, e| acc + e.clone())
+        .cloned()
+        .reduce(|| N::default(), |a, b| a + b)
 }
 
-pub fn map<N, M, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-    f: impl Fn(N) -> M,
-) -> Matrix<M, R, C>
+pub fn map<N, M, F, const R: usize, const C: usize>(m: &Matrix<N, R, C>, f: F) -> Matrix<M, R, C>
 where
-    N: Clone,
+    N: Sync + Clone,
+    M: Send + Sync,
+    F: Fn(N) -> M + Sync,
 {
-    let inner = m.linear_iter().map(|e| f(e.clone())).collect();
+    let inner = m.inner.par_iter().map(|e| f(e.clone())).collect();
     Matrix { inner }
 }
 

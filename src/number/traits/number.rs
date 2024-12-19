@@ -18,6 +18,8 @@ use crate::number::{
 pub trait Number: One + Zero
 where
     Self: std::marker::Sized
+        + std::marker::Send
+        + std::marker::Sync
         + std::clone::Clone
         + std::default::Default
         + std::fmt::Debug
@@ -27,7 +29,7 @@ where
         + std::ops::Add<Output = Self>
         + std::ops::Sub<Output = Self>
         + std::ops::Mul<Output = Self>
-        + std::str::FromStr<Err = String>,
+        + std::str::FromStr<Err = ()>,
 {
     /// absolute value
     fn absolute_value(&self) -> Self;

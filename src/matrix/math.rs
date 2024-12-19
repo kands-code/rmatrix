@@ -1,18 +1,21 @@
-//! # Math
+//! # matrix::math
 //!
 //! Some mathematical functions for matrix operations,
 //! such as matrix validation, matrix simplification,
 //! and determinant calculation, etc.
 
 use crate::{
-    matrix::matrix::Matrix,
+    matrix::{
+        matrix::Matrix,
+        utils::{conjugate_transpose, points_2d, transpose},
+    },
     number::{
         instances::complex::Complex,
         traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
     },
 };
 
-use super::utils::{conjugate_transpose, points_2d, transpose};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 /// Validate whether a matrix is a square matrix.
 ///
@@ -71,12 +74,12 @@ pub fn is_symmetric_matrix<N, F, const R: usize, const C: usize>(
     pred: F,
 ) -> bool
 where
-    N: PartialEq,
-    F: Fn(&N, &N) -> bool,
+    N: PartialEq + Sync,
+    F: Fn(&N, &N) -> bool + Sync,
 {
     is_square_matrix(m)
         && points_2d((1, R), (1, C), |row, col| row < col)
-            .iter()
+            .par_iter()
             .all(|&p @ (row, col)| pred(&m[p], &m[(col, row)]))
 }
 
@@ -105,7 +108,7 @@ where
     N: Number,
 {
     points_2d((1, R), (1, C), |row, col| row > col)
-        .iter()
+        .par_iter()
         .all(|&p| m[p].is_zero())
 }
 
@@ -134,7 +137,7 @@ where
     N: Number,
 {
     points_2d((1, R), (1, C), |row, col| row < col)
-        .iter()
+        .par_iter()
         .all(|&p| m[p].is_zero())
 }
 
@@ -163,7 +166,7 @@ where
     N: Number,
 {
     points_2d((1, R), (1, C), |row, col| row != col)
-        .iter()
+        .par_iter()
         .cloned()
         .map(|p| &m[p])
         .all(|e| e.is_zero())
@@ -195,7 +198,7 @@ where
     is_square_matrix(m)
         && is_diagonal_matrix(m)
         && points_2d((1, R), (1, C), |row, col| row == col)
-            .iter()
+            .par_iter()
             .all(|&p| m[p].is_one())
 }
 
@@ -376,7 +379,7 @@ where
 /// # Returns
 ///
 /// - Times of row swaps
-/// - Row swap matrix
+/// - Permutation matrix
 /// - Lower triangular matrix
 /// - Row-reduced matrix
 ///
@@ -385,32 +388,31 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{math::row_reduce, matrix::Matrix},
-///     number::{instances::double::Double, traits::zero::Zero},
+///     number::instances::double::Double,
 /// };
 ///
 /// fn main() {
 ///     let m = Matrix::<Double, 3, 3>::of(
 ///         &[
-///             2.0, 1.0, -1.0,  // r1
+///             2.0, 1.0, -1.0, // r1
 ///             -3.0, -1.0, 2.0, // r2
-///             -2.0, 1.0, 2.0,  // r3
+///             -2.0, 1.0, 2.0, // r3
 ///         ]
 ///         .map(|e| Double::of(e)),
 ///     )
 ///     .unwrap();
 ///     let (_, _, _, reduced) = row_reduce(&m);
-///     assert!((reduced
-///         - Matrix::<Double, 3, 3>::of(
+///     assert!(reduced.equals(
+///         &Matrix::<Double, 3, 3>::of(
 ///             &[
 ///                 2.0, 1.0, -1.0, // r1
-///                 0.0, 0.5, 0.5,  // r2
-///                 0.0, 0.0, -1.0  // r3
+///                 0.0, 0.5, 0.5, // r2
+///                 0.0, 0.0, -1.0 // r3
 ///             ]
 ///             .map(|e| Double::of(e))
 ///         )
-///         .unwrap())
-///     .linear_iter()
-///     .all(|e| e.is_zero()));
+///         .unwrap()
+///     ));
 /// }
 /// ```
 pub fn row_reduce<N, const R: usize, const C: usize>(
@@ -484,24 +486,6 @@ where
 ///
 /// - Transform matrix
 /// - Row-eliminated matrix
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::{math::row_eliminate, matrix::Matrix},
-///     number::instances::double::Double,
-/// };
-///
-/// fn main() {
-///     let m = Matrix::<Double, 3, 3>::of(
-///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
-///     )
-///     .unwrap();
-///     let (_, eliminated) = row_eliminate(&m);
-///     assert_eq!(eliminated, Matrix::<Double, 3, 3>::eyes());
-/// }
-/// ```
 fn row_eliminate_inner<N, const R: usize, const C: usize>(
     m: &Matrix<N, R, C>,
 ) -> (Matrix<N, R, R>, Matrix<N, R, C>)
@@ -584,7 +568,7 @@ where
 ///     )
 ///     .unwrap();
 ///     let inv = inverse(&m).unwrap();
-///     assert_eq!(inv * m, Matrix::<Double, 3, 3>::eyes());
+///     assert!((inv * m).equals(&Matrix::<Double, 3, 3>::eyes()));
 /// }
 /// ```
 pub fn inverse<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<Matrix<N, R, R>>
@@ -593,6 +577,7 @@ where
 {
     let det = determinant(m);
     if det.is_none_or(|e| e.is_zero()) {
+        eprintln!("Error[matrix::math::inverse]: The singular matrix does not have an inverse.");
         None
     } else {
         Some(row_eliminate_inner(m).0)
@@ -627,10 +612,11 @@ where
             reduced
                 .get_row(row_index)
                 .expect(&format!(
-                    "Error[matrix::rank]: get the {}-th row of matrix failed",
+                    "Error[matrix::math::rank]: Failed to retrieve the {}-th row of the matrix.",
                     row_index
                 ))
-                .linear_iter()
+                .inner
+                .par_iter()
                 .any(|e| !e.is_zero())
         })
         .filter(|&p| p)
@@ -675,6 +661,7 @@ where
                 * if t & 1 == 0 { N::one() } else { -N::one() },
         )
     } else {
+        eprintln!("Error[matrix::math::determinant]: Only square matrices have determinants.");
         None
     }
 }
@@ -735,17 +722,58 @@ where
         let mut adjugate = Matrix::<N, R, R>::default();
         for row in 1..=R {
             for column in 1..=C {
-                adjugate[(row, column)] = determinant(&m.submatrix(column, row)).expect(
-                    "Error[matrix::adjugate_matrix]: get the determinant of submatrix failed",
-                ) * if (row + column) & 1 == 0 {
-                    N::one()
-                } else {
-                    -N::one()
-                }
+                adjugate[(row, column)] = determinant(&m.submatrix(column, row)).expect(&format!(
+                    "Error[matrix::math::adjugate_matrix]: Failed to retrieve the determinant of the submatrix({}, {}) of the matrix.",
+                    row, column))
+                    * if (row + column) & 1 == 0 {
+                        N::one()
+                    } else {
+                        -N::one()
+                    }
             }
         }
         Some(adjugate)
     } else {
+        eprintln!(
+            "Error[matrix::math::adjugate_matrix]: Only square matrices have adjugate matrices."
+        );
         None
     }
+}
+
+/// Calculate the PLU decomposition of the matrix.
+///
+/// p * m = l * u
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::plu_decomposition, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Double, 3, 3>::of(
+///         &[0.0, 5.0, 22.0 / 3.0, 4.0, 2.0, 1.0, 2.0, 7.0, 9.0].map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     let (p, l, u) = plu_decomposition(&m);
+///     assert!((p * m).equals(&(l * u)));
+/// }
+/// ```
+pub fn plu_decomposition<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> (Matrix<N, R, R>, Matrix<N, R, R>, Matrix<N, R, C>)
+where
+    N: Fractional,
+{
+    let (_, p, lt, reduced) = row_reduce(m);
+    (
+        p,
+        inverse(&lt).expect(
+            "Error[matrix::math::plu_decomposition]: Failed to retrieve the inverse of 'lt'.",
+        ),
+        reduced,
+    )
 }

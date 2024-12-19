@@ -10,7 +10,6 @@ use crate::number::{
     },
 };
 
-#[cfg(feature = "rand_mat")]
 use rand::{
     distributions::{
         uniform::{SampleBorrow, SampleUniform, Uniform, UniformSampler},
@@ -30,8 +29,8 @@ impl<F: RealFloat> Complex<F> {
         Self { real, imaginary }
     }
 
-    pub fn of_str(float_number: &str) -> Result<Self, String> {
-        std::str::FromStr::from_str(float_number)
+    pub fn of_str(float_number: &str) -> Option<Self> {
+        std::str::FromStr::from_str(float_number).ok()
     }
 
     pub fn conjugate(self) -> Self {
@@ -293,15 +292,16 @@ impl<F: RealFloat> std::fmt::Debug for Complex<F> {
 }
 
 impl<F: RealFloat> std::str::FromStr for Complex<F> {
-    type Err = String;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let trimmed_s = s.split(":+").map(|p| p.trim()).collect::<Vec<_>>();
         if trimmed_s.len() != 2 {
-            Err(format!(
-                "Error[Complex::from_str]: {} is not a valid complex number",
+            eprintln!(
+                "Error[Complex::from_str]: ({}) is not a valid Complex literal.",
                 s
-            ))
+            );
+            Err(())
         } else {
             let real = F::from_str(trimmed_s[0])?;
             let imaginary = F::from_str(trimmed_s[1])?;
@@ -310,12 +310,9 @@ impl<F: RealFloat> std::str::FromStr for Complex<F> {
     }
 }
 
-#[cfg(feature = "rand_mat")]
-#[doc(cfg(feature = "rand_mat"))]
 /// Uniform for Complex
 pub struct UniformComplex<F: RealFloat + SampleUniform>(Uniform<F>, Uniform<F>);
 
-#[cfg(feature = "rand_mat")]
 impl<F: RealFloat + SampleUniform> UniformSampler for UniformComplex<F> {
     type X = Complex<F>;
 
@@ -352,7 +349,6 @@ impl<F: RealFloat + SampleUniform> UniformSampler for UniformComplex<F> {
     }
 }
 
-#[cfg(feature = "rand_mat")]
 impl<F: RealFloat + SampleUniform> SampleUniform for Complex<F> {
     type Sampler = UniformComplex<F>;
 }

@@ -1,4 +1,4 @@
-//! # Vector
+//! # matrix::vector
 //!
 //! Definitions of column vectors and row vectors,
 //! along with related functions.
@@ -7,6 +7,8 @@
 //! so most functions are implemented only for column vectors.
 //! For row vectors, you can first transpose them into column vectors
 //! and then use the corresponding functions.
+
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
     matrix::matrix::Matrix,
@@ -109,10 +111,11 @@ pub fn dot_product<N, const R: usize>(v1: VectorC<N, R>, v2: VectorC<N, R>) -> N
 where
     N: Number,
 {
-    v1.linear_iter()
-        .zip(v2.linear_iter())
+    v1.inner
+        .par_iter()
+        .zip(v2.inner.par_iter())
         .map(|(e1, e2)| e1.clone() * e2.clone())
-        .fold(N::zero(), |acc, e| acc + e)
+        .reduce(|| N::zero(), |acc, e| acc + e)
 }
 
 /// Calculate the cross product of two three-dimensional column vectors.
@@ -128,10 +131,8 @@ where
 /// fn main() {
 ///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
 ///     let v2: VectorC<Int8, 3> = VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
-///     assert_eq!(
-///         cross_product(v1, v2),
-///         VectorC::of(&[Int8::of(-3), Int8::of(6), Int8::of(-3)]).unwrap()
-///     );
+///     assert!(cross_product(v1, v2)
+///         .equals(&VectorC::of(&[Int8::of(-3), Int8::of(6), Int8::of(-3)]).unwrap()));
 /// }
 /// ```
 pub fn cross_product<N>(v1: VectorC<N, 3>, v2: VectorC<N, 3>) -> VectorC<N, 3>
@@ -170,9 +171,7 @@ where
 ///         8i8, 10i8, 12i8, // row2
 ///         12i8, 15i8, 18i8, // row3
 ///     ]
-///     .iter()
-///     .map(|&e| Int8::of(e))
-///     .collect::<Vec<Int8>>();
+///     .map(|e| Int8::of(e));
 ///     let m = Matrix::<Int8, 3, 3>::of(&data).unwrap();
 ///     assert_eq!(layer_product(v1, v2), m);
 /// }
@@ -209,7 +208,7 @@ where
 /// fn main() {
 ///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
 ///     let v2: VectorC<Int8, 2> = VectorC::of(&[Int8::of(4), Int8::of(5)]).unwrap();
-///     let cv = VectorC::of(&[Int8::of(4), Int8::of(13), Int8::of(22), Int8::of(15)]).unwrap();
+///     let cv = VectorC::<Int8, 4>::of(&[4, 13, 22, 15].map(|e| Int8::of(e))).unwrap();
 ///     assert_eq!(convolution(v1, v2), cv);
 /// }
 /// ```
@@ -259,9 +258,10 @@ pub fn euclidean_norm<N, const R: usize>(v: &VectorC<N, R>) -> N
 where
     N: Floating,
 {
-    v.linear_iter()
+    v.inner
+        .par_iter()
         .map(|e| e.clone() * e.clone())
-        .fold(N::zero(), |acc, e| acc + e)
+        .reduce(|| N::zero(), |acc, e| acc + e)
         .square_root()
 }
 
@@ -319,10 +319,10 @@ where
     N: Floating,
 {
     let l2_norm = euclidean_norm(v);
-    let r_sqrt = N::from_integer(
-        Integer::of_str(&format!("{}", R))
-            .expect("Error[vector::root_mean_square]: convert from usize to integer failed"),
-    )
+    let r_sqrt = N::from_integer(Integer::of_str(&format!("{}", R)).expect(&format!(
+        "Error[matrix::vector::root_mean_square]: Failed to convert {} from usize to Integer.",
+        R
+    )))
     .square_root();
     l2_norm / r_sqrt
 }
@@ -365,7 +365,9 @@ where
     let v1_norm = euclidean_norm(v1);
     let v2_norm = euclidean_norm(v2);
     if v1_norm.is_zero() || v2_norm.is_zero() {
-        eprintln!("Error[vector::angle_between]: zero-vector has no angle with any other vector");
+        eprintln!(
+            "Error[matrix::vector::angle_between]: The zero-vector has no angle with other vectors."
+        );
         None
     } else {
         Some((dot_product(v1.clone(), v2.clone()) / (v1_norm * v2_norm)).arc_cosine())
