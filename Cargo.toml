@@ -1,25 +1,27 @@
 [package]
 name = "rmatrix_ks"
 authors = ["Kevin Stephen <qarks@icloud.com>"]
-version = "0.4.2"
+version = "0.5.0"
 resolver = "2"
 edition = "2021"
 rust-version = "1.81"
 license = "AGPL-3.0-or-later"
 description = "matrix and some algebra in Rust"
 readme = "README.md"
-keywords = ["math", "matrix"]
+keywords = ["math", "linear", "matrix", "number"]
 repository = "https://github.com/kands-code/rmatrix"
 documentation = "https://docs.rs/rmatrix_ks"
 
+# default config for docs.rs
 [package.metadata.docs.rs]
-rustdoc-args = ["--generate-link-to-definition"]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "rmatrix_ks"
 path = "src/lib.rs"
-crate-type = ["rlib"]
+crate-type = ["rlib", "staticlib"]
 
 [dependencies]
 # for pattern validate

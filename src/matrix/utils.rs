@@ -12,10 +12,23 @@ use crate::{
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
+/// Generates coordinates within a specified inclusive-range that meet certain criteria.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::matrix::utils::points_2d;
+///
+/// fn main() {
+///     // Generates coordinates for the lower triangular part of a 3x3 matrix.
+///     let p = points_2d((1, 3), (1, 3), |row, column| row > column);
+///     assert_eq!(p, vec![(2, 1), (3, 1), (3, 2)]);
+/// }
+/// ```
 pub fn points_2d<F>(
     (row_lb, row_ub): (usize, usize),
     (col_lb, col_ub): (usize, usize),
-    pred: F,
+    criteria: F,
 ) -> Vec<(usize, usize)>
 where
     F: Fn(usize, usize) -> bool,
@@ -26,7 +39,7 @@ where
         let mut all_points = Vec::with_capacity((row_ub - row_lb + 1) * (col_ub - col_lb + 1));
         for row in row_lb..=row_ub {
             for col in col_lb..=col_ub {
-                if pred(row, col) {
+                if criteria(row, col) {
                     all_points.push((row, col));
                 }
             }
@@ -37,20 +50,57 @@ where
     }
 }
 
+/// Calculates the trace of the matrix.
+///
+/// # Panics
+///
+/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
+/// # Examples
+///
+/// ```rust
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::trace},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+///     assert_eq!(trace(&m), Word8::of(15));
+/// }
+/// ```
 pub fn trace<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
 where
     N: Number,
     [(); Matrix::<N, R, C>::get_diagonal_length()]:,
 {
     m.get_diagonal()
-        .inner
-        .par_iter()
+        .linear_iter()
         .cloned()
-        .cloned()
-        .reduce(|| N::default(), |a, b| a + b)
+        .fold(N::zero(), |acc, e| acc + e.clone())
 }
 
-pub fn map<N, M, F, const R: usize, const C: usize>(m: &Matrix<N, R, C>, f: F) -> Matrix<M, R, C>
+/// Applies the function f to each element of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::apply},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+///     let n =
+///         Matrix::<Word8, 3, 3>::of(&[2, 4, 6, 8, 10, 12, 14, 16, 18].map(|e| Word8::of(e))).unwrap();
+///     assert_eq!(apply(&m, |e| e * Word8::of(2)), n);
+/// }
+/// ```
+pub fn apply<N, M, F, const R: usize, const C: usize>(m: &Matrix<N, R, C>, f: F) -> Matrix<M, R, C>
 where
     N: Sync + Clone,
     M: Send + Sync,
@@ -60,6 +110,22 @@ where
     Matrix { inner }
 }
 
+/// Obtains the transpose of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::transpose},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+///     let n = Matrix::<Word8, 3, 3>::of(&[1, 4, 7, 2, 5, 8, 3, 6, 9].map(|e| Word8::of(e))).unwrap();
+///     assert_eq!(transpose(&m), n);
+/// }
+/// ```
 pub fn transpose<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Matrix<N, C, R>
 where
     N: Clone,
@@ -73,6 +139,30 @@ where
     Matrix { inner }
 }
 
+/// Obtains the conjugate transpose of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::conjugate_transpose},
+///     number::instances::{complex::Complex, float::Float},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 2, 2>::of(
+///         &[(1.0, 2.0), (3.0, -1.0), (4.0, 0.0), (5.0, 6.0)]
+///             .map(|(real, imag)| Complex::of(Float::of(real), Float::of(imag))),
+///     )
+///     .unwrap();
+///     let n = Matrix::<Complex<Float>, 2, 2>::of(
+///         &[(1.0, -2.0), (4.0, 0.0), (3.0, 1.0), (5.0, -6.0)]
+///             .map(|(real, imag)| Complex::of(Float::of(real), Float::of(imag))),
+///     )
+///     .unwrap();
+///     assert!(conjugate_transpose(&m).equals(&n));
+/// }
+/// ```
 pub fn conjugate_transpose<F, const R: usize, const C: usize>(
     m: &Matrix<Complex<F>, R, C>,
 ) -> Matrix<Complex<F>, C, R>
@@ -80,9 +170,33 @@ where
     F: RealFloat,
 {
     let transposed = transpose(m);
-    map(&transposed, |e| e.conjugate())
+    apply(&transposed, |e| e.conjugate())
 }
 
+/// Horizontally concatenate two matrices.
+///
+/// # Panics
+///
+/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
+/// # Examples
+///
+/// ```rust
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::horizontal_concat},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Word8, 2, 2>::of(&[1, 2, 3, 4].map(|e| Word8::of(e))).unwrap();
+///     let n = Matrix::<Word8, 2, 2>::of(&[5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
+///     let cat = Matrix::<Word8, 2, 4>::of(&[1, 2, 5, 6, 3, 4, 7, 8].map(|e| Word8::of(e))).unwrap();
+///     assert_eq!(horizontal_concat(&m, &n), cat);
+/// }
+/// ```
 pub fn horizontal_concat<N, const R: usize, const C1: usize, const C2: usize>(
     m1: &Matrix<N, R, C1>,
     m2: &Matrix<N, R, C2>,
@@ -103,6 +217,30 @@ where
     Matrix { inner }
 }
 
+/// Vertically concatenate two matrices.
+///
+/// # Panics
+///
+/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
+/// # Examples
+///
+/// ```rust
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::vertical_concat},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Word8, 2, 2>::of(&[1, 2, 3, 4].map(|e| Word8::of(e))).unwrap();
+///     let n = Matrix::<Word8, 2, 2>::of(&[5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
+///     let cat = Matrix::<Word8, 4, 2>::of(&[1, 2, 3, 4, 5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
+///     assert_eq!(vertical_concat(&m, &n), cat);
+/// }
+/// ```
 pub fn vertical_concat<N, const R1: usize, const R2: usize, const C: usize>(
     m1: &Matrix<N, R1, C>,
     m2: &Matrix<N, R2, C>,

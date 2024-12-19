@@ -102,12 +102,12 @@ where
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
 /// use rmatrix_ks::{matrix::serde::from_stdin, number::instances::word8::Word8};
 ///
 /// fn main() {
 ///     let m = from_stdin::<Word8, 3, 3>();
-///     assert_eq!(m.dimension(), (3, 3));
+///     assert_eq!(m.shape(), (3, 3));
 /// }
 /// ```
 pub fn from_stdin<N, const R: usize, const C: usize>() -> Matrix<N, R, C>

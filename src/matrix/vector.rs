@@ -194,6 +194,10 @@ where
 
 /// Calculate the convolution of two column vectors.
 ///
+/// # Panics
+///
+/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
 /// # Examples
 ///
 /// ```rust

@@ -2,8 +2,9 @@
 //!
 //! Matrix and relative operations.
 //!
-//! > Matrix index is 1-based.
+//! > All matrix indices are 1-based.
 
+pub mod extra;
 pub mod math;
 pub mod matrix;
 pub mod serde;
