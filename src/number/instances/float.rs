@@ -8,7 +8,7 @@ use crate::number::{
         floating::Floating, fractional::Fractional, integral::Integral, number::Number, one::One,
         real::Real, realfloat::RealFloat, realfrac::RealFrac, zero::Zero,
     },
-    utils::from_integeral,
+    utils::from_integral,
 };
 
 use rand::{
@@ -169,7 +169,7 @@ impl RealFloat for Float {
 impl RealFrac for Float {
     fn proper_fraction<I: Integral>(self) -> (I, Self) {
         (
-            from_integeral(Int::of(self.inner.trunc() as i32)),
+            from_integral(Int::of(self.inner.trunc() as i32)),
             Self::of(self.inner.fract()),
         )
     }
@@ -189,7 +189,7 @@ impl Real for Float {
             }
         } else {
             let sign = !self.inner.is_sign_negative();
-            let str_inner = format!("{}", self.inner);
+            let str_inner = format!("{:?}", self.inner);
             let p = str_inner.split(".").collect::<Vec<&str>>()[1].len();
             let mut denominator = vec![0u8; p + 1];
             denominator[0] = 1u8;

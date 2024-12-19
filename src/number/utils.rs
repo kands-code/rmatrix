@@ -1,15 +1,15 @@
-//! # Number Utils
+//! # number::utils
 //!
-//! some useful tools
+//! Some util functions.
 
 use crate::number::{
     instances::int::Int,
     traits::{fractional::Fractional, integral::Integral, number::Number, real::Real},
 };
 
-/// division and modulus for i8
+/// Division and modulus for i8
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::number::utils::i8_div_mod;
@@ -30,9 +30,9 @@ pub fn i8_div_mod(lhs: i8, rhs: i8) -> (i8, i8) {
     }
 }
 
-/// raise a number to a non-negative integral power
+/// Calculate the non-negative power of a number.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::number::instances::int::Int;
@@ -46,7 +46,7 @@ pub fn i8_div_mod(lhs: i8, rhs: i8) -> (i8, i8) {
 /// }
 /// ```
 pub fn non_negative_integral_power<N: Number, I: Integral>(base: N, exponents: I) -> Option<N> {
-    /// use divide and conquer method to optimize the calculation process
+    /// Optimize calculations using divide and conquer method.
     fn inner_power<N: Number, I: Integral>(base: N, exponents: I) -> N {
         if exponents.is_even() {
             inner_power(base.clone() * base, exponents.quotient(I::one() + I::one()))
@@ -61,7 +61,7 @@ pub fn non_negative_integral_power<N: Number, I: Integral>(base: N, exponents: I
         }
     }
 
-    /// divide and conquer for the case where the exponent is an odd number
+    /// Divide and conquer operation when the exponent is odd.
     fn inner_power_acc<N: Number, I: Integral>(base: N, exponents: I, acc: N) -> N {
         if exponents.is_even() {
             inner_power_acc(
@@ -80,43 +80,61 @@ pub fn non_negative_integral_power<N: Number, I: Integral>(base: N, exponents: I
         }
     }
 
-    // main process
+    // Main computation process.
     if exponents < I::zero() {
-        // integeral exponents cannot handle negative exponents
+        // Exponentiation of integers does not support negative exponents.
         eprintln!(
-            "Error[number::utils::non_negative_integral_power]: Negative exponents {} are not allowed.",
+            "Error[number::utils::non_negative_integral_power]: Negative exponents ({}) are not allowed.",
             exponents
         );
         None
     } else if exponents == I::zero() {
-        // a^0 === 1
+        // a^0 === 1.
         Some(N::one())
     } else if base == N::zero() {
-        // 0^x === 0 where x != 0
+        // 0^x === 0 where x != 0.
         Some(N::zero())
     } else {
-        // use a divide and conquer method
+        // Calculate using divide and conquer.
         Some(inner_power(base, exponents))
     }
 }
 
-/// prevent exponent over/underflow when encoding floating point numbers
+/// Prevent overflow or underflow when encoding floating-point numbers.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::number::{instances::int::Int, utils::clamp};
+///
+/// fn main() {
+///     let m = Int::of(-10);
+///     let n = Int::of(5);
+///     assert_eq!(clamp(m, n), Int::of(10));
+/// }
+/// ```
 pub fn clamp(first: Int, second: Int) -> Int {
-    let smaller = if first < second {
-        first.clone()
-    } else {
-        second
-    };
-    let negtive_first = first;
-    if negtive_first > smaller {
-        negtive_first
-    } else {
-        smaller
-    }
+    (-first.clone()).max(first.min(second))
 }
 
-/// raise a number to an integral power
-pub fn integeral_power<F: Fractional, I: Integral>(base: F, exponents: I) -> Option<F> {
+/// Calculate the integral power of a number.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::number::{
+///     instances::{float::Float, int::Int},
+///     traits::zero::Zero,
+///     utils::integral_power,
+/// };
+///
+/// fn main() {
+///     let m = Int::of(-2);
+///     let n = Float::of(2.0);
+///     assert!((integral_power(n, m).is_some_and(|e| (e - Float::of(0.25)).is_zero())));
+/// }
+/// ```
+pub fn integral_power<F: Fractional, I: Integral>(base: F, exponents: I) -> Option<F> {
     if exponents < I::zero() {
         non_negative_integral_power(base, -exponents).map(|v| v.reciprocal())
     } else {
@@ -145,9 +163,9 @@ pub fn lcm<I: Integral>(lhs: I, rhs: I) -> I {
     }
 }
 
-/// convert integeral number to other number type
-pub fn from_integeral<N: Number, I: Integral>(integeral_number: I) -> N {
-    N::from_integer(integeral_number.to_integer())
+/// convert integral number to other number type
+pub fn from_integral<N: Number, I: Integral>(integral_number: I) -> N {
+    N::from_integer(integral_number.to_integer())
 }
 
 /// convert real number to fractional number

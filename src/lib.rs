@@ -12,10 +12,6 @@
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs
 //!
-//! This library is used for numerical computing,
-//! mainly matrix operations as well as numerical ordinary differential equations
-//! and some optimization problems.
-//!
 //! ## Warning
 //!
 //! Unstable features used:
@@ -25,8 +21,9 @@
 //!
 //! # Description
 //!
-//! This library is for matrix computation,
-//! just for learning and self using.
+//! This library is used for numerical computing,
+//! mainly matrix operations as well as numerical ordinary differential equations
+//! and some optimization problems, just for learning and self using.
 
 pub mod matrix;
 pub mod number;

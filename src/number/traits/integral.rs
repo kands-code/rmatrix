@@ -1,10 +1,10 @@
 //! # Number Trait :: Integral
 //!
-//! A type that implements this trait is a integeral number.
+//! A type that implements this trait is a integral number.
 
 use crate::number::{instances::integer::Integer, traits::real::Real};
 
-/// Integeral
+/// Integral
 pub trait Integral: Real
 where
     Self: std::cmp::Ord,
@@ -33,10 +33,10 @@ where
     ///
     /// ```rust,ignore
     /// assert_eq!(
-    ///     integeral_number.clone()
+    ///     integral_number.clone()
     ///         .quotient(m.clone())
     ///         .mul(m.clone()) + n.remainder(m),
-    ///     integeral_number
+    ///     integral_number
     /// )
     /// ```
     fn quot_rem(self, rhs: Self) -> (Self, Self);
@@ -45,24 +45,24 @@ where
     ///
     /// ```rust,ignore
     /// assert_eq!(
-    ///     integeral_number_x.clone()
-    ///         .division(integeral_number_y.clone())
-    ///         .mul(integeral_number_y.clone())
-    ///         + integeral_number_x.modulus(integeral_number_y),
-    ///     integeral_number_x
+    ///     integral_number_x.clone()
+    ///         .division(integral_number_y.clone())
+    ///         .mul(integral_number_y.clone())
+    ///         + integral_number_x.modulus(integral_number_y),
+    ///     integral_number_x
     /// )
     /// ```
     fn div_mod(self, rhs: Self) -> (Self, Self);
 
-    /// convert an integeral number to an integer
+    /// convert an intgeral number to an integer
     fn to_integer(self) -> Integer;
 
-    /// determine whether an integeral number is even
+    /// determine whether an integral number is even
     fn is_even(&self) -> bool {
         self.clone().modulus(Self::one() + Self::one()) == Self::zero()
     }
 
-    /// determine whether an integeral number is odd
+    /// determine whether an integral number is odd
     fn is_odd(&self) -> bool {
         !self.is_even()
     }

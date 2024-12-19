@@ -5,7 +5,7 @@
 use crate::number::{
     instances::{int::Int, integer::Integer},
     traits::{floating::Floating, integral::Integral, one::One, realfrac::RealFrac, zero::Zero},
-    utils::{clamp, from_integeral, integeral_power, non_negative_integral_power},
+    utils::{clamp, from_integral, integral_power, non_negative_integral_power},
 };
 
 /// RealFloat
@@ -24,17 +24,17 @@ pub trait RealFloat: RealFrac + Floating {
     ///  returns the significand expressed and an appropriately scaled exponent
     ///
     /// ```rust,ignore
-    /// use rmatrix_ks::number::utils::integeral_power;
+    /// use rmatrix_ks::number::utils::integral_power;
     ///
     /// let (significand, exponent) = real_float_number.clone().decode_float();
     /// let radix = F::FLOAT_RADIX;
-    /// assert_eq!(real_float_number, significand * integeral_power(radix, exponent));
+    /// assert_eq!(real_float_number, significand * integral_power(radix, exponent));
     /// ```
     fn decode_float(self) -> (Integer, Int) {
         let range = Self::FLOAT_RANGE.1 + Int::one();
         let exponent = self
             .absolute_value()
-            .logarithmic_base(from_integeral(Self::FLOAT_RADIX))
+            .logarithmic_base(from_integral(Self::FLOAT_RADIX))
             .ceiling::<Int>();
         let modified_exponent = if self.is_zero() {
             Int::zero()
@@ -44,7 +44,7 @@ pub trait RealFloat: RealFrac + Floating {
             exponent.clone() - Self::FLOAT_DIGITS
         };
         let significand =
-            integeral_power(from_integeral(Self::FLOAT_RADIX), modified_exponent.clone())
+            integral_power(from_integral(Self::FLOAT_RADIX), modified_exponent.clone())
                 .map(|p| self.clone() / p)
                 .map(|p| p.to_rational().numerator)
                 .expect(
@@ -72,7 +72,7 @@ pub trait RealFloat: RealFrac + Floating {
 
     /// inverse of decode_float
     fn encode_float(significand: Integer, exponent: Int) -> Self {
-        integeral_power(from_integeral(Self::FLOAT_RADIX), exponent)
+        integral_power(from_integral(Self::FLOAT_RADIX), exponent)
             .map(|p: Self| p * Self::from_integer(significand))
             .expect("Error[RealFloat::encode_float]: Should be able to produce the correct result.")
     }

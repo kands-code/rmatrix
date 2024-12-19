@@ -8,7 +8,7 @@ use crate::number::{
         floating::Floating, fractional::Fractional, integral::Integral, number::Number, one::One,
         real::Real, realfloat::RealFloat, realfrac::RealFrac, zero::Zero,
     },
-    utils::from_integeral,
+    utils::from_integral,
 };
 
 use rand::{
@@ -169,8 +169,8 @@ impl RealFloat for Double {
 impl RealFrac for Double {
     fn proper_fraction<I: Integral>(self) -> (I, Self) {
         (
-            from_integeral(
-                Integer::of_str(&format!("{}", self.inner.trunc() as i64))
+            from_integral(
+                Integer::of_str(&format!("{:?}", self.inner.trunc() as i64))
                     .expect("Error[Double::proper_fraction]: Should be a valid i64 number."),
             ),
             Self::of(self.inner.fract()),
@@ -192,7 +192,7 @@ impl Real for Double {
             }
         } else {
             let sign = !self.inner.is_sign_negative();
-            let str_inner = format!("{}", self.inner);
+            let str_inner = format!("{:?}", self.inner);
             let p = str_inner.split(".").collect::<Vec<&str>>()[1].len();
             let mut denominator = vec![0u8; p + 1];
             denominator[0] = 1u8;

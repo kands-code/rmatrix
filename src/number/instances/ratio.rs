@@ -9,7 +9,7 @@ use crate::number::{
         fractional::Fractional, integral::Integral, number::Number, one::One, real::Real,
         realfrac::RealFrac, zero::Zero,
     },
-    utils::{from_integeral, gcd},
+    utils::{from_integral, gcd},
 };
 
 #[derive(Clone)]
@@ -247,7 +247,7 @@ impl<I: Integral> RealFrac for Ratio<I> {
             (II::zero(), refined)
         } else {
             let (quot, rem) = refined.numerator.quot_rem(refined.denominator.clone());
-            (from_integeral(quot), Self::of(rem, refined.denominator))
+            (from_integral(quot), Self::of(rem, refined.denominator))
         }
     }
 }
@@ -284,7 +284,7 @@ impl<I: Integral> std::str::FromStr for Ratio<I> {
                 (Ok(n), Ok(d)) => Ok(Self::of(n, d)),
                 _ => {
                     eprintln!(
-                        "Error[Ratio::from_str]: ({}) or ({}) is not a valid Integeral literal.",
+                        "Error[Ratio::from_str]: ({}) or ({}) is not a valid Integral literal.",
                         numerator_s, denominator_s
                     );
                     Err(())
