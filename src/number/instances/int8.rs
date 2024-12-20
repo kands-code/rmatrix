@@ -1,6 +1,6 @@
-//! # Number Type :: Int8
+//! # instances::int8
 //!
-//! i8 wrapper.
+//! Functions and implementations related to 8-bit signed integers.
 
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
@@ -12,22 +12,58 @@ use rand::{
     Rng,
 };
 
-/// Int8
+/// Int8 numbers are the wrapper type for i8.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Int8 {
     inner: i8,
 }
 
 impl Int8 {
+    /// Construct int8 numbers from i8.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::int8::Int8;
+    ///
+    /// fn main() {
+    ///     let _i = Int8::of(12);
+    /// }
+    /// ```
     pub const fn of(num: i8) -> Self {
         Self { inner: num }
     }
 
-    // create Int8 from &str
+    /// Construct int8 numbers from string.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::int8::Int8;
+    ///
+    /// fn main() {
+    ///     let si = Int8::of_str("-23").unwrap();
+    ///     let i = Int8::of(-23);
+    ///     assert_eq!(si, i);
+    /// }
+    /// ```
     pub fn of_str(int8_number: &str) -> Option<Self> {
         std::str::FromStr::from_str(int8_number).ok()
     }
 
+    /// Return the digit at each position.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::int8::Int8;
+    ///
+    /// fn main() {
+    ///     let i = Int8::of(125);
+    ///     let digits = i.digits();
+    ///     assert_eq!(digits, vec![1, 2, 5]);
+    /// }
+    /// ```
     pub fn digits(&self) -> Vec<u8> {
         let string_view = self.inner.to_string();
         string_view
@@ -37,6 +73,7 @@ impl Int8 {
     }
 }
 
+/// Implement the concept of ZERO for the int8 number.
 impl Zero for Int8 {
     fn zero() -> Self {
         Self { inner: 0i8 }
@@ -47,6 +84,7 @@ impl Zero for Int8 {
     }
 }
 
+/// Implement the concept of ONE for the int8 number.
 impl One for Int8 {
     fn one() -> Self {
         Self { inner: 1i8 }
@@ -57,12 +95,14 @@ impl One for Int8 {
     }
 }
 
+/// Implement Default for the int8 number.
 impl std::default::Default for Int8 {
     fn default() -> Self {
         Self::zero()
     }
 }
 
+/// Implement the negation operation for the int8 number.
 impl std::ops::Neg for Int8 {
     type Output = Self;
 
@@ -71,6 +111,7 @@ impl std::ops::Neg for Int8 {
     }
 }
 
+/// Implement the addition operation for the int8 number.
 impl std::ops::Add for Int8 {
     type Output = Self;
 
@@ -81,6 +122,7 @@ impl std::ops::Add for Int8 {
     }
 }
 
+/// Implement the subtraction operation for the int8 number.
 impl std::ops::Sub for Int8 {
     type Output = Self;
 
@@ -91,6 +133,7 @@ impl std::ops::Sub for Int8 {
     }
 }
 
+/// Implement the multiplication operation for the int8 number.
 impl std::ops::Mul for Int8 {
     type Output = Self;
 
@@ -101,6 +144,7 @@ impl std::ops::Mul for Int8 {
     }
 }
 
+/// Implement the concept of NUMBER for the int8 number.
 impl Number for Int8 {
     fn absolute_value(&self) -> Self {
         Self {
@@ -118,19 +162,56 @@ impl Number for Int8 {
         }
     }
 
+    /// Construct a int8 number from an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{int8::Int8, integer::Integer},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let integer = Integer::of_str("-18");
+    ///     let int = integer.map(|i| Int8::from_integer(i));
+    ///     assert_eq!(int, Some(Int8::of(-18)));
+    /// }
+    /// ```
+    ///
+    /// ## Panics
+    ///
+    /// If the size of the integer exceeds the maximum literal value of i8,
+    /// it will cause a panic.
+    ///
+    /// ```rust,should_panic
+    /// use rmatrix_ks::number::{
+    ///     instances::{int8::Int8, integer::Integer},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let integer = Integer::of_str("12345678");
+    ///     // Panic occurs here.
+    ///     let _ = integer.map(|i| Int8::from_integer(i));
+    /// }
+    /// ```
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{}", integer_number).parse::<i8>().expect(&format!(
-                "Error[Int8::from_Integer]: ({}) should be a valid i8 number.",
-                integer_number
-            ));
+            let inner = format!("{:?}", integer_number)
+                .parse::<i8>()
+                .expect(&format!(
+                    "Error[Int8::from_Integer]: ({}) should be a valid i8 number.",
+                    integer_number
+                ));
             Self { inner }
         }
     }
 }
 
+/// Implement the concept of Real for Int8.
 impl Real for Int8 {
     fn to_rational(self) -> Rational
     where
@@ -140,6 +221,7 @@ impl Real for Int8 {
     }
 }
 
+/// Implement the concept of Integral for Int8.
 impl Integral for Int8 {
     fn quot_rem(self, rhs: Self) -> (Self, Self) {
         (
@@ -170,18 +252,21 @@ impl Integral for Int8 {
     }
 }
 
+/// Implement Display for Int8.
 impl std::fmt::Display for Int8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
+/// Implement Debug for Int8.
 impl std::fmt::Debug for Int8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:+}", self.inner)
     }
 }
 
+/// Implement FromStr for Int8.
 impl std::str::FromStr for Int8 {
     type Err = ();
 
@@ -199,9 +284,10 @@ impl std::str::FromStr for Int8 {
     }
 }
 
-/// Uniform for Int8
+/// Uniform distribution of int8 numbers.
 pub struct UniformI8(UniformInt<i8>);
 
+/// Implement uniform sampling for the uniform distribution of int8 numbers.
 impl UniformSampler for UniformI8 {
     type X = Int8;
 
@@ -232,6 +318,7 @@ impl UniformSampler for UniformI8 {
     }
 }
 
+/// Implement uniform sampling for int8 numbers.
 impl SampleUniform for Int8 {
     type Sampler = UniformI8;
 }

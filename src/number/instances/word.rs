@@ -1,6 +1,6 @@
-//! # Number Type :: Word
+//! # instances::word
 //!
-//! u32 wrapper.
+//! Functions and implementations related to 32-bit unsigned integers.
 
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
@@ -12,22 +12,58 @@ use rand::{
     Rng,
 };
 
-/// Word
+/// Word numbers are the wrapper type for u32.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Word {
     inner: u32,
 }
 
 impl Word {
+    /// Construct word numbers from u32.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::word::Word;
+    ///
+    /// fn main() {
+    ///     let _w = Word::of(12);
+    /// }
+    /// ```
     pub const fn of(num: u32) -> Self {
         Self { inner: num }
     }
 
-    // create Word from &str
+    /// Construct word numbers from string.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::word::Word;
+    ///
+    /// fn main() {
+    ///     let sw = Word::of_str("23").unwrap();
+    ///     let w = Word::of(23);
+    ///     assert_eq!(sw, w);
+    /// }
+    /// ```
     pub fn of_str(int_number: &str) -> Option<Self> {
         std::str::FromStr::from_str(int_number).ok()
     }
 
+    /// Return the digit at each position.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::word::Word;
+    ///
+    /// fn main() {
+    ///     let w = Word::of(125436);
+    ///     let digits = w.digits();
+    ///     assert_eq!(digits, vec![1, 2, 5, 4, 3, 6]);
+    /// }
+    /// ```
     pub fn digits(&self) -> Vec<u8> {
         let string_view = self.inner.to_string();
         string_view
@@ -38,6 +74,7 @@ impl Word {
     }
 }
 
+/// Implement the concept of ZERO for the word number.
 impl Zero for Word {
     fn zero() -> Self {
         Self { inner: 0u32 }
@@ -48,6 +85,7 @@ impl Zero for Word {
     }
 }
 
+/// Implement the concept of ONE for the word number.
 impl One for Word {
     fn one() -> Self {
         Self { inner: 1u32 }
@@ -58,15 +96,31 @@ impl One for Word {
     }
 }
 
+/// Implement Default for the word number.
 impl std::default::Default for Word {
     fn default() -> Self {
         Self::zero()
     }
 }
 
+/// Implement the negation operation for the word number.
 impl std::ops::Neg for Word {
     type Output = Self;
 
+    /// Retrieve the corresponding opposite number.
+    ///
+    /// For an unsigned number `A`, we have its opposite number `B`.
+    /// By the definition of the opposite number, we know that `A + B = 0`,
+    /// which means B = MAX - A.
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::word::Word;
+    ///
+    /// fn main() {
+    ///     let w = Word::of(224756);
+    ///     assert_eq!(-w, Word::of(4294742539));
+    /// }
+    /// ```
     fn neg(self) -> Self::Output {
         Self {
             inner: u32::MAX - self.inner,
@@ -74,6 +128,7 @@ impl std::ops::Neg for Word {
     }
 }
 
+/// Implement the addition operation for the word number.
 impl std::ops::Add for Word {
     type Output = Self;
 
@@ -84,6 +139,7 @@ impl std::ops::Add for Word {
     }
 }
 
+/// Implement the subtraction operation for the word number.
 impl std::ops::Sub for Word {
     type Output = Self;
 
@@ -98,6 +154,7 @@ impl std::ops::Sub for Word {
     }
 }
 
+/// Implement the multiplication operation for the word number.
 impl std::ops::Mul for Word {
     type Output = Self;
 
@@ -108,6 +165,7 @@ impl std::ops::Mul for Word {
     }
 }
 
+/// Implement the concept of NUMBER for the word number.
 impl Number for Word {
     fn absolute_value(&self) -> Self {
         Self { inner: self.inner }
@@ -121,11 +179,46 @@ impl Number for Word {
         }
     }
 
+    /// Construct a word number from an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{integer::Integer, word::Word},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let digits = (1..10).collect::<Vec<u8>>();
+    ///     let integer = Integer::of(true, &digits);
+    ///     let word = integer.map(|w| Word::from_integer(w));
+    ///     assert_eq!(word, Some(Word::of(123456789)));
+    /// }
+    /// ```
+    ///
+    /// ## Panics
+    ///
+    /// If the size of the integer exceeds the maximum literal value of u32,
+    /// it will cause a panic.
+    ///
+    /// ```rust,should_panic
+    /// use rmatrix_ks::number::{
+    ///     instances::{integer::Integer, word::Word},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let integer = Integer::of_str("12345678910111213141516");
+    ///     // Panic occurs here.
+    ///     let _ = integer.map(|w| Word::from_integer(w));
+    /// }
+    /// ```
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{}", integer_number)
+            let inner = format!("{:?}", integer_number)
                 .parse::<u32>()
                 .expect(&format!(
                     "Error[Word::from_Integer]: ({}) should be a valid u32 number.",
@@ -136,6 +229,7 @@ impl Number for Word {
     }
 }
 
+/// Implement the concept of Real for Word.
 impl Real for Word {
     fn to_rational(self) -> Rational
     where
@@ -145,6 +239,7 @@ impl Real for Word {
     }
 }
 
+/// Implement the concept of Integral for Word.
 impl Integral for Word {
     fn quot_rem(self, rhs: Self) -> (Self, Self) {
         (
@@ -175,18 +270,21 @@ impl Integral for Word {
     }
 }
 
+/// Implement Display for Word.
 impl std::fmt::Display for Word {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
+/// Implement Debug for Word.
 impl std::fmt::Debug for Word {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:+}", self.inner)
     }
 }
 
+/// Implement FromStr for Word.
 impl std::str::FromStr for Word {
     type Err = ();
 
@@ -204,9 +302,10 @@ impl std::str::FromStr for Word {
     }
 }
 
-/// Uniform for Word
+/// Uniform distribution of word numbers.
 pub struct UniformU32(UniformInt<u32>);
 
+/// Implement uniform sampling for the uniform distribution of word numbers.
 impl UniformSampler for UniformU32 {
     type X = Word;
 
@@ -237,6 +336,7 @@ impl UniformSampler for UniformU32 {
     }
 }
 
+/// Implement uniform sampling for word numbers.
 impl SampleUniform for Word {
     type Sampler = UniformU32;
 }

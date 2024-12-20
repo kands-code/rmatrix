@@ -1,68 +1,64 @@
-//! # Number Trait :: Integral
+//! # traits::integral
 //!
-//! A type that implements this trait is a integral number.
+//! Types that implement this trait can be considered as integral numbers.
 
 use crate::number::{instances::integer::Integer, traits::real::Real};
 
-/// Integral
+/// Concepts of Integral.
+///
+/// Integral numbers should be real numbers
+/// and have a total order relationship.
 pub trait Integral: Real
 where
     Self: std::cmp::Ord,
 {
-    /// integer division truncated toward zero
+    /// Calculating the quotient of two integers, rounding the result towards zero.
     fn quotient(self, rhs: Self) -> Self {
         self.quot_rem(rhs).0
     }
 
-    /// integer remainder
+    /// Calculating the remainder corresponding to the quotient rounded towards zero.
     fn remainder(self, rhs: Self) -> Self {
         self.quot_rem(rhs).1
     }
 
-    /// integer division truncated toward negative infinity
+    /// Calculating the quotient of two integers, rounding the result towards negative infinity.
     fn division(self, rhs: Self) -> Self {
         self.div_mod(rhs).0
     }
 
-    /// integer modulus
+    /// Calculating the modulus of two integers.
     fn modulus(self, rhs: Self) -> Self {
         self.div_mod(rhs).1
     }
 
-    /// simultaneous 'quotient' and 'remainder'
+    /// Calculating the quotient and remainder of two integers,
+    /// where the quotient is rounded towards zero.
     ///
     /// ```rust,ignore
-    /// assert_eq!(
-    ///     integral_number.clone()
-    ///         .quotient(m.clone())
-    ///         .mul(m.clone()) + n.remainder(m),
-    ///     integral_number
-    /// )
+    /// let m: I, n: I;
+    /// assert_eq!(m.quotient(n) * n + m.remainder(n), m);
     /// ```
     fn quot_rem(self, rhs: Self) -> (Self, Self);
 
-    /// simultaneous 'division' and 'modulus'
+    /// Calculating the division and modulus of two integers,
+    /// where the division result is rounded towards negative infinity.
     ///
     /// ```rust,ignore
-    /// assert_eq!(
-    ///     integral_number_x.clone()
-    ///         .division(integral_number_y.clone())
-    ///         .mul(integral_number_y.clone())
-    ///         + integral_number_x.modulus(integral_number_y),
-    ///     integral_number_x
-    /// )
+    /// let x: I, y: I;
+    /// assert_eq!(x.division(y) * y + x.modulus(y), x);
     /// ```
     fn div_mod(self, rhs: Self) -> (Self, Self);
 
-    /// convert an intgeral number to an integer
+    /// Convert the integral number to an integer.
     fn to_integer(self) -> Integer;
 
-    /// determine whether an integral number is even
+    /// Validate whether an integral number is even.
     fn is_even(&self) -> bool {
         self.clone().modulus(Self::one() + Self::one()) == Self::zero()
     }
 
-    /// determine whether an integral number is odd
+    /// Validate whether an integral number is odd.
     fn is_odd(&self) -> bool {
         !self.is_even()
     }

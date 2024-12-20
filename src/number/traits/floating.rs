@@ -1,94 +1,96 @@
-//! # Number Trait :: Floating
+//! # traits::floating
 //!
-//! A type that implements this trait is a floating number.
+//! Types that implement this trait can be considered as floating-point numbers.
 
 use crate::number::traits::fractional::Fractional;
 
-/// Floating
+/// Concepts of Floating.
 pub trait Floating: Fractional {
-    /// zero
+    /// Zero of the floating-point type.
     const ZERO: Self;
 
-    /// pi \approx 3.141593
+    /// Floating-point constant pi, approximately `3.141592653589793`.
     const PI: Self;
 
-    /// exp(x)
+    /// Exponential function with base of the Euler's number, exp(x).
     fn exponential(self) -> Self;
 
-    /// ln(x)
+    /// Logarithmic function with base of the Euler's number, ln(x).
     fn logarithmic(self) -> Self;
 
-    /// sqrt(x)
+    /// Square root function.
     fn square_root(self) -> Self {
         self.power(Self::half())
     }
 
-    /// sin(x)
+    /// Sine function, sin(x).
     fn sine(self) -> Self;
 
-    /// cos(x)
+    /// Cosine function, cos(x).
     fn cosine(self) -> Self;
 
-    /// tan(x)
+    /// Tangent function, tan(x).
     fn tangent(self) -> Self {
         self.clone().sine() / self.cosine()
     }
 
-    /// asin(x)
+    /// Arcsine function, asin(x).
     fn arc_sine(self) -> Self;
 
-    /// acos(x)
+    /// Arccosine function, acos(x).
     fn arc_cosine(self) -> Self;
 
-    /// atan(x)
+    /// Arctangent function, atan(x).
     fn arc_tangent(self) -> Self;
 
-    /// sinh(x)
+    /// Hyperbolic sine function, sinh(x).
     fn hyperbolic_sine(self) -> Self;
 
-    /// cosh(x)
+    /// Hyperbolic cosine function, cosh(x).
     fn hyperbolic_cosine(self) -> Self;
 
-    /// tanh(x)
+    /// Hyperbolic tangent function, tanh(x).
     fn hyperbolic_tangent(self) -> Self {
         self.clone().hyperbolic_sine() / self.hyperbolic_cosine()
     }
 
-    /// asinh(x)
+    /// Inverse hyperbolic sine function, asinh(x).
     fn arc_hyperbolic_sine(self) -> Self;
 
-    /// acosh(x)
+    /// Inverse hyperbolic cosine function, acosh(x).
     fn arc_hyperbolic_cosine(self) -> Self;
 
-    /// atanh(x)
+    /// Inverse hyperbolic tangent function, atanh(x).
     fn arc_hyperbolic_tangent(self) -> Self;
 
-    /// x^y
+    /// Power function, pow(x, a).
     fn power(self, exponents: Self) -> Self {
         (self.logarithmic() * exponents).exponential()
     }
 
-    /// log(a, x)
+    /// Logarithm function with base a, log(a, x).
     fn logarithmic_base(self, base: Self) -> Self {
         self.logarithmic() / base.logarithmic()
     }
 
-    /// log(1 + x)
+    /// Logarithm function with base Euler's number plus one, ln(1 + x).
     fn logarithmic_1p(self) -> Self {
         (Self::one() + self).logarithmic()
     }
 
-    /// exp(x) - 1
+    /// Exponential function with base Euler's number minus one, exp(x) - 1.
     fn exponential_1m(self) -> Self {
         self.exponential() - Self::one()
     }
 
-    /// log(1 + exp(x))
+    /// Logarithm function plus one of the exponential function
+    /// with base Euler's number, ln(1 + exp(x)).
     fn logarithmic_1p_exponential(self) -> Self {
         self.exponential().logarithmic_1p()
     }
 
-    /// log(1 - exp(x))
+    /// Logarithm function minus one of the exponential function
+    /// with base Euler's number, ln(1 - exp(x)).
     fn logarithmic_1m_exponential(self) -> Self {
         (-self.exponential()).logarithmic_1p()
     }

@@ -1,6 +1,6 @@
-//! # Number Type :: Int
+//! # instances::int
 //!
-//! i32 wrapper.
+//! Functions and implementations related to 32-bit signed integers.
 
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
@@ -12,22 +12,58 @@ use rand::{
     Rng,
 };
 
-/// Int
+/// Int numbers are the wrapper type for i32.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Int {
     inner: i32,
 }
 
 impl Int {
+    /// Construct int numbers from i32.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::int::Int;
+    ///
+    /// fn main() {
+    ///     let _i = Int::of(12);
+    /// }
+    /// ```
     pub const fn of(num: i32) -> Self {
         Self { inner: num }
     }
 
-    // create Int from &str
+    /// Construct int numbers from string.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::int::Int;
+    ///
+    /// fn main() {
+    ///     let si = Int::of_str("23").unwrap();
+    ///     let i = Int::of(23);
+    ///     assert_eq!(si, i);
+    /// }
+    /// ```
     pub fn of_str(int_number: &str) -> Option<Self> {
         std::str::FromStr::from_str(int_number).ok()
     }
 
+    /// Return the digit at each position.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::int::Int;
+    ///
+    /// fn main() {
+    ///     let i = Int::of(125436);
+    ///     let digits = i.digits();
+    ///     assert_eq!(digits, vec![1, 2, 5, 4, 3, 6]);
+    /// }
+    /// ```
     pub fn digits(&self) -> Vec<u8> {
         let string_view = self.inner.to_string();
         string_view
@@ -38,6 +74,7 @@ impl Int {
     }
 }
 
+/// Implement the concept of ZERO for the int number.
 impl Zero for Int {
     fn zero() -> Self {
         Self { inner: 0i32 }
@@ -48,6 +85,7 @@ impl Zero for Int {
     }
 }
 
+/// Implement the concept of ONE for the int number.
 impl One for Int {
     fn one() -> Self {
         Self { inner: 1i32 }
@@ -58,12 +96,14 @@ impl One for Int {
     }
 }
 
+/// Implement Default for the int number.
 impl std::default::Default for Int {
     fn default() -> Self {
         Self::zero()
     }
 }
 
+/// Implement the negation operation for the int number.
 impl std::ops::Neg for Int {
     type Output = Self;
 
@@ -72,6 +112,7 @@ impl std::ops::Neg for Int {
     }
 }
 
+/// Implement the addition operation for the int number.
 impl std::ops::Add for Int {
     type Output = Self;
 
@@ -82,6 +123,7 @@ impl std::ops::Add for Int {
     }
 }
 
+/// Implement the subtraction operation for the int number.
 impl std::ops::Sub for Int {
     type Output = Self;
 
@@ -92,6 +134,7 @@ impl std::ops::Sub for Int {
     }
 }
 
+/// Implement the multiplication operation for the int number.
 impl std::ops::Mul for Int {
     type Output = Self;
 
@@ -102,6 +145,7 @@ impl std::ops::Mul for Int {
     }
 }
 
+/// Implement the concept of NUMBER for the int number.
 impl Number for Int {
     fn absolute_value(&self) -> Self {
         Self {
@@ -118,12 +162,46 @@ impl Number for Int {
             -Self::one()
         }
     }
-
+    /// Construct a int number from an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{int::Int, integer::Integer},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let digits = (1..10).collect::<Vec<u8>>();
+    ///     let integer = Integer::of(true, &digits);
+    ///     let int = integer.map(|i| Int::from_integer(i));
+    ///     assert_eq!(int, Some(Int::of(123456789)));
+    /// }
+    /// ```
+    ///
+    /// ## Panics
+    ///
+    /// If the size of the integer exceeds the maximum literal value of i32,
+    /// it will cause a panic.
+    ///
+    /// ```rust,should_panic
+    /// use rmatrix_ks::number::{
+    ///     instances::{int::Int, integer::Integer},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let integer = Integer::of_str("12345678910111213141516");
+    ///     // Panic occurs here.
+    ///     let _ = integer.map(|i| Int::from_integer(i));
+    /// }
+    /// ```
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{}", integer_number)
+            let inner = format!("{:?}", integer_number)
                 .parse::<i32>()
                 .expect(&format!(
                     "Error[Int::from_Integer]: ({}) should be a valid i32 number.",
@@ -134,6 +212,7 @@ impl Number for Int {
     }
 }
 
+/// Implement the concept of Real for Int.
 impl Real for Int {
     fn to_rational(self) -> Rational
     where
@@ -143,6 +222,7 @@ impl Real for Int {
     }
 }
 
+/// Implement the concept of Integral for Int.
 impl Integral for Int {
     fn quot_rem(self, rhs: Self) -> (Self, Self) {
         (
@@ -173,18 +253,21 @@ impl Integral for Int {
     }
 }
 
+/// Implement Display for Int.
 impl std::fmt::Display for Int {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
+/// Implement Debug for Int.
 impl std::fmt::Debug for Int {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:+}", self.inner)
     }
 }
 
+/// Implement FromStr for Int.
 impl std::str::FromStr for Int {
     type Err = ();
 
@@ -202,9 +285,10 @@ impl std::str::FromStr for Int {
     }
 }
 
-/// Uniform for Int
+/// Uniform distribution of int numbers.
 pub struct UniformI32(UniformInt<i32>);
 
+/// Implement uniform sampling for the uniform distribution of int numbers.
 impl UniformSampler for UniformI32 {
     type X = Int;
 
@@ -235,6 +319,7 @@ impl UniformSampler for UniformI32 {
     }
 }
 
+/// Implement uniform sampling for int numbers.
 impl SampleUniform for Int {
     type Sampler = UniformI32;
 }

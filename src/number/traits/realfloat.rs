@@ -1,6 +1,6 @@
-//! # Number Trait :: RealFloat
+//! # traits::realfloat
 //!
-//! Floating point number for Real.
+//! Types that implement this trait can be considered as real floating-point numbers.
 
 use crate::number::{
     instances::{int::Int, integer::Integer},
@@ -8,27 +8,32 @@ use crate::number::{
     utils::{clamp, from_integral, integral_power, non_negative_integral_power},
 };
 
-/// RealFloat
+/// Concepts of RealFloat.
 pub trait RealFloat: RealFrac + Floating {
-    /// the radix of the representation
+    /// The base of the numerical system.
     ///
-    /// by default is 2-based
+    /// The base, also known as "radix" in standards,
+    /// is typically `2`, which represents binary representation.
+    /// However, for decimal numbers, the base may be `10`.
     const FLOAT_RADIX: Int = Int::of(2);
 
-    /// the number of digits of `FLOAT_RADIX` in the significand
+    /// Number of digits in the radix used, including any implicit digit, but not counting the sign bit.
     const FLOAT_DIGITS: Int;
 
-    /// the lowest and highest values the exponent may assume
+    /// In the standard representation of floating-point numbers,
+    /// the range of the exponent is defined as `[-m + 2, m + 1)`
+    /// if the maximum value of the floating-point exponent is `m`.
     const FLOAT_RANGE: (Int, Int);
 
-    ///  returns the significand expressed and an appropriately scaled exponent
+    ///  Decode a real floating-point number into its significand and exponent.
+    ///
+    /// **NEED FIX**
     ///
     /// ```rust,ignore
-    /// use rmatrix_ks::number::utils::integral_power;
-    ///
-    /// let (significand, exponent) = real_float_number.clone().decode_float();
+    /// let rfp : F;
+    /// let (significand, exponent) = rfp.decode_float();
     /// let radix = F::FLOAT_RADIX;
-    /// assert_eq!(real_float_number, significand * integral_power(radix, exponent));
+    /// assert_eq!(significand * integral_power(radix, exponent), rfp);
     /// ```
     fn decode_float(self) -> (Integer, Int) {
         let range = Self::FLOAT_RANGE.1 + Int::one();
@@ -70,14 +75,14 @@ pub trait RealFloat: RealFrac + Floating {
         (modified_significand, modified_exponent)
     }
 
-    /// inverse of decode_float
+    /// Encode the given significand and exponent into a floating-point number.
     fn encode_float(significand: Integer, exponent: Int) -> Self {
         integral_power(from_integral(Self::FLOAT_RADIX), exponent)
             .map(|p: Self| p * Self::from_integer(significand))
             .expect("Error[RealFloat::encode_float]: Should be able to produce the correct result.")
     }
 
-    /// corresponds to the second component of decode_float
+    /// Return the actual exponent in the floating-point representation.
     ///
     /// In Haskell, it defines like:
     ///
@@ -86,15 +91,21 @@ pub trait RealFloat: RealFrac + Floating {
     /// exponent x = snd (decodeFloat x) + floatDigits x
     /// ```
     fn exponent(self) -> Int {
-        self.decode_float().1 + Self::FLOAT_DIGITS
+        if self.is_zero() {
+            Int::zero()
+        } else {
+            self.decode_float().1 + Self::FLOAT_DIGITS
+        }
     }
 
-    /// corresponds to the first component of decode_float
+    /// Return the actual significand in the floating-point representation.
     fn significand(self) -> Self {
         Self::encode_float(self.decode_float().0, -Self::FLOAT_DIGITS)
     }
 
-    /// multiplies a floating-point number by an integer power of the radix
+    /// Multiplies a real floating-point number by an integer power of the radix.
+    ///
+    /// **NEED FIX**
     fn scale_float(self, factor: Int) -> Self {
         if self.is_zero() || self.is_not_a_number() || self.is_infinite_number() {
             self
@@ -106,19 +117,19 @@ pub trait RealFloat: RealFrac + Floating {
         }
     }
 
-    /// check if it is NaN
+    /// Validate whether a given real floating-point number is NaN.
     fn is_not_a_number(&self) -> bool;
 
-    /// check if it is Inf
+    /// Validate whether a given real floating-point number is Inf.
     fn is_infinite_number(&self) -> bool;
 
-    /// check if it is denormalized
+    /// Validate whether a given real floating-point number is in a denormalized form.
     fn is_denormalized(&self) -> bool;
 
-    /// check if it is (-0)
+    /// Validate whether a given real floating-point number is "negative zero".
     fn is_negative_zero(&self) -> bool;
 
-    /// atan2(y, x)
+    /// The two-parameter arctangent function, atan2(y, x).
     fn arc_tangent_2(y: Self, x: Self) -> Self {
         if x > Self::zero() {
             (y / x).arc_tangent()

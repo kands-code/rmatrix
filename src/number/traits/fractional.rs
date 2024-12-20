@@ -1,20 +1,23 @@
-//! # Number Trait :: Fractional
+//! # traits::fractional
 //!
-//! A type that implements this trait is a fractional number.
+//! Types that implement this trait can be considered as fractional numbers.
 
 use crate::number::{instances::ratio::Rational, traits::number::Number};
 
-/// Fractional
+/// Concepts of Fractional.
+///
+/// Fractional numbers, in addition to being numbers,
+/// must also be able to perform division operations.
 pub trait Fractional: Number
 where
     Self: std::ops::Div<Output = Self>,
 {
-    /// 0.5 or 1/2
+    /// The concept of `1/2`, or in other words, half of ONE.
     fn half() -> Self;
 
-    /// reciprocal of a fraction
+    /// The reciprocal of a fractional number.
     fn reciprocal(self) -> Self;
 
-    /// convert a rational number to a fractional number
+    /// Converting a rational number into a fractional number.
     fn from_rational(rational_number: Rational) -> Self;
 }

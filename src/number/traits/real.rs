@@ -1,14 +1,17 @@
-//! # Number Trait :: Real
+//! # traits::real
 //!
-//! A type that implements this trait is a real number.
+//! Types that implement this trait can be considered as real numbers.
 
 use crate::number::{instances::ratio::Rational, traits::number::Number};
 
-/// Real
+/// Concepts of Real.
+///
+/// Real numbers are not only numbers
+/// but also possess a partial ordering relation.
 pub trait Real: Number
 where
     Self: std::cmp::PartialOrd,
 {
-    /// convert a real number to a rational number
+    /// Convert a real number to a rational number.
     fn to_rational(self) -> Rational;
 }

@@ -1,8 +1,8 @@
+#![warn(missing_docs)]
 #![allow(incomplete_features)]
 #![feature(doc_cfg)]
 #![feature(doc_auto_cfg)]
 #![feature(generic_const_exprs)]
-#![warn(missing_docs)]
 
 //! # rmatrix_ks
 //!
@@ -14,12 +14,19 @@
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs
 //!
-//! ## Warning
+//! ## Warnings
+//!
+//! <div class="warning">
 //!
 //! Unstable features used:
+//! - doc_cfg
+//! - doc_auto_cfg
 //! - generic_const_exprs
 //!
-//! Please add `#![feature(generic_const_exprs)]` if you want to use this library.
+//! If you want to use this library, please use Rust Nightly
+//! and make sure to add `#![feature(generic_const_exprs)]`.
+//!
+//! </div>
 //!
 //! # Description
 //!

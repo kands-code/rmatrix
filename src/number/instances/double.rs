@@ -91,7 +91,7 @@ impl One for Double {
     }
 }
 
-/// Implement Default for the complex number.
+/// Implement Default for the double number.
 impl std::default::Default for Double {
     fn default() -> Self {
         Self::zero()
@@ -193,9 +193,9 @@ impl Number for Double {
     /// }
     /// ```
     ///
-    /// <div class="warning">
-    ///
     /// ## Warnings
+    ///
+    /// <div class="warning">
     ///
     /// When the size of an integer exceeds the maximum integer
     /// representable by a double-precision floating-point number,
@@ -222,7 +222,7 @@ impl Number for Double {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{}", integer_number)
+            let inner = format!("{:?}", integer_number)
                 .parse::<f64>()
                 .expect(&format!(
                     "Error[Double::from_Integer]: ({}) should be a valid f64 number.",

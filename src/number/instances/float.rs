@@ -1,6 +1,6 @@
-//! # Number Type :: Float
+//! # instances::float
 //!
-//! f32 wrapper.
+//! Functions and related implementations for single precision floating-point numbers.
 
 use crate::number::{
     instances::{int::Int, integer::Integer, ratio::Rational},
@@ -16,32 +16,70 @@ use rand::{
     Rng,
 };
 
+/// Float numbers are the wrapper type for f32.
 #[derive(Clone, PartialOrd)]
 pub struct Float {
     inner: f32,
 }
 
 impl Float {
+    /// Construct float numbers from f32.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::float::Float;
+    ///
+    /// fn main() {
+    ///     let _f = Float::of(12.0);
+    /// }
+    /// ```
     pub const fn of(num: f32) -> Self {
         Self { inner: num }
     }
 
+    /// Construct float numbers from string.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::float::Float;
+    ///
+    /// fn main() {
+    ///     let sf = Float::of_str("-12.0").unwrap();
+    ///     let f = Float::of(-12.0);
+    ///     assert_eq!(sf, f);
+    /// }
+    /// ```
     pub fn of_str(float_number: &str) -> Option<Self> {
         std::str::FromStr::from_str(float_number).ok()
     }
 }
 
+/// Implement the concept of ZERO for the float number.
 impl Zero for Float {
     fn zero() -> Self {
         Self { inner: 0.0f32 }
     }
 
+    /// Validate whether a float number is ZERO.
+    ///
+    /// Use half-precision to avoid certain floating-point precision errors.
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
+    ///
+    /// fn main() {
+    ///     let f = Float::of(core::f32::EPSILON);
+    ///     assert!(f.is_zero());
+    /// }
+    /// ```
     fn is_zero(&self) -> bool {
-        // Use half-precision to avoid certain floating-point precision errors.
         self.inner.abs() <= core::f32::EPSILON.sqrt()
     }
 }
 
+/// Implement the concept of ONE for the float number.
 impl One for Float {
     fn one() -> Self {
         Self { inner: 1.0f32 }
@@ -52,12 +90,14 @@ impl One for Float {
     }
 }
 
+/// Implement Default for the float number.
 impl std::default::Default for Float {
     fn default() -> Self {
         Self::zero()
     }
 }
 
+/// Implement the negation operation for the float number.
 impl std::ops::Neg for Float {
     type Output = Self;
 
@@ -66,6 +106,7 @@ impl std::ops::Neg for Float {
     }
 }
 
+/// Implement the addition operation for the float number.
 impl std::ops::Add for Float {
     type Output = Self;
 
@@ -76,6 +117,7 @@ impl std::ops::Add for Float {
     }
 }
 
+/// Implement the subtraction operation for the float number.
 impl std::ops::Sub for Float {
     type Output = Self;
 
@@ -86,6 +128,7 @@ impl std::ops::Sub for Float {
     }
 }
 
+/// Implement the multiplication operation for the float number.
 impl std::ops::Mul for Float {
     type Output = Self;
 
@@ -96,6 +139,7 @@ impl std::ops::Mul for Float {
     }
 }
 
+/// Implement the division operation for the float number.
 impl std::ops::Div for Float {
     type Output = Self;
 
@@ -106,12 +150,14 @@ impl std::ops::Div for Float {
     }
 }
 
+/// Implement equality for float numbers.
 impl std::cmp::PartialEq for Float {
     fn eq(&self, other: &Self) -> bool {
         (self.clone() - other.clone()).is_zero()
     }
 }
 
+/// Implement the concept of NUMBER for the float number.
 impl Number for Float {
     fn absolute_value(&self) -> Self {
         Self {
@@ -129,11 +175,53 @@ impl Number for Float {
         }
     }
 
+    /// Construct a float number from an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{float::Float, integer::Integer},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let i1 = Integer::of_str("123456789").unwrap();
+    ///     let f1 = Float::from_integer(i1);
+    ///     assert_eq!(f1, Float::of(123456789.0));
+    /// }
+    /// ```
+    ///
+    /// ## Warnings
+    ///
+    /// <div class="warning">
+    ///
+    /// When the size of an integer exceeds the maximum integer
+    /// representable by a single-precision floating-point number,
+    /// significant errors may occur.
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{float::Float, integer::Integer},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let i2 = Integer::of_str("1234567891011121314151617181920").unwrap();
+    ///     let f2 = Float::from_integer(i2);
+    ///     assert_eq!(
+    ///         f2,
+    ///         Float::of(1234567900000000000000000000000.0)
+    ///     );
+    /// }
+    /// ```
+    ///
+    /// </div>
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{}", integer_number)
+            let inner = format!("{:?}", integer_number)
                 .parse::<f32>()
                 .expect(&format!(
                     "Error[Float::from_Integer]: ({}) should be a valid f32 number.",
@@ -144,6 +232,7 @@ impl Number for Float {
     }
 }
 
+/// Implement the concept of RealFloat for Float.
 impl RealFloat for Float {
     const FLOAT_DIGITS: Int = Int::of(24);
 
@@ -166,6 +255,7 @@ impl RealFloat for Float {
     }
 }
 
+/// Implement the concept of RealFrac for Float.
 impl RealFrac for Float {
     fn proper_fraction<I: Integral>(self) -> (I, Self) {
         (
@@ -175,6 +265,7 @@ impl RealFrac for Float {
     }
 }
 
+/// Implement the concept of Real for Float.
 impl Real for Float {
     fn to_rational(self) -> Rational {
         if self.is_not_a_number() || self.is_infinite_number() {
@@ -213,6 +304,7 @@ impl Real for Float {
     }
 }
 
+/// Implement the concept of Floating for Float.
 impl Floating for Float {
     const ZERO: Self = Self { inner: 0.0f32 };
 
@@ -291,6 +383,7 @@ impl Floating for Float {
     }
 }
 
+/// Implement the concept of Fractional for Float.
 impl Fractional for Float {
     fn half() -> Self {
         Self { inner: 0.5f32 }
@@ -307,18 +400,21 @@ impl Fractional for Float {
     }
 }
 
+/// Implement Display for Float.
 impl std::fmt::Display for Float {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
+/// Implement Debug for Float.
 impl std::fmt::Debug for Float {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:+}", self.inner)
     }
 }
 
+/// Implement FromStr for Float.
 impl std::str::FromStr for Float {
     type Err = ();
 
@@ -336,9 +432,10 @@ impl std::str::FromStr for Float {
     }
 }
 
-/// Uniform for Float
+/// Uniform distribution of float numbers.
 pub struct UniformF32(UniformFloat<f32>);
 
+/// Implement uniform sampling for the uniform distribution of float numbers.
 impl UniformSampler for UniformF32 {
     type X = Float;
 
@@ -369,6 +466,7 @@ impl UniformSampler for UniformF32 {
     }
 }
 
+/// Implement uniform sampling for float numbers.
 impl SampleUniform for Float {
     type Sampler = UniformF32;
 }

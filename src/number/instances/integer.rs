@@ -1,6 +1,6 @@
-//! # Number Type :: Integer
+//! # instances::integer
 //!
-//! Integer of arbitrary length.
+//! Functions and implementations related to signed integers.
 
 use crate::number::{
     instances::ratio::Rational,
@@ -8,19 +8,16 @@ use crate::number::{
     utils::i8_div_mod,
 };
 
-/// Integer
+/// Integer type with no size limit.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Integer {
+    /// Sign of the number.
     pub sign: bool,
     inner: Vec<u8>,
 }
 
 impl Integer {
-    /// default create function for Integer
-    ///
-    /// # Note
-    ///
-    /// every digits should be in [0, 10)
+    /// Construct an integer by passing the sign and each digit.
     ///
     /// # Example
     ///
@@ -35,8 +32,26 @@ impl Integer {
     ///     };
     /// }
     /// ```
+    ///
+    /// ## Warning
+    ///
+    /// <div class="warning">
+    ///
+    /// Each digit should be between [0, 9],
+    /// which means it is a single decimal digit.
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::integer::Integer;
+    ///
+    /// fn main() {
+    ///     let digits = vec![1, 2, 10];
+    ///     assert_eq!(Integer::of(true, &digits), None);
+    /// }
+    /// ```
+    ///
+    /// </div>
     pub fn of(sign: bool, digits: &[u8]) -> Option<Self> {
-        // remove redundant zeros
+        // Remove leading zeros.
         let mut inner = digits
             .iter()
             .skip_while(|&&digit| digit == 0u8)
@@ -45,9 +60,9 @@ impl Integer {
         if inner.is_empty() {
             Some(Self::zero())
         } else {
-            // reverse storage for ease of calculation
+            // Store in reverse for easier computation.
             inner.reverse();
-            // every digits should be in [0, 10)
+            // Each digit should be between [0, 9].
             if inner.iter().all(|&digit| digit < 10u8) {
                 Some(Self { sign, inner })
             } else {
@@ -60,47 +75,40 @@ impl Integer {
         }
     }
 
-    /// create Integer from string literal
+    /// Construct integer numbers from string.
     ///
-    /// # Note
-    ///
-    /// the string literal should match `r"([+-]?)([0-9_]+)"`
-    ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use rmatrix_ks::number::instances::integer::Integer;
     ///
     /// fn main() {
-    ///     let integer_str = "-123_4567";
-    ///     // Integer(-1234567)
-    ///     let Some(_) = Integer::of_str(integer_str) else {
-    ///         unreachable!();
-    ///     };
+    ///     let i1 = Integer::of_str("-123456");
+    ///     let i2 = Integer::of(false, &[1, 2, 3, 4, 5, 6]);
+    ///     assert_eq!(i1, i2);
     /// }
     /// ```
     pub fn of_str(integer_number: &str) -> Option<Self> {
         std::str::FromStr::from_str(integer_number).ok()
     }
 
-    /// get the digits of the integer
+    /// Return the digit at each position.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use rmatrix_ks::number::instances::integer::Integer;
     ///
     /// fn main() {
-    ///     if let Some(integer_number) = Integer::of_str("-123_4567") {
-    ///         assert_eq!(integer_number.digits(), vec![1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8]);
-    ///     };
+    ///     let digits = Integer::of_str("-123456").map(|e| e.digits());
+    ///     assert_eq!(digits, Some(vec![1, 2, 3, 4, 5, 6]));
     /// }
     /// ```
     pub fn digits(&self) -> Vec<u8> {
         self.inner.iter().rev().cloned().collect::<Vec<u8>>()
     }
 
-    /// add self and rhs with non-negative
+    /// Non-negative integer addition.
     fn integer_add(self, rhs: Self) -> Self {
         if self.is_zero() {
             rhs
@@ -124,7 +132,7 @@ impl Integer {
         }
     }
 
-    /// subtract self and rhs with non-negative
+    /// Non-negative integer subtraction.
     fn integer_sub(self, rhs: Self) -> Self {
         if self.is_zero() {
             -rhs
@@ -148,9 +156,8 @@ impl Integer {
             sign = (carry == 0i8) == sign;
             let digits = diff
                 .iter()
-                .rev() // convert to noraml digits
+                .rev() // Revert to normal order.
                 .map(|&digit| digit as u8)
-                // .map(|&digit| digit as u8)
                 .collect::<Vec<u8>>();
             Self::of(sign, &digits).expect(
                 "Error[Integer::integer_sub]: Each digit should be within the range [1, 9].",
@@ -159,10 +166,11 @@ impl Integer {
     }
 }
 
+/// Implement the concept of ZERO for the integer number.
 impl Zero for Integer {
-    /// ZERO for Integer
+    /// Retrieve zeros in integers.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use rmatrix_ks::number::{instances::integer::Integer, traits::zero::Zero};
@@ -182,9 +190,9 @@ impl Zero for Integer {
         }
     }
 
-    /// checks if it is the ZERO
+    /// Validate whether an integer is zero.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use rmatrix_ks::number::{instances::integer::Integer, traits::zero::Zero};
@@ -199,26 +207,11 @@ impl Zero for Integer {
     /// }
     /// ```
     fn is_zero(&self) -> bool {
-        self.inner.len() == 1 && self.inner.get(0).is_some_and(|&v| v == 0u8)
+        self.inner.is_empty() || self.inner.iter().all(|&e| e == 0u8)
     }
 }
 
 impl One for Integer {
-    /// ONE for Integer
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use rmatrix_ks::number::{instances::integer::Integer, traits::one::One};
-    ///
-    /// fn main() {
-    ///     let a = Integer::one();
-    ///     let Some(one) = Integer::of_str("1") else {
-    ///         unreachable!();
-    ///     };
-    ///     assert_eq!(a, one);
-    /// }
-    /// ```
     fn one() -> Self {
         Self {
             sign: true,
@@ -226,9 +219,9 @@ impl One for Integer {
         }
     }
 
-    /// checks if it is the ONE
+    /// Validate whether an integer is one.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use rmatrix_ks::number::{instances::integer::Integer, traits::one::One};
@@ -236,27 +229,34 @@ impl One for Integer {
     /// fn main() {
     ///     let a = Integer::one();
     ///     assert!(a.is_one());
-    ///     let Some(b) = Integer::of(true, &[1, 6]) else {
-    ///         unreachable!();
-    ///     };
-    ///     assert!(!b.is_one());
+    ///     let b = Integer::of(true, &[1, 6]);
+    ///     assert!(b.is_some_and(|e| !e.is_one()));
     /// }
     /// ```
     fn is_one(&self) -> bool {
-        self.inner.len() == 1 && self.inner.get(0).is_some_and(|&v| v == 1u8)
+        (!self.inner.is_empty()) // An empty integer cannot be one.
+            && (self
+                .inner
+                .iter()
+                .rev() // Revert to normal order.
+                .skip_while(|&&e| e == 0)
+                .collect::<Vec<&u8>>()
+                == vec![&1u8]) // Exclude the influence of leading zeros.
     }
 }
 
+/// Implement Default for the integer number.
 impl std::default::Default for Integer {
     fn default() -> Self {
         Self::zero()
     }
 }
 
+/// Implement PartialOrd for the integer number.
 impl std::cmp::PartialOrd for Integer {
-    /// compare two integers
+    /// Compare two integers.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```rust
     /// use rmatrix_ks::number::instances::integer::Integer;
@@ -293,6 +293,7 @@ impl std::cmp::PartialOrd for Integer {
     }
 }
 
+/// Implement Ord for the integer number.
 impl std::cmp::Ord for Integer {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.partial_cmp(other)
@@ -300,6 +301,7 @@ impl std::cmp::Ord for Integer {
     }
 }
 
+/// Implement the negation operation for the integer number.
 impl std::ops::Neg for Integer {
     type Output = Self;
 
@@ -311,6 +313,7 @@ impl std::ops::Neg for Integer {
     }
 }
 
+/// Implement the addition operation for the integer number.
 impl std::ops::Add for Integer {
     type Output = Self;
 
@@ -324,6 +327,7 @@ impl std::ops::Add for Integer {
     }
 }
 
+/// Implement the subtraction operation for the integer number.
 impl std::ops::Sub for Integer {
     type Output = Self;
 
@@ -332,6 +336,7 @@ impl std::ops::Sub for Integer {
     }
 }
 
+/// Implement the multiplication operation for the integer number.
 impl std::ops::Mul for Integer {
     type Output = Self;
 
@@ -360,6 +365,7 @@ impl std::ops::Mul for Integer {
     }
 }
 
+/// Implement the concept of NUMBER for the integer number.
 impl Number for Integer {
     fn absolute_value(&self) -> Self {
         Self {
@@ -383,12 +389,14 @@ impl Number for Integer {
     }
 }
 
+/// Implement the concept of Real for Integer.
 impl Real for Integer {
     fn to_rational(self) -> Rational {
         Rational::of(self, Self::one())
     }
 }
 
+/// Implement the concept of Integral for Integer.
 impl Integral for Integer {
     fn quot_rem(self, rhs: Self) -> (Self, Self) {
         if self == rhs {
@@ -459,6 +467,7 @@ impl Integral for Integer {
     }
 }
 
+/// Implement Display for Integer.
 impl std::fmt::Display for Integer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -474,6 +483,7 @@ impl std::fmt::Display for Integer {
     }
 }
 
+/// Implement Debug for Integer.
 impl std::fmt::Debug for Integer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -489,16 +499,14 @@ impl std::fmt::Debug for Integer {
     }
 }
 
+/// Implement FromStr for Integer.
 impl std::str::FromStr for Integer {
     type Err = ();
 
-    /// convert string literal to Integer
-    ///
-    /// note and example see [Integer::of_str()]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // remove extra whitespaces
+        // Remove any leading and trailing whitespace characters from the string.
         let trimmed_s = s.trim();
-        // use regular expressions to validate string
+        // Use regular expressions to validate the string.
         regex::Regex::new(r"(?<sign>[+-]?)(?<digits>[0-9_]+)")
             .ok()
             .and_then(|matcher| {

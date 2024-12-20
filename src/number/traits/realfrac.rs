@@ -1,20 +1,20 @@
-//! # Number Trait :: RealFrac
+//! # traits::realfrac
 //!
-//! Extracting components of fractions.
+//! Types that implement this trait can be considered as real fractional numbers.
 
 use crate::number::traits::{fractional::Fractional, integral::Integral, real::Real};
 
-/// RealFrac
+/// Concepts of RealFrac.
 pub trait RealFrac: Real + Fractional {
-    /// extract the Integral and Fractional parts of self
+    /// Extract the integral part and the fractional part from a real fractional number.
     fn proper_fraction<I: Integral>(self) -> (I, Self);
 
-    /// returns the Integral nearest self between zero and self
+    /// Return the nearest integral number between itself and zero.
     fn truncate<I: Integral>(self) -> I {
         self.proper_fraction().0
     }
 
-    /// returns the nearest Integral to self
+    /// Return the nearest integral number to itself.
     fn round<I: Integral>(self) -> I {
         let (integral_part, fractional_part): (I, Self) = self.proper_fraction();
         let integral_part_acc = if fractional_part < Self::zero() {
@@ -35,7 +35,7 @@ pub trait RealFrac: Real + Fractional {
         }
     }
 
-    /// returns the least Integral not less than self
+    /// Return the smallest integer greater than itself.
     fn ceiling<I: Integral>(self) -> I {
         let (integral_part, fractional_part) = self.proper_fraction();
         if fractional_part > Self::zero() {
@@ -45,7 +45,7 @@ pub trait RealFrac: Real + Fractional {
         }
     }
 
-    /// returns the greatest Integral not greater than self
+    /// Return the largest integer less than itself.
     fn floor<I: Integral>(self) -> I {
         let (integral_part, fractional_part) = self.proper_fraction();
         if fractional_part < Self::zero() {
