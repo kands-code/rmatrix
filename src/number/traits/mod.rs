@@ -1,6 +1,6 @@
 //! # traits
 //!
-//! some common number traits
+//! Common traits of some numbers.
 
 pub mod floating;
 pub mod fractional;

@@ -1,6 +1,6 @@
 //! # instances
 //!
-//! some common number instances
+//! Some common number instances.
 
 pub mod complex;
 pub mod double;

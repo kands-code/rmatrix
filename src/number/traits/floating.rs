@@ -6,6 +6,7 @@ use crate::number::traits::fractional::Fractional;
 
 /// Floating
 pub trait Floating: Fractional {
+    /// zero
     const ZERO: Self;
 
     /// pi \approx 3.141593

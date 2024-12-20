@@ -1,6 +1,8 @@
 #![allow(incomplete_features)]
 #![feature(doc_cfg)]
+#![feature(doc_auto_cfg)]
 #![feature(generic_const_exprs)]
+#![warn(missing_docs)]
 
 //! # rmatrix_ks
 //!

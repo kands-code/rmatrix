@@ -1,6 +1,6 @@
-//! # Number Type :: Double
+//! # instances::double
 //!
-//! f64 wrapper.
+//! Functions and related implementations for double precision floating-point numbers.
 
 use crate::number::{
     instances::{int::Int, integer::Integer, ratio::Rational},
@@ -16,32 +16,71 @@ use rand::{
     Rng,
 };
 
+/// Double numbers are the wrapper type for f64.
 #[derive(Clone, PartialOrd)]
 pub struct Double {
+    /// Internal data.
     inner: f64,
 }
 
 impl Double {
+    /// Construct double numbers from f64.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::double::Double;
+    ///
+    /// fn main() {
+    ///     let _d = Double::of(12.0);
+    /// }
+    /// ```
     pub const fn of(num: f64) -> Self {
         Self { inner: num }
     }
 
+    /// Construct double numbers from string.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{instances::double::Double, traits::zero::Zero};
+    ///
+    /// fn main() {
+    ///     let sd = Double::of_str("-12.0").unwrap();
+    ///     let d = Double::of(-12.0);
+    ///     assert!((sd - d).is_zero());
+    /// }
+    /// ```
     pub fn of_str(float_number: &str) -> Option<Self> {
         std::str::FromStr::from_str(float_number).ok()
     }
 }
 
+/// Implement the concept of ZERO for the double number.
 impl Zero for Double {
     fn zero() -> Self {
         Self { inner: 0.0f64 }
     }
 
+    /// Validate whether a double number is ZERO.
+    ///
+    /// Use half-precision to avoid certain floating-point precision errors.
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{instances::double::Double, traits::zero::Zero};
+    ///
+    /// fn main() {
+    ///     let d = Double::of(core::f64::EPSILON);
+    ///     assert!(d.is_zero());
+    /// }
+    /// ```
     fn is_zero(&self) -> bool {
-        // Use half-precision to avoid certain floating-point precision errors.
         self.inner.abs() <= core::f64::EPSILON.sqrt()
     }
 }
 
+/// Implement the concept of ONE for the double number.
 impl One for Double {
     fn one() -> Self {
         Self { inner: 1.0f64 }
@@ -52,12 +91,14 @@ impl One for Double {
     }
 }
 
+/// Implement Default for the complex number.
 impl std::default::Default for Double {
     fn default() -> Self {
         Self::zero()
     }
 }
 
+/// Implement the negation operation for the double number.
 impl std::ops::Neg for Double {
     type Output = Self;
 
@@ -66,6 +107,7 @@ impl std::ops::Neg for Double {
     }
 }
 
+/// Implement the addition operation for the double number.
 impl std::ops::Add for Double {
     type Output = Self;
 
@@ -76,6 +118,7 @@ impl std::ops::Add for Double {
     }
 }
 
+/// Implement the subtraction operation for the double number.
 impl std::ops::Sub for Double {
     type Output = Self;
 
@@ -86,6 +129,7 @@ impl std::ops::Sub for Double {
     }
 }
 
+/// Implement the multiplication operation for the double number.
 impl std::ops::Mul for Double {
     type Output = Self;
 
@@ -96,6 +140,7 @@ impl std::ops::Mul for Double {
     }
 }
 
+/// Implement the division operation for the double number.
 impl std::ops::Div for Double {
     type Output = Self;
 
@@ -106,12 +151,14 @@ impl std::ops::Div for Double {
     }
 }
 
+/// Implement equality for double numbers.
 impl std::cmp::PartialEq for Double {
     fn eq(&self, other: &Self) -> bool {
         (self.clone() - other.clone()).is_zero()
     }
 }
 
+/// Implement the concept of NUMBER for the double number.
 impl Number for Double {
     fn absolute_value(&self) -> Self {
         Self {
@@ -129,6 +176,48 @@ impl Number for Double {
         }
     }
 
+    /// Construct a double number from an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{double::Double, integer::Integer},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let i1 = Integer::of_str("12345678910").unwrap();
+    ///     let d1 = Double::from_integer(i1);
+    ///     assert_eq!(d1, Double::of(12345678910.0));
+    /// }
+    /// ```
+    ///
+    /// <div class="warning">
+    ///
+    /// ## Warnings
+    ///
+    /// When the size of an integer exceeds the maximum integer
+    /// representable by a double-precision floating-point number,
+    /// significant errors may occur.
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{double::Double, integer::Integer},
+    ///     traits::number::Number,
+    /// };
+    ///
+    /// fn main() {
+    ///     let i2 = Integer::of_str("123456789101112131415161718192021222324252627").unwrap();
+    ///     let d2 = Double::from_integer(i2);
+    ///     assert_eq!(
+    ///         d2,
+    ///         Double::of(123456789101112130000000000000000000000000000.0)
+    ///     );
+    /// }
+    /// ```
+    ///
+    /// </div>
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
@@ -144,6 +233,7 @@ impl Number for Double {
     }
 }
 
+/// Implement the concept of RealFloat for Double.
 impl RealFloat for Double {
     const FLOAT_DIGITS: Int = Int::of(53);
 
@@ -166,6 +256,7 @@ impl RealFloat for Double {
     }
 }
 
+/// Implement the concept of RealFrac for Double.
 impl RealFrac for Double {
     fn proper_fraction<I: Integral>(self) -> (I, Self) {
         (
@@ -178,6 +269,7 @@ impl RealFrac for Double {
     }
 }
 
+/// Implement the concept of Real for Double.
 impl Real for Double {
     fn to_rational(self) -> Rational {
         if self.is_not_a_number() || self.is_infinite_number() {
@@ -216,6 +308,7 @@ impl Real for Double {
     }
 }
 
+/// Implement the concept of Floating for Double.
 impl Floating for Double {
     const ZERO: Self = Self { inner: 0.0f64 };
 
@@ -294,6 +387,7 @@ impl Floating for Double {
     }
 }
 
+/// Implement the concept of Fractional for Double.
 impl Fractional for Double {
     fn half() -> Self {
         Self { inner: 0.5f64 }
@@ -310,18 +404,21 @@ impl Fractional for Double {
     }
 }
 
+/// Implement Display for Double.
 impl std::fmt::Display for Double {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
     }
 }
 
+/// Implement Debug for Double.
 impl std::fmt::Debug for Double {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:+}", self.inner)
     }
 }
 
+/// Implement FromStr for Double.
 impl std::str::FromStr for Double {
     type Err = ();
 
@@ -339,9 +436,10 @@ impl std::str::FromStr for Double {
     }
 }
 
-/// Uniform for Double
+/// Uniform distribution of double numbers.
 pub struct UniformF64(UniformFloat<f64>);
 
+/// Implement uniform sampling for the uniform distribution of double numbers.
 impl UniformSampler for UniformF64 {
     type X = Double;
 
@@ -372,6 +470,7 @@ impl UniformSampler for UniformF64 {
     }
 }
 
+/// Implement uniform sampling for double numbers.
 impl SampleUniform for Double {
     type Sampler = UniformF64;
 }

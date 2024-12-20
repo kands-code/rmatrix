@@ -1,12 +1,12 @@
-//! # Number Trait :: One
+//! # traits::one
 //!
-//! Implementing this trait implements the multiplication unit.
+//! Types that implement this trait have the concept of ONE.
 
-/// multiplication unit :: One
+/// Concept of ONE.
 pub trait One {
-    /// the multiplication unit
+    /// Return the ONE number.
     fn one() -> Self;
 
-    /// checks if it is the multiplication unit
+    /// Validate whether a number is ONE.
     fn is_one(&self) -> bool;
 }

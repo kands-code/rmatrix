@@ -142,7 +142,19 @@ pub fn integral_power<F: Fractional, I: Integral>(base: F, exponents: I) -> Opti
     }
 }
 
-/// the greatest common factor
+/// Calculate the greatest common divisor.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::number::{instances::int::Int, utils::gcd};
+///
+/// fn main() {
+///     let m = Int::of(128);
+///     let n = Int::of(96);
+///     assert_eq!(gcd(m, n), Int::of(32));
+/// }
+/// ```
 pub fn gcd<I: Integral>(lhs: I, rhs: I) -> I {
     fn inner_gcd<I: Integral>(lhs: I, rhs: I) -> I {
         if rhs == I::zero() || lhs == rhs {
@@ -154,7 +166,19 @@ pub fn gcd<I: Integral>(lhs: I, rhs: I) -> I {
     inner_gcd(lhs.absolute_value(), rhs.absolute_value())
 }
 
-/// the least common multiple
+/// Calculate the least common multiple.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::number::{instances::int::Int, utils::lcm};
+///
+/// fn main() {
+///     let m = Int::of(15);
+///     let n = Int::of(6);
+///     assert_eq!(lcm(m, n), Int::of(30));
+/// }
+/// ```
 pub fn lcm<I: Integral>(lhs: I, rhs: I) -> I {
     if lhs.is_zero() || rhs.is_zero() {
         I::zero()
@@ -163,12 +187,38 @@ pub fn lcm<I: Integral>(lhs: I, rhs: I) -> I {
     }
 }
 
-/// convert integral number to other number type
+/// Convert Integral to other number types.
+///
+/// ```rust
+/// use rmatrix_ks::number::{
+///     instances::{float::Float, int::Int},
+///     utils::from_integral,
+/// };
+///
+/// fn main() {
+///     let m = Int::of(15);
+///     let f = Float::of(15.0);
+///     assert_eq!(from_integral::<Float, Int>(m), f);
+/// }
+/// ```
 pub fn from_integral<N: Number, I: Integral>(integral_number: I) -> N {
     N::from_integer(integral_number.to_integer())
 }
 
-/// convert real number to fractional number
+/// Convert Real to Fractional.
+///
+/// ```rust
+/// use rmatrix_ks::number::{
+///     instances::{double::Double, ratio::Rational},
+///     utils::real_to_frac,
+/// };
+///
+/// fn main() {
+///     let m = Rational::of_str("12 % 5").unwrap();
+///     let f = Double::of(2.4);
+///     assert_eq!(real_to_frac::<Rational, Double>(m), f);
+/// }
+/// ```
 pub fn real_to_frac<R: Real, F: Fractional>(real_number: R) -> F {
     F::from_rational(real_number.to_rational())
 }

@@ -1,12 +1,12 @@
-//! # Number Trait :: Zero
+//! # traits::zero
 //!
-//! Implementing this trait implements the additive unit.
+//! Types that implement this trait have the concept of ZERO.
 
-/// additive unit :: Zero
+/// Concept of ZERO.
 pub trait Zero {
-    /// the additive unit
+    /// Return the ZERO number.
     fn zero() -> Self;
 
-    /// checks if it is the additive unit
+    /// Validate whether a number is ZERO.
     fn is_zero(&self) -> bool;
 }

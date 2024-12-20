@@ -2,13 +2,15 @@
 #![feature(generic_const_exprs)]
 
 use rmatrix_ks::number::{
-    instances::{float::Float, int::Int},
-    traits::zero::Zero,
-    utils::integral_power,
+    instances::{double::Double, integer::Integer},
+    traits::number::Number,
 };
 
 fn main() {
-    let m = Int::of(-2);
-    let n = Float::of(2.0);
-    assert!((integral_power(n, m).is_some_and(|e| (e - Float::of(0.25)).is_zero())));
+    let i2 = Integer::of_str("123456789101112131415161718192021222324252627").unwrap();
+    let d2 = Double::from_integer(i2);
+    assert_eq!(
+        d2,
+        Double::of(123456789101112130000000000000000000000000000.0)
+    );
 }

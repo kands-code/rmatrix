@@ -30,3 +30,7 @@ regex = "^1.11.1"
 rand = "^0.8.5"
 # for optimize
 rayon = "^1.10.0"
+
+[features]
+extra = []
+default = []
