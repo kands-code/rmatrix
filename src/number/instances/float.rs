@@ -291,11 +291,17 @@ impl Real for Float {
                 .collect::<Vec<u8>>();
             Rational::of(
                 Integer::of(sign, &numerator).expect(&format!(
-                    "Error[Float::to_rational]: Each digit should be within the range [1, 9] ({:?}).",
+                    concat!(
+                        "Error[Float::to_rational]: ",
+                        "Each digit should be within the range [1, 9] ({:?})."
+                    ),
                     numerator
                 )),
                 Integer::of(true, &denominator).expect(&format!(
-                    "Error[Float::to_rational]: Each digit should be within the range [1, 9] ({:?}).",
+                    concat!(
+                        "Error[Float::to_rational]: ",
+                        "Each digit should be within the range [1, 9] ({:?})."
+                    ),
                     denominator
                 )),
             )

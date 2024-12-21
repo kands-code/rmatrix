@@ -35,18 +35,38 @@ where
     /// Calculating the quotient and remainder of two integers,
     /// where the quotient is rounded towards zero.
     ///
-    /// ```rust,ignore
-    /// let m: I, n: I;
-    /// assert_eq!(m.quotient(n) * n + m.remainder(n), m);
+    /// For example, for the `Integer`:
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{instances::integer::Integer, traits::integral::Integral};
+    ///
+    /// fn main() {
+    ///     let i1 = Integer::of_str("8").unwrap();
+    ///     let i2 = Integer::of_str("-3").unwrap();
+    ///     let (quot, rem) = i1.clone().quot_rem(i2.clone());
+    ///     assert_eq!(quot, Integer::of_str("-2").unwrap());
+    ///     assert_eq!(rem, Integer::of_str("2").unwrap());
+    ///     assert_eq!(quot * i2 + rem, i1);
+    /// }
     /// ```
     fn quot_rem(self, rhs: Self) -> (Self, Self);
 
     /// Calculating the division and modulus of two integers,
     /// where the division result is rounded towards negative infinity.
     ///
-    /// ```rust,ignore
-    /// let x: I, y: I;
-    /// assert_eq!(x.division(y) * y + x.modulus(y), x);
+    /// For example, for the `Integer`:
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{instances::integer::Integer, traits::integral::Integral};
+    ///
+    /// fn main() {
+    ///     let i1 = Integer::of_str("8").unwrap();
+    ///     let i2 = Integer::of_str("-3").unwrap();
+    ///     let (div, m) = i1.clone().div_mod(i2.clone());
+    ///     assert_eq!(div, Integer::of_str("-3").unwrap());
+    ///     assert_eq!(m, Integer::of_str("-1").unwrap());
+    ///     assert_eq!(div * i2 + m, i1);
+    /// }
     /// ```
     fn div_mod(self, rhs: Self) -> (Self, Self);
 

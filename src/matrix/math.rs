@@ -577,7 +577,10 @@ where
 {
     let det = determinant(m);
     if det.is_none_or(|e| e.is_zero()) {
-        eprintln!("Error[matrix::math::inverse]: The singular matrix does not have an inverse.");
+        eprintln!(concat!(
+            "Error[matrix::math::inverse]: ",
+            "The singular matrix does not have an inverse."
+        ));
         None
     } else {
         Some(row_eliminate_inner(m).0)
@@ -727,13 +730,17 @@ where
         for row in 1..=R {
             for column in 1..=C {
                 adjugate[(row, column)] = determinant(&m.submatrix(column, row)).expect(&format!(
-                    "Error[matrix::math::adjugate_matrix]: Failed to retrieve the determinant of the submatrix({}, {}) of the matrix.",
-                    row, column))
-                    * if (row + column) & 1 == 0 {
-                        N::one()
-                    } else {
-                        -N::one()
-                    }
+                    concat!(
+                        "Error[matrix::math::adjugate_matrix]: ",
+                        "Failed to retrieve the determinant ",
+                        "of the submatrix({}, {}) of the matrix."
+                    ),
+                    row, column
+                )) * if (row + column) & 1 == 0 {
+                    N::one()
+                } else {
+                    -N::one()
+                }
             }
         }
         Some(adjugate)

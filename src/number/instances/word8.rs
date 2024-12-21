@@ -39,7 +39,7 @@ impl Word8 {
     /// # Examples
     ///
     /// ```rust
-    /// use rmatrix_ks::number::instances::word8::Word9;
+    /// use rmatrix_ks::number::instances::word8::Word8;
     ///
     /// fn main() {
     ///     let sw = Word8::of_str("23").unwrap();

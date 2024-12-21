@@ -67,7 +67,11 @@ impl Integer {
                 Some(Self { sign, inner })
             } else {
                 eprintln!(
-                    "Error[Integer::of]: Each digit of the integer should be within the range [0, 9] ({:?}).",
+                    concat!(
+                        "Error[Integer::of]: ",
+                        "Each digit of the integer ",
+                        "should be within the range [0, 9] ({:?})."
+                    ),
                     digits,
                 );
                 None
@@ -162,6 +166,24 @@ impl Integer {
             Self::of(sign, &digits).expect(
                 "Error[Integer::integer_sub]: Each digit should be within the range [1, 9].",
             )
+        }
+    }
+
+    /// Non-negative integer comparison.
+    fn integer_cmp(&self, rhs: &Integer) -> std::cmp::Ordering {
+        if self.inner.len() > rhs.inner.len() {
+            std::cmp::Ordering::Greater
+        } else if self.inner.len() < rhs.inner.len() {
+            std::cmp::Ordering::Less
+        } else {
+            for (lhs_digit, rhs_digit) in self.digits().iter().zip(rhs.digits().iter()) {
+                if lhs_digit > rhs_digit {
+                    return std::cmp::Ordering::Greater;
+                } else if lhs_digit < rhs_digit {
+                    return std::cmp::Ordering::Less;
+                }
+            }
+            std::cmp::Ordering::Equal
         }
     }
 }
@@ -276,19 +298,15 @@ impl std::cmp::PartialOrd for Integer {
     /// }
     /// ```
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.inner.len() > other.inner.len() {
-            Some(std::cmp::Ordering::Greater)
-        } else if self.inner.len() < other.inner.len() {
-            Some(std::cmp::Ordering::Less)
-        } else {
-            for (self_digit, other_digit) in self.digits().iter().zip(other.digits().iter()) {
-                if self_digit > other_digit {
-                    return Some(std::cmp::Ordering::Greater);
-                } else if self_digit < other_digit {
-                    return Some(std::cmp::Ordering::Less);
-                }
-            }
+        if self.is_zero() && other.is_zero() {
             Some(std::cmp::Ordering::Equal)
+        } else {
+            match (self.sign, other.sign) {
+                (true, false) => Some(std::cmp::Ordering::Greater),
+                (false, true) => Some(std::cmp::Ordering::Less),
+                (true, true) => Some(self.integer_cmp(other)),
+                (false, false) => Some(other.integer_cmp(self)),
+            }
         }
     }
 }
@@ -448,7 +466,10 @@ impl Integral for Integer {
             }
             Self::of(self.sign == rhs.sign, &quot_digits)
                 .zip(Self::of(self.sign, &rem_digits))
-                .expect("Error[Integer::quot_rem]: Each digit should be within the range [1, 9].")
+                .expect(concat!(
+                    "Error[Integer::quot_rem]: ",
+                    "Each digit should be within the range [1, 9]."
+                ))
         }
     }
 

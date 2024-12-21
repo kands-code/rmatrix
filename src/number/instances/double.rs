@@ -295,11 +295,17 @@ impl Real for Double {
                 .collect::<Vec<u8>>();
             Rational::of(
                 Integer::of(sign, &numerator).expect(&format!(
-                    "Error[Double::to_rational]: Each digit should be within the range [1, 9] ({:?}).",
+                    concat!(
+                        "Error[Double::to_rational]: ",
+                        "Each digit should be within the range [1, 9] ({:?})."
+                    ),
                     numerator
                 )),
                 Integer::of(true, &denominator).expect(&format!(
-                    "Error[Double::to_rational]: Each digit should be within the range [1, 9] ({:?}).",
+                    concat!(
+                        "Error[Double::to_rational]: ",
+                        "Each digit should be within the range [1, 9] ({:?})."
+                    ),
                     denominator
                 )),
             )

@@ -72,7 +72,11 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     {
         if data.len() < R * C {
             eprintln!(
-                "Error[Matrix::of]: The data length ({}) does not meet the required number of elements ({}) for the matrix.",
+                concat!(
+                    "Error[Matrix::of]: ",
+                    "The data length ({}) does not meet the required number ",
+                    "of elements ({}) for the matrix."
+                ),
                 data.len(),
                 R * C
             );
@@ -133,7 +137,11 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         let length = Self::get_diagonal_length();
         if data.len() < length {
             eprintln!(
-                "Error[Matrix::diagonal]: The data length ({}) does not meet the required number of elements ({}) for the matrix.",
+                concat!(
+                    "Error[Matrix::diagonal]: ",
+                    "The data length ({}) does not meet the required number ",
+                    "of elements ({}) for the matrix."
+                ),
                 data.len(),
                 length
             );

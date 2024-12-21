@@ -180,9 +180,10 @@ impl<I: Integral> std::cmp::PartialEq for Ratio<I> {
 impl<I: Integral> std::cmp::PartialOrd for Ratio<I> {
     fn partial_cmp(&self, rhs: &Self) -> Option<std::cmp::Ordering> {
         if self.denominator.is_zero() || rhs.denominator.is_zero() {
-            eprintln!(
-                "Error[Ratio::partial_cmp]: Ratios with a denominator of zero cannot be compared."
-            );
+            eprintln!(concat!(
+                "Error[Ratio::partial_cmp]: ",
+                "Ratios with a denominator of zero cannot be compared."
+            ));
             None
         } else {
             let difference = self.clone() - rhs.clone();

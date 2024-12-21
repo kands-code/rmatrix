@@ -369,9 +369,10 @@ where
     let v1_norm = euclidean_norm(v1);
     let v2_norm = euclidean_norm(v2);
     if v1_norm.is_zero() || v2_norm.is_zero() {
-        eprintln!(
-            "Error[matrix::vector::angle_between]: The zero-vector has no angle with other vectors."
-        );
+        eprintln!(concat!(
+            "Error[matrix::vector::angle_between]: ",
+            "The zero-vector has no angle with other vectors."
+        ));
         None
     } else {
         Some((dot_product(v1.clone(), v2.clone()) / (v1_norm * v2_norm)).arc_cosine())

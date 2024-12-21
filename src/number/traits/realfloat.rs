@@ -4,8 +4,8 @@
 
 use crate::number::{
     instances::{int::Int, integer::Integer},
-    traits::{floating::Floating, integral::Integral, one::One, realfrac::RealFrac, zero::Zero},
-    utils::{clamp, from_integral, integral_power, non_negative_integral_power},
+    traits::{floating::Floating, realfrac::RealFrac, zero::Zero},
+    utils::{clamp, decimal_to_binary, from_integral, integral_power, non_negative_integral_power},
 };
 
 /// Concepts of RealFloat.
@@ -25,61 +25,68 @@ pub trait RealFloat: RealFrac + Floating {
     /// if the maximum value of the floating-point exponent is `m`.
     const FLOAT_RANGE: (Int, Int);
 
-    ///  Decode a real floating-point number into its significand and exponent.
+    /// Decode a real floating-point number into its significand and exponent.
     ///
-    /// **NEED FIX**
+    /// # Examples
     ///
-    /// ```rust,ignore
-    /// let rfp : F;
-    /// let (significand, exponent) = rfp.decode_float();
-    /// let radix = F::FLOAT_RADIX;
-    /// assert_eq!(significand * integral_power(radix, exponent), rfp);
+    /// For example, for the `Double`:
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{double::Double, int::Int, integer::Integer},
+    ///     traits::realfloat::RealFloat,
+    /// };
+    ///
+    /// fn main() {
+    ///     let d1 = Double::of(3.14);
+    ///     assert_eq!(
+    ///         d1.decode_float(),
+    ///         (Integer::of_str("7070651414971679").unwrap(), Int::of(-51))
+    ///     );
+    ///
+    ///     let d2 = Double::of(-13.14);
+    ///     assert_eq!(
+    ///         d2.decode_float(),
+    ///         (Integer::of_str("-7397162387956040").unwrap(), Int::of(-49))
+    ///     );
+    /// }
     /// ```
     fn decode_float(self) -> (Integer, Int) {
-        let range = Self::FLOAT_RANGE.1 + Int::one();
-        let exponent = self
-            .absolute_value()
-            .logarithmic_base(from_integral(Self::FLOAT_RADIX))
-            .ceiling::<Int>();
-        let modified_exponent = if self.is_zero() {
-            Int::zero()
-        } else if exponent.is_zero() {
-            range - Self::FLOAT_DIGITS
-        } else {
-            exponent.clone() - Self::FLOAT_DIGITS
-        };
-        let significand =
-            integral_power(from_integral(Self::FLOAT_RADIX), modified_exponent.clone())
-                .map(|p| self.clone() / p)
-                .map(|p| p.to_rational().numerator)
-                .expect(
-                    "Error[RealFloat::decode_float]: Should be able to produce the correct result.",
-                );
-        let significand_range =
-            non_negative_integral_power(Self::FLOAT_RADIX, Self::FLOAT_DIGITS + Int::one())
-                .expect(
-                    "Error[RealFloat::decode_float]: Should be able to produce the correct result.",
-                )
-                .to_integer();
-        let modified_significand = if modified_exponent.is_zero() {
-            significand.modulus(
-                if self > Self::zero() {
-                    significand_range
-                } else {
-                    -significand_range
-                } - Integer::one(),
-            )
-        } else {
-            significand
-        };
-        (modified_significand, modified_exponent)
+        let sign = self >= Self::zero();
+        let rfp = self.absolute_value();
+        let (exponent_digits, float_digits) = decimal_to_binary(rfp).expect(&format!(
+            "Error[RealFloat::decode_float]: Failed to convert ({}) to binary format.",
+            self
+        ));
+        let exponent = Int::of(exponent_digits.len() as i32) - Self::FLOAT_DIGITS;
+        let significand_digits = vec![exponent_digits, float_digits].concat();
+        let two = Integer::of(true, &[2])
+            .expect("Error[RealFloat::decode_float]: Failed to obtain integer two.");
+        let mut significand = Integer::zero();
+        for (index, &base) in significand_digits.iter().enumerate().rev() {
+            if base == 1u8 {
+                let exp = significand_digits.len() - index - 1;
+                significand = significand
+                    + non_negative_integral_power(two.clone(), Int::of(exp as i32)).expect(
+                        &format!(
+                            "Error[RealFloat::decode_float]: Failed to compute pow(2, {})",
+                            exp
+                        ),
+                    );
+            }
+        }
+        significand.sign = sign;
+        (significand, exponent)
     }
 
     /// Encode the given significand and exponent into a floating-point number.
     fn encode_float(significand: Integer, exponent: Int) -> Self {
         integral_power(from_integral(Self::FLOAT_RADIX), exponent)
             .map(|p: Self| p * Self::from_integer(significand))
-            .expect("Error[RealFloat::encode_float]: Should be able to produce the correct result.")
+            .expect(concat!(
+                "Error[RealFloat::encode_float]: ",
+                "Should be able to produce the correct result."
+            ))
     }
 
     /// Return the actual exponent in the floating-point representation.
@@ -104,8 +111,6 @@ pub trait RealFloat: RealFrac + Floating {
     }
 
     /// Multiplies a real floating-point number by an integer power of the radix.
-    ///
-    /// **NEED FIX**
     fn scale_float(self, factor: Int) -> Self {
         if self.is_zero() || self.is_not_a_number() || self.is_infinite_number() {
             self
