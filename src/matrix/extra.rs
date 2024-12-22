@@ -56,17 +56,17 @@ where
 ///
 /// # Examples
 ///
-/// ## Rectangular matrix
+/// ## Tall matrix
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::qr_decomposition_gs, matrix::Matrix},
+///     matrix::{extra::qr_decomposition_gs, matrix::Matrix, utils::transpose},
 ///     number::instances::double::Double,
 /// };
 ///
 /// fn main() {
 ///     let m = Matrix::<Double, 3, 2>::of(&[1.0, 0.0, 0.0, 1.0, 1.0, 1.0].map(Double::of)).unwrap();
-///     let (q, r) = qr_decomposition_gs(&m);
+///     let (q, r) = qr_decomposition_gs(&m).unwrap();
 ///     let q_expect = Matrix::<Double, 3, 2>::of(
 ///         &[
 ///             1.0 / 2.0f64.sqrt(),
@@ -91,6 +91,8 @@ where
 ///     )
 ///     .unwrap();
 ///     assert_eq!(r, r_expect);
+///     // Q^T Q = I
+///     assert_eq!(transpose(&q) * q, Matrix::<Double, 2, 2>::eyes());
 /// }
 /// ```
 ///
@@ -98,7 +100,7 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::qr_decomposition_gs, matrix::Matrix},
+///     matrix::{extra::qr_decomposition_gs, matrix::Matrix, utils::transpose},
 ///     number::instances::double::Double,
 /// };
 ///
@@ -106,7 +108,7 @@ where
 ///     let m =
 ///         Matrix::<Double, 3, 3>::of(&[1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0].map(Double::of))
 ///             .unwrap();
-///     let (q, r) = qr_decomposition_gs(&m);
+///     let (q, r) = qr_decomposition_gs(&m).unwrap();
 ///     let q_expect = Matrix::<Double, 3, 3>::of(
 ///         &[
 ///             1.0 / 2.0f64.sqrt(),
@@ -152,54 +154,65 @@ where
 /// For square matrices with linearly independent columns, i.e., full rank matrices,
 /// the resulting `Q` is an orthogonal matrix.
 ///
+/// The matrix should be a tall matrix or a square matrix, i.e., `R >= C`.
+///
 /// **_The Gram-Schmidt process is inherently numerically unstable._**
 ///
 /// </div>
 pub fn qr_decomposition_gs<N, const R: usize, const C: usize>(
     m: &Matrix<N, R, C>,
-) -> (Matrix<N, R, C>, Matrix<N, C, C>)
+) -> Option<(Matrix<N, R, C>, Matrix<N, C, C>)>
 where
     N: RealFloat,
 {
-    let mut q = Matrix::<N, R, C>::default();
-    for colum in 1..=C {
-        // A = [ a1 | a2 | ... | an ]
-        let a = apply(
-            &m.get_column(colum).expect(&format!(
-                concat!(
-                    "Error[matrix::extra::qr_decomposition_gs]: ",
-                    "Failed to retrieve the {}-th column of the matrix"
-                ),
-                colum,
-            )),
-            |e: &N| e.clone(),
-        );
-        // u1 = a1
-        // uk = ak - sum((ak . en) en, {n, 1, k - 1})
-        let mut u = a.clone();
-        for k in 2..=colum {
-            // Q = [ e1 | e2 | ... | en ]
-            let ek = apply(
-                &q.get_column(k - 1).expect(&format!(
+    if R < C {
+        eprintln!(concat!(
+            "Error[matrix::extra::qr_decomposition_gs]: ",
+            "The matrix should be a tall matrix or a square matrix"
+        ));
+        None
+    } else {
+        let mut q = Matrix::<N, R, C>::default();
+        for colum in 1..=C {
+            // A = [ a1 | a2 | ... | an ]
+            let a = apply(
+                &m.get_column(colum).expect(&format!(
                     concat!(
                         "Error[matrix::extra::qr_decomposition_gs]: ",
                         "Failed to retrieve the {}-th column of the matrix"
                     ),
-                    k - 1,
+                    colum,
                 )),
                 |e: &N| e.clone(),
             );
-            u = u - ek.clone() * dot_product(a.clone(), ek)
+            // u1 = a1
+            // uk = ak - sum((ak . en) en, {n, 1, k - 1})
+            let mut u = a.clone();
+            for k in 1..colum {
+                // Q = [ e1 | e2 | ... | en ]
+                let en = apply(
+                    &q.get_column(k).expect(&format!(
+                        concat!(
+                            "Error[matrix::extra::qr_decomposition_gs]: ",
+                            "Failed to retrieve the {}-th column of the matrix"
+                        ),
+                        k,
+                    )),
+                    |e: &N| e.clone(),
+                );
+                // uk(n) = uk(n - 1) - en (uk(n - 1) . en)
+                u = u.clone() - en.clone() * dot_product(u, en)
+            }
+            let u_norm = euclidean_norm(&u);
+            for row in 1..=R {
+                // ek = uk / ||uk||
+                q[(row, colum)] = index_c(&u, row).clone() / u_norm.clone();
+            }
         }
-        let u_norm = euclidean_norm(&u);
-        for row in 1..=R {
-            // ek = uk / ||uk||
-            q[(row, colum)] = index_c(&u, row).clone() / u_norm.clone();
-        }
+        // R = Upper {  a_c . e_r } and R = Q^T A
+        let r = transpose(&q) * m.clone();
+        Some((q, r))
     }
-    // R = Upper {  a_c . e_r } and R = Q^T A
-    let r = transpose(&q) * m.clone();
-    (q, r)
 }
 
 /// Use the Householder method to compute the QR decomposition of a REAL matrix.
@@ -271,7 +284,7 @@ where
     let mut q = Matrix::<N, R, R>::eyes();
     let mut r = m.clone();
     let two = N::one() + N::one();
-    for column in 1..=C {
+    for column in 1..=C.min(R) {
         // x = col(m, c)
         let mut x = apply(
             &r.get_column(column).expect(&format!(
