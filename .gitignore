@@ -23,5 +23,8 @@ Cargo.lock
 src-old/
 _*
 
+# random data
+data/random.txt
+
 # vscode
 .vscode/

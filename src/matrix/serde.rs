@@ -22,7 +22,7 @@ use std::{
 /// };
 ///
 /// fn main() {
-///     let path = "data/test.txt";
+///     let path = "data/random.txt";
 ///     let m = Matrix::<Complex<Float>, 16, 16>::rand(
 ///         Complex::of(Float::of(-2.0), Float::of(-2.0)),
 ///         Complex::of(Float::of(2.0), Float::of(2.0)),
