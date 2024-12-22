@@ -320,6 +320,7 @@ where
 /// # Panics
 ///
 /// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
 /// # Examples
 ///
 /// ```rust
@@ -393,18 +394,60 @@ where
     (q, r)
 }
 
-/// solve linear equations
+/// Solve linear problems based on QR decomposition.
 ///
-/// **TODO**
-pub fn linear_solve<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, R>,
-    b: &Matrix<N, R, C>,
-) -> Matrix<N, R, C>
+/// For `M x = b`, we can have `M = Q R`, thus `x = inv(R) trans(Q) b`.
+///
+/// # Panics
+///
+/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
+/// # Examples
+///
+/// ```rust
+/// #![warn(missing_docs)]
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::{extra::linear_solve, matrix::Matrix},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     // x
+///     let m = Matrix::<Float, 10, 2>::vandermonde(
+///         &[
+///             208.0, 152.0, 113.0, 227.0, 137.0, 238.0, 178.0, 104.0, 191.0, 130.0,
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     // y
+///     let b = Matrix::<Float, 10, 1>::of(
+///         &[21.6, 15.5, 10.4, 31.0, 13.0, 32.4, 19.0, 10.4, 19.0, 11.8].map(Float::of),
+///     )
+///     .unwrap();
+///     // y = sol[0] + sol[1] x
+///     let sol = linear_solve(&m, &b);
+///     let sol_expect = Matrix::<Float, 2, 1>::of(&[-8.6451, 0.1612].map(Float::of)).unwrap();
+///     assert_eq!(sol, sol_expect);
+/// }
+/// ```
+pub fn linear_solve<N, const R: usize, const C1: usize, const C2: usize>(
+    m: &Matrix<N, R, C1>,
+    b: &Matrix<N, R, C2>,
+) -> Matrix<N, { Matrix::<N, R, C1>::get_diagonal_length() }, C2>
 where
-    N: Fractional,
+    N: RealFloat,
+    [(); Matrix::<N, R, C1>::get_diagonal_length()]:,
 {
-    let m_inv = inverse(&m).unwrap();
-    m_inv * b.clone()
+    let (q, r) = qr_decomposition_es(&m);
+    let r_inv = inverse(&r).expect(concat!(
+        "Error[matrix::extra::linear_solve]",
+        "Should be able to compute the inverse of an upper triangular matrix."
+    ));
+    r_inv * transpose(&q) * b.clone()
 }
 
 /// eigen values

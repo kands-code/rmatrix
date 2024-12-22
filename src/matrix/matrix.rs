@@ -7,7 +7,7 @@ use crate::{
         utils::apply,
         vector::{layer_product, VectorC, VectorR},
     },
-    number::traits::{fractional::Fractional, number::Number},
+    number::traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
 };
 
 use rand::distributions::{uniform::SampleUniform, Distribution, Uniform};
@@ -152,6 +152,59 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
                 diag[(index, index)] = data[index - 1].clone();
             }
             Some(diag)
+        }
+    }
+
+    /// Construct the Vandermonde matrix.
+    ///
+    /// Where `R` is the length of the data,
+    /// and assuming the order of the data is `n`, then `C = n + 1`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::double::Double};
+    ///
+    /// fn main() {
+    ///     let m =
+    ///         Matrix::<Double, 5, 2>::vandermonde(&[1.0, 2.0, 4.0, 6.0, 8.0].map(Double::of)).unwrap();
+    ///     let m_expect = Matrix::<Double, 5, 2>::of(
+    ///         &[1.0, 1.0, 1.0, 2.0, 1.0, 4.0, 1.0, 6.0, 1.0, 8.0].map(Double::of),
+    ///     )
+    ///     .unwrap();
+    ///     assert_eq!(m, m_expect);
+    /// }
+    /// ```
+    pub fn vandermonde(data: &[N]) -> Option<Self>
+    where
+        N: RealFloat,
+    {
+        if data.len() < R {
+            eprintln!(
+                concat!(
+                    "Error[Matrix::vandermonde]: ",
+                    "R ({}) should not exceed the length of the data ({})."
+                ),
+                R,
+                data.len()
+            );
+            None
+        } else {
+            Some(Self {
+                inner: data
+                    .iter()
+                    .map(|e| {
+                        (0..C)
+                            .map(|p| {
+                                e.clone().power(N::from_str(&format!("{:?}", p)).expect(
+                                    "Error[Matrix::vandermonde]: Failed to convert from usize.",
+                                ))
+                            })
+                            .collect::<Vec<N>>()
+                    })
+                    .flatten()
+                    .collect::<Vec<N>>(),
+            })
         }
     }
 
