@@ -33,3 +33,4 @@ rayon = "^1.10.0"
 
 [features]
 extra = []
+complex = []

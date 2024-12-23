@@ -4,10 +4,7 @@
 
 use crate::{
     matrix::{math::row_eliminate, matrix::Matrix},
-    number::{
-        instances::complex::Complex,
-        traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
-    },
+    number::traits::{fractional::Fractional, number::Number},
 };
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -139,40 +136,6 @@ where
         }
     }
     Matrix { inner }
-}
-
-/// Obtains the conjugate transpose of the matrix.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::conjugate_transpose},
-///     number::instances::{complex::Complex, float::Float},
-/// };
-///
-/// fn main() {
-///     let m = Matrix::<Complex<Float>, 2, 2>::of(
-///         &[(1.0, 2.0), (3.0, -1.0), (4.0, 0.0), (5.0, 6.0)]
-///             .map(|(real, imag)| Complex::of(Float::of(real), Float::of(imag))),
-///     )
-///     .unwrap();
-///     let n = Matrix::<Complex<Float>, 2, 2>::of(
-///         &[(1.0, -2.0), (4.0, 0.0), (3.0, 1.0), (5.0, -6.0)]
-///             .map(|(real, imag)| Complex::of(Float::of(real), Float::of(imag))),
-///     )
-///     .unwrap();
-///     assert!(conjugate_transpose(&m).equals(&n));
-/// }
-/// ```
-pub fn conjugate_transpose<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> Matrix<Complex<F>, C, R>
-where
-    F: RealFloat,
-{
-    let transposed = transpose(m);
-    apply(&transposed, |e| e.conjugate())
 }
 
 /// Calculate the rank of the matrix.

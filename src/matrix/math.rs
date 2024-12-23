@@ -7,12 +7,9 @@
 use crate::{
     matrix::{
         matrix::Matrix,
-        utils::{conjugate_transpose, points_2d, transpose},
+        utils::{points_2d, transpose},
     },
-    number::{
-        instances::complex::Complex,
-        traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
-    },
+    number::traits::{fractional::Fractional, number::Number, real::Real},
 };
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -225,7 +222,7 @@ where
 /// ```
 pub fn is_orthogonal_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
 where
-    N: Number,
+    N: Real,
 {
     let transposed = transpose(m);
     if R > C {
@@ -233,145 +230,6 @@ where
     } else {
         is_identity_matrix(&(m.clone() * transposed))
     }
-}
-
-/// Validate whether a matrix is an unitary matrix.
-///
-/// A matrix is called an unitary matrix
-/// if and only if the conjugate transpose of the matrix
-/// is the inverse of the matrix itself.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::{math::is_unitary_matrix, matrix::Matrix},
-///     number::{
-///         instances::{complex::Complex, float::Float},
-///         traits::zero::Zero,
-///     },
-/// };
-///
-/// fn main() {
-///     let m1 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
-///         Complex::of(Float::of(-1.0f32 / 2.0f32.sqrt()), Float::zero()),
-///         Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
-///         Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
-///     ])
-///     .unwrap();
-///     let m2 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(-1.0), Float::zero()),
-///         Complex::of(Float::zero(), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///     ])
-///     .unwrap();
-///     assert!(is_unitary_matrix(&m1));
-///     assert!(!is_unitary_matrix(&m2));
-/// }
-/// ```
-pub fn is_unitary_matrix<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> bool
-where
-    F: RealFloat,
-{
-    let conjugate_transposed = conjugate_transpose(m);
-    if R > C {
-        is_identity_matrix(&(conjugate_transposed * m.clone()))
-    } else {
-        is_identity_matrix(&(m.clone() * conjugate_transposed))
-    }
-}
-
-/// Validate whether a matrix is a hermitian matrix.
-///
-/// A matrix is called a hermitian matrix
-/// if and only if the conjugate transpose of the matrix
-/// is the matrix itself.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::{math::is_hermitian_matrix, matrix::Matrix},
-///     number::{
-///         instances::{complex::Complex, float::Float},
-///         traits::zero::Zero,
-///     },
-/// };
-///
-/// fn main() {
-///     let m1 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(2.0f32), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::of(1.0f32)),
-///         Complex::of(Float::of(1.0f32), Float::of(-1.0f32)),
-///         Complex::of(Float::of(3.0f32), Float::zero()),
-///     ])
-///     .unwrap();
-///     let m2 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(2.0f32), Float::of(1.0f32)),
-///         Complex::of(Float::of(3.0f32), Float::zero()),
-///         Complex::of(Float::of(4.0f32), Float::zero()),
-///     ])
-///     .unwrap();
-///     assert!(is_hermitian_matrix(&m1));
-///     assert!(!is_hermitian_matrix(&m2));
-/// }
-/// ```
-pub fn is_hermitian_matrix<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> bool
-where
-    F: RealFloat,
-{
-    is_square_matrix(m) && m == &conjugate_transpose(m)
-}
-
-/// Validate whether a matrix is a normal matrix.
-///
-/// A matrix `m` is called a normal matrix
-/// if and only if it satisfies:
-///
-/// > mul(m, conj) = mul(conj, m)
-///
-/// where `conj` is its conjugate transpose.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::{math::is_normal_matrix, matrix::Matrix},
-///     number::{
-///         instances::{complex::Complex, float::Float},
-///         traits::zero::Zero,
-///     },
-/// };
-///
-/// fn main() {
-///     let m1 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(2.0f32), Float::zero()),
-///         Complex::of(Float::of(2.0f32), Float::zero()),
-///         Complex::of(Float::of(3.0f32), Float::zero()),
-///     ])
-///     .unwrap();
-///     let m2 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(0.0f32), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///     ])
-///     .unwrap();
-///     assert!(is_normal_matrix(&m1));
-///     assert!(!is_normal_matrix(&m2));
-/// }
-/// ```
-pub fn is_normal_matrix<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> bool
-where
-    F: RealFloat,
-{
-    let conjugate_transposed = conjugate_transpose(m);
-    is_square_matrix(m)
-        && (conjugate_transposed.clone() * m.clone() == m.clone() * conjugate_transposed)
 }
 
 /// Calculate the row-reduced form of the matrix.

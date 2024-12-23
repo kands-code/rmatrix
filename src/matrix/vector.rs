@@ -14,7 +14,7 @@ use crate::{
     matrix::matrix::Matrix,
     number::{
         instances::integer::Integer,
-        traits::{floating::Floating, number::Number, real::Real},
+        traits::{number::Number, real::Real, realfloat::RealFloat},
     },
 };
 
@@ -109,7 +109,7 @@ where
 /// ```
 pub fn dot_product<N, const R: usize>(v1: VectorC<N, R>, v2: VectorC<N, R>) -> N
 where
-    N: Number,
+    N: Real,
 {
     v1.inner
         .par_iter()
@@ -260,7 +260,7 @@ where
 /// ```
 pub fn euclidean_norm<N, const R: usize>(v: &VectorC<N, R>) -> N
 where
-    N: Floating,
+    N: RealFloat,
 {
     v.inner
         .par_iter()
@@ -320,7 +320,7 @@ where
 /// ```
 pub fn root_mean_square<N, const R: usize>(v: &VectorC<N, R>) -> N
 where
-    N: Floating,
+    N: RealFloat,
 {
     let l2_norm = euclidean_norm(v);
     let r_sqrt = N::from_integer(Integer::of_str(&format!("{}", R)).expect(&format!(
@@ -364,7 +364,7 @@ where
 /// ```
 pub fn angle_between<N, const R: usize>(v1: &VectorC<N, R>, v2: &VectorC<N, R>) -> Option<N>
 where
-    N: Floating,
+    N: RealFloat,
 {
     let v1_norm = euclidean_norm(v1);
     let v2_norm = euclidean_norm(v2);

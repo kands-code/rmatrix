@@ -7,9 +7,7 @@ use crate::{
         utils::apply,
         vector::{layer_product, VectorC, VectorR},
     },
-    number::traits::{
-        floating::Floating, fractional::Fractional, number::Number, realfloat::RealFloat,
-    },
+    number::traits::{floating::Floating, fractional::Fractional, number::Number},
 };
 
 use rand::distributions::{uniform::SampleUniform, Distribution, Uniform};
@@ -179,7 +177,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// ```
     pub fn vandermonde(data: &[N]) -> Option<Self>
     where
-        N: RealFloat,
+        N: Floating,
     {
         if data.len() < R {
             eprintln!(
@@ -360,32 +358,29 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// The `rand` library is used, and the matrix element type must implement the `SampleUniform` trait.
     /// In particular, the `Ratio` type cannot be used.
     ///
-    /// For the `Complex` type, the ranges for the elements are defined by the real and imaginary parts.
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::float::Float};
+    ///
+    /// fn main() {
+    ///     let m = Matrix::<Float, 3, 3>::rand(Float::of(-1.0), Float::of(3.0));
+    ///     assert!(m
+    ///         .linear_iter()
+    ///         .all(|e| Float::of(-1.0) < e.clone() && e.clone() < Float::of(3.0)));
+    /// }
+    /// ```
+    ///
+    /// ## Warnings
+    ///
+    /// <div class="warning">
+    ///
+    /// For the [Complex](crate::number::instances::complex::Complex), the ranges for the elements are defined by the real and imaginary parts.
     /// For example, if `lb` is passed as `Complex(-1.0, -3.0)` and `ub` as `Complex(3.0, 1.0)`,
     /// the real part of the matrix elements will be randomly selected from the range `[-1.0, 3.0)`,
     /// while the imaginary part will be randomly selected from the range `[-3.0, 1.0)`.
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use rmatrix_ks::{
-    ///     matrix::matrix::Matrix,
-    ///     number::instances::{complex::Complex, float::Float},
-    /// };
-    ///
-    /// fn main() {
-    ///     let m = Matrix::<Complex<Float>, 3, 3>::rand(
-    ///         Complex::of(Float::of(-1.0), Float::of(-3.0)),
-    ///         Complex::of(Float::of(3.0), Float::of(1.0)),
-    ///     );
-    ///     assert!(
-    ///         m.linear_iter().all(|e| Float::of(-1.0) < e.real
-    ///         && e.real < Float::of(3.0) // real range
-    ///         && Float::of(-3.0) < e.imaginary
-    ///         && e.imaginary < Float::of(1.0)) // imaginary range
-    ///     );
-    /// }
-    /// ```
+    /// </div>
     pub fn rand(lb: N, ub: N) -> Self
     where
         N: Number + SampleUniform,

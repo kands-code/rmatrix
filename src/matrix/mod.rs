@@ -12,3 +12,6 @@ pub mod vector;
 
 #[cfg(feature = "extra")]
 pub mod extra;
+
+#[cfg(feature = "complex")]
+pub mod complex;
