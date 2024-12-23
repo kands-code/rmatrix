@@ -3,14 +3,16 @@
 //! Some util functions.
 
 use crate::{
-    matrix::matrix::Matrix,
+    matrix::{math::row_eliminate, matrix::Matrix},
     number::{
         instances::complex::Complex,
-        traits::{number::Number, realfloat::RealFloat},
+        traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
     },
 };
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
+use super::{math::row_reduce, vector::VectorC};
 
 /// Generates coordinates within a specified inclusive-range that meet certain criteria.
 ///
@@ -171,6 +173,116 @@ where
 {
     let transposed = transpose(m);
     apply(&transposed, |e| e.conjugate())
+}
+
+/// Calculate the rank of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{utils::rank, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Double, 3, 3>::of(
+///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     assert_eq!(rank(&m), 3);
+/// }
+/// ```
+pub fn rank<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> usize
+where
+    N: Fractional,
+{
+    let (_, _, _, reduced) = row_reduce(m);
+    (1..=R)
+        .map(|row_index| {
+            reduced
+                .get_row(row_index)
+                .expect(&format!(
+                    "Error[matrix::utils::rank]: Failed to retrieve the {}-th row of the matrix.",
+                    row_index
+                ))
+                .inner
+                .par_iter()
+                .any(|e| !e.is_zero())
+        })
+        .filter(|&p| p)
+        .count()
+}
+
+/// Calculate the nullspace of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::nullspace, vector::VectorC},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let a = Matrix::<Double, 3, 5>::of(
+///         &[
+///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///         ]
+///         .map(Double::of),
+///     )
+///     .unwrap();
+///     let ns = nullspace(&a);
+///     // For this matrix, the nullspace contains only three elements.
+///     assert_eq!(ns.len(), 3);
+///     // Second column:
+///     let n1 = VectorC::<Double, 5>::of(&[2.0, 1.0, 0.0, 0.0, 0.0].map(Double::of)).unwrap();
+///     assert_eq!(ns[0], n1);
+///     // Fourth column:
+///     let n2 = VectorC::<Double, 5>::of(&[1.0, 0.0, -2.0, 1.0, 0.0].map(Double::of)).unwrap();
+///     assert_eq!(ns[1], n2);
+///     // Fifth column:
+///     let n3 = VectorC::<Double, 5>::of(&[-3.0, 0.0, 2.0, 0.0, 1.0].map(Double::of)).unwrap();
+///     assert_eq!(ns[2], n3);
+/// }
+/// ```
+pub fn nullspace<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Vec<VectorC<N, C>>
+where
+    N: Fractional,
+{
+    // Reduce the matrix to its row echelon form.
+    let refined = row_eliminate(m);
+    // Set the markers for each row, which is the column index of the first non-zero element.
+    let mut row_flags: [usize; C] = [0; C];
+    for row in 1..=R {
+        for column in row..=C {
+            if !(row_flags.contains(&row) || refined[(row, column)].is_zero()) {
+                row_flags[column - 1] = row;
+            }
+        }
+    }
+    let mut space = Vec::new();
+    // Only rank-deficient matrices have a nullspace.
+    if row_flags.iter().any(|&e| e == 0) {
+        for column in 1..=C {
+            // The vector corresponding to unmarked columns is an element of the nullspace.
+            if row_flags[column - 1] == 0 {
+                let mut base = VectorC::<N, C>::default();
+                for check in 1..=C {
+                    if row_flags[check - 1] != 0 {
+                        // Negate the elements of the marked rows.
+                        let val = refined[(row_flags[check - 1], column)].clone();
+                        base[(check, 1)] = if val.is_zero() { val } else { -val };
+                    } else if column == check {
+                        // Set the column corresponding to itself to one.
+                        base[(check, 1)] = N::one();
+                    }
+                }
+                space.push(base);
+            }
+        }
+    }
+    space
 }
 
 /// Horizontally concatenate two matrices.

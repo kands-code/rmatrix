@@ -41,12 +41,12 @@ pub fn plu_decomposition<N, const R: usize, const C: usize>(
 where
     N: Fractional,
 {
-    let (_, p, lt, reduced) = row_reduce(m);
+    let (_, p, l_inv, reduced) = row_reduce(m);
     (
         p,
-        inverse(&lt).expect(concat!(
+        inverse(&l_inv).expect(concat!(
             "Error[matrix::extra::plu_decomposition]: ",
-            "Failed to retrieve the inverse of 'lt'."
+            "Failed to retrieve the inverse."
         )),
         reduced,
     )
@@ -394,23 +394,21 @@ where
     (q, r)
 }
 
-/// Solve linear problems based on QR decomposition.
+/// Use QR decomposition to solve linear equation problems for tall matrices or square matrices.
 ///
 /// For `M x = b`, we can have `M = Q R`, thus `x = inv(R) trans(Q) b`.
 ///
 /// # Panics
 ///
-/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+/// Since the QR decomposition uses the Gram-Schmidt process,
+/// the matrix must be a tall matrix or a square matrix,
+/// otherwise, it will panic.
 ///
 /// # Examples
 ///
 /// ```rust
-/// #![warn(missing_docs)]
-/// #![allow(incomplete_features)]
-/// #![feature(generic_const_exprs)]
-///
 /// use rmatrix_ks::{
-///     matrix::{extra::linear_solve, matrix::Matrix},
+///     matrix::{extra::linear_solve_t, matrix::Matrix},
 ///     number::instances::float::Float,
 /// };
 ///
@@ -429,25 +427,140 @@ where
 ///     )
 ///     .unwrap();
 ///     // y = sol[0] + sol[1] x
-///     let sol = linear_solve(&m, &b);
+///     let sol = linear_solve_t(&m, &b);
 ///     let sol_expect = Matrix::<Float, 2, 1>::of(&[-8.6451, 0.1612].map(Float::of)).unwrap();
 ///     assert_eq!(sol, sol_expect);
 /// }
 /// ```
-pub fn linear_solve<N, const R: usize, const C1: usize, const C2: usize>(
+///
+/// ## Warnings
+///
+/// <div class="warning">
+///
+/// For homogeneous systems of equations, the function will always return a zero matrix as the result.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{extra::linear_solve_t, matrix::Matrix},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     // M
+///     let m = Matrix::<Float, 5, 2>::vandermonde(&[208.0, 152.0, 113.0, 227.0, 137.0].map(Float::of))
+///         .unwrap();
+///     // b
+///     let b = Matrix::<Float, 5, 1>::default();
+///     let sol = linear_solve_t(&m, &b);
+///     // Should return a zero matrix.
+///     let sol_expect = Matrix::<Float, 2, 1>::default();
+///     assert_eq!(sol, sol_expect);
+/// }
+/// ```
+///
+/// </div>
+pub fn linear_solve_t<N, const R: usize, const C1: usize, const C2: usize>(
     m: &Matrix<N, R, C1>,
     b: &Matrix<N, R, C2>,
-) -> Matrix<N, { Matrix::<N, R, C1>::get_diagonal_length() }, C2>
+) -> Matrix<N, C1, C2>
 where
     N: RealFloat,
-    [(); Matrix::<N, R, C1>::get_diagonal_length()]:,
 {
-    let (q, r) = qr_decomposition_es(&m);
+    let (q, r) = qr_decomposition_gs(&m).expect(concat!(
+        "Error[matrix::extra::linear_solve_t]",
+        "Only high matrices or square matrices can use this function to solve linear equations."
+    ));
     let r_inv = inverse(&r).expect(concat!(
-        "Error[matrix::extra::linear_solve]",
+        "Error[matrix::extra::linear_solve_t]",
         "Should be able to compute the inverse of an upper triangular matrix."
     ));
     r_inv * transpose(&q) * b.clone()
+}
+
+/// Use QR decomposition to solve linear equation problems for wide matrices.
+///
+/// For wide matrices, we can have `trans(M) = Q R`,
+/// which means` M = trans(Q R) = trans(R) trans(Q)`,
+/// or alternatively `M = L trans(Q)`.
+/// Therefore, for the equation `M x = b`, we can express `x` as `x = Q inv(L) b`, since `trans(Q) Q = I`.
+///
+/// # Panics
+///
+/// Since the QR decomposition uses the Gram-Schmidt process,
+/// the matrix must be a wide matrix or a square matrix,
+/// otherwise, it will panic.
+///
+/// For tall matrices, please refer to [linear_solve_t].
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{extra::linear_solve_w, matrix::Matrix},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     // M
+///     let m = Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
+///     // b
+///     let b = Matrix::<Float, 2, 1>::of(&[7.0, 8.0].map(Float::of)).unwrap();
+///     let sol = linear_solve_w(&m, &b);
+///     // Will return one of the possible solutions.
+///     let sol_expect = Matrix::<Float, 3, 1>::of(&[-3.0556, 0.1111, 3.2778].map(Float::of)).unwrap();
+///     assert_eq!(sol, sol_expect);
+/// }
+/// ```
+///
+/// The information for the complete solution
+/// can be computed in conjunction with the [nullspace](crate::matrix::utils::nullspace).
+///
+/// ## Warnings
+///
+/// <div class="warning">
+///
+/// For homogeneous systems of equations, the function will always return a zero matrix as the result.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{extra::linear_solve_w, matrix::Matrix},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     // M
+///     let m = Matrix::<Float, 2, 2>::vandermonde(&[208.0, 137.0].map(Float::of))
+///         .unwrap();
+///     // b
+///     let b = Matrix::<Float, 2, 1>::default();
+///     let sol = linear_solve_w(&m, &b);
+///     // Should return a zero matrix.
+///     let sol_expect = Matrix::<Float, 2, 1>::default();
+///     assert_eq!(sol, sol_expect);
+/// }
+/// ```
+///
+/// </div>
+pub fn linear_solve_w<N, const R: usize, const C1: usize, const C2: usize>(
+    m: &Matrix<N, R, C1>,
+    b: &Matrix<N, R, C2>,
+) -> Matrix<N, C1, C2>
+where
+    N: RealFloat,
+{
+    if b.linear_iter().all(|e| e.is_zero()) {
+        Matrix::<N, C1, C2>::default()
+    } else {
+        let (q, r) = qr_decomposition_gs(&transpose(m)).expect(concat!(
+        "Error[matrix::extra::linear_solve_w]",
+        "Only high matrices or square matrices can use this function to solve linear equations."
+    ));
+        let l_inv = inverse(&transpose(&r)).expect(concat!(
+            "Error[matrix::extra::linear_solve_w]",
+            "Should be able to compute the inverse of an lower triangular matrix."
+        ));
+        q * l_inv * b.clone()
+    }
 }
 
 /// eigen values

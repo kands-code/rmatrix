@@ -587,45 +587,6 @@ where
     }
 }
 
-/// Calculate the rank of the matrix.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::{math::rank, matrix::Matrix},
-///     number::instances::double::Double,
-/// };
-///
-/// fn main() {
-///     let m = Matrix::<Double, 3, 3>::of(
-///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
-///     )
-///     .unwrap();
-///     assert_eq!(rank(&m), 3);
-/// }
-/// ```
-pub fn rank<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> usize
-where
-    N: Fractional,
-{
-    let (_, _, _, reduced) = row_reduce(m);
-    (1..=R)
-        .map(|row_index| {
-            reduced
-                .get_row(row_index)
-                .expect(&format!(
-                    "Error[matrix::math::rank]: Failed to retrieve the {}-th row of the matrix.",
-                    row_index
-                ))
-                .inner
-                .par_iter()
-                .any(|e| !e.is_zero())
-        })
-        .filter(|&p| p)
-        .count()
-}
-
 /// Calculate the determinant of the matrix.
 ///
 /// # Examples
