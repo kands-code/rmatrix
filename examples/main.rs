@@ -7,17 +7,56 @@
 #![feature(generic_const_exprs)]
 
 use rmatrix_ks::{
-    matrix::{extra::linear_solve_w, matrix::Matrix},
-    number::instances::float::Float,
+    matrix::{extra::qr_decomposition_h, matrix::Matrix},
+    number::instances::double::Double,
 };
 
 fn main() {
-    // M
-    let m = Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
-    // b
-    let b = Matrix::<Float, 2, 1>::of(&[7.0, 8.0].map(Float::of)).unwrap();
-    let sol = linear_solve_w(&m, &b);
-    // Will return one of the possible solutions.
-    let sol_expect = Matrix::<Float, 3, 1>::of(&[-3.0556, 0.1111, 3.2778].map(Float::of)).unwrap();
-    assert_eq!(sol, sol_expect);
+    let m = Matrix::<Double, 4, 3>::of(
+        &[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, -1.0, 1.0, 0.0, 4.0].map(Double::of),
+    )
+    .unwrap();
+    let (q, r) = qr_decomposition_h(&m);
+    let q_expect = Matrix::<Double, 4, 4>::of(
+        &[
+            -0.5,
+            -0.5,
+            1.0 / (2.0 * 13.0f64.sqrt()),
+            -5.0 / (2.0 * 13.0f64.sqrt()),
+            -0.5,
+            -0.5,
+            -1.0 / (2.0 * 13.0f64.sqrt()),
+            5.0 / (2.0 * 13.0f64.sqrt()),
+            -0.5,
+            0.5,
+            -5.0 / (2.0 * 13.0f64.sqrt()),
+            -1.0 / (2.0 * 13.0f64.sqrt()),
+            -0.5,
+            0.5,
+            5.0 / (2.0 * 13.0f64.sqrt()),
+            1.0 / (2.0 * 13.0f64.sqrt()),
+        ]
+        .map(Double::of),
+    )
+    .unwrap();
+    assert_eq!(q, q_expect);
+    let r_expect = Matrix::<Double, 4, 3>::of(
+        &[
+            -2.0,
+            -1.0,
+            -2.0,
+            0.0,
+            -1.0,
+            1.0,
+            0.0,
+            0.0,
+            13.0f64.sqrt(),
+            0.0,
+            0.0,
+            0.0,
+        ]
+        .map(Double::of),
+    )
+    .unwrap();
+    assert_eq!(r, r_expect);
 }

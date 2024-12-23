@@ -9,10 +9,12 @@ use crate::{
         math::{inverse, row_reduce},
         matrix::Matrix,
         utils::{apply, transpose},
-        vector::{dot_product, euclidean_norm, index_c, layer_product},
+        vector::{dot_product, euclidean_norm, index_c, layer_product, maximum_norm},
     },
     number::traits::{fractional::Fractional, realfloat::RealFloat},
 };
+
+use super::vector::VectorC;
 
 /// Calculate the PLU decomposition of the matrix.
 ///
@@ -394,6 +396,62 @@ where
     (q, r)
 }
 
+/// Use the Givens rotation process to compute the QR decomposition of a REAL matrix .
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{extra::qr_decomposition_gr, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let a = Matrix::<Double, 4, 3>::of(
+///         &[
+///             1.0, -1.0, 4.0, 1.0, 4.0, -2.0, 1.0, 4.0, 2.0, 1.0, -1.0, 0.0,
+///         ]
+///         .map(Double::of),
+///     )
+///     .unwrap();
+///     let (q, r) = qr_decomposition_gr(&a);
+///     let q_expect = Matrix::<Double, 4, 4>::of(
+///         &[
+///             0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5,
+///         ]
+///         .map(Double::of),
+///     )
+///     .unwrap();
+///     assert_eq!(q, q_expect);
+///     let r_expect = Matrix::<Double, 4, 3>::of(
+///         &[2.0, 3.0, 2.0, 0.0, 5.0, -2.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0].map(Double::of),
+///     )
+///     .unwrap();
+///     assert_eq!(r, r_expect);
+/// }
+/// ```
+pub fn qr_decomposition_gr<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> (Matrix<N, R, R>, Matrix<N, R, C>)
+where
+    N: RealFloat,
+{
+    let mut q = Matrix::<N, R, R>::eyes();
+    let mut r = m.clone();
+    for column in 1..=C {
+        for row in (column..R).rev() {
+            if r[(row, column)].is_zero() {
+                continue;
+            } else {
+                let rotation = r.givens_rotation(row, column);
+                r = rotation.clone() * r;
+                q = rotation * q;
+            }
+        }
+    }
+    (transpose(&q), r)
+}
+
 /// Use QR decomposition to solve linear equation problems for tall matrices or square matrices.
 ///
 /// For `M x = b`, we can have `M = Q R`, thus `x = inv(R) trans(Q) b`.
@@ -563,16 +621,62 @@ where
     }
 }
 
-/// eigen values
+/// Calculate the dominant eigenvalue and the corresponding normalized eigenvector using the power method.
 ///
-/// **TODO**
-pub fn eigen_values() {
-    todo!()
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{extra::eigen_system_power, matrix::Matrix, vector::VectorC},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let m =
+///         Matrix::<Float, 3, 3>::of(&[1.0, 2.0, 0.0, -2.0, 1.0, 2.0, 1.0, 3.0, 1.0].map(Float::of))
+///             .unwrap();
+///     let (e, v) = eigen_system_power(&m);
+///     assert_eq!(e, Float::of(3.0));
+///     assert_eq!(
+///         v,
+///         VectorC::<Float, 3>::of(&[1.0, 1.0, 2.0].map(|e| Float::of(e / 6.0f32.sqrt()))).unwrap()
+///     );
+/// }
+/// ```
+pub fn eigen_system_power<N, const E: usize>(m: &Matrix<N, E, E>) -> (N, VectorC<N, E>)
+where
+    N: RealFloat,
+{
+    let mut x = VectorC::<N, E>::of(&(1..=E).map(|_| N::one()).collect::<Vec<N>>()).expect("msg");
+    let mut xk = m.clone() * x.clone();
+    let mut x_max_norm = maximum_norm(&xk);
+    xk = apply(&xk, |e| e / x_max_norm.clone());
+    // Start the iteration process.
+    loop {
+        x = xk.clone();
+        // x(k) = m x(k - 1)
+        xk = m.clone() * x.clone();
+        x_max_norm = maximum_norm(&xk);
+        // v(k) = x(k) / abs_max(x(k))
+        xk = apply(&xk, |e| e / x_max_norm.clone());
+        // Exclude interference from constant multiples.
+        let p = x[(1, 1)].clone() / xk[(1, 1)].clone();
+        if x.equals(&(xk.clone() * p)) {
+            // Achieve the desired precision and exit.
+            break;
+        }
+    }
+    // e = ((m x) . x) / ||x||
+    let eigen = dot_product(m.clone() * x.clone(), x.clone()) / dot_product(x.clone(), x);
+    // Normalize the eigenvector.
+    let norm = euclidean_norm(&xk);
+    xk = apply(&xk, |e| e / norm.clone());
+    (eigen, xk)
 }
 
-/// eigen vectors
+/// QR algorithm
 ///
 /// **TODO**
-pub fn eigen_system() {
+pub fn eigen_system_qr() {
     todo!()
 }

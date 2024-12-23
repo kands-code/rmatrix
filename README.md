@@ -8,8 +8,6 @@ matrix and some algebra in Rust
 
 **_just a toy_**
 
-> todo: eigen_values & eigen_system & linear_solve
-
 Simple example see: [main](./examples/main.rs)
 
 [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
