@@ -34,7 +34,7 @@ use super::utils::nullspace;
 ///     )
 ///     .unwrap();
 ///     let (p, l, u) = plu_decomposition(&m);
-///     assert!((p * m).equals(&(l * u)));
+///     assert_eq!(p * m, l * u);
 /// }
 /// ```
 pub fn plu_decomposition<N, const R: usize, const C: usize>(
@@ -647,7 +647,11 @@ pub fn eigen_system_power<N, const E: usize>(m: &Matrix<N, E, E>) -> (N, VectorC
 where
     N: RealFloat,
 {
-    let mut x = VectorC::<N, E>::of(&(1..=E).map(|_| N::one()).collect::<Vec<N>>()).expect("msg");
+    let mut x =
+        VectorC::<N, E>::of(&(1..=E).map(|_| N::one()).collect::<Vec<N>>()).expect(concat!(
+            "Error[matrix::extra::eigen_system_power]: ",
+            "Failed to construct the initial vector."
+        ));
     let mut xk = m.clone() * x.clone();
     let mut x_max_norm = maximum_norm(&xk);
     xk = apply(&xk, |e| e / x_max_norm.clone());
@@ -661,7 +665,7 @@ where
         xk = apply(&xk, |e| e / x_max_norm.clone());
         // Exclude interference from constant multiples.
         let p = x[(1, 1)].clone() / xk[(1, 1)].clone();
-        if x.equals(&(xk.clone() * p)) {
+        if x == xk.clone() * p {
             // Achieve the desired precision and exit.
             break;
         }
@@ -688,28 +692,21 @@ where
 ///
 /// fn main() {
 ///     let m =
-///         Matrix::<Float, 3, 3>::of(&[1.0, 2.0, 3.0, 0.0, 4.0, 5.0, 0.0, 0.0, 6.0].map(Float::of))
+///         Matrix::<Float, 3, 3>::of(&[2.0, 0.0, 0.0, 0.0, 3.0, 1.0, 0.0, 0.0, 3.0].map(Float::of))
 ///             .unwrap();
 ///     let (e, ev) = eigen_system_qr(&m);
-///     assert_eq!(e.len(), ev.len());
-///     // This matrix has three eigenvalues and corresponding eigenvectors.
-///     assert_eq!(e.len(), 3);
-///     assert_eq!(e, [1.0, 4.0, 6.0].map(Float::of).to_vec());
 ///     assert_eq!(
-///         ev[0],
-///         VectorC::<Float, 3>::of(&[1.0, 0.0, 0.0].map(Float::of)).unwrap()
+///         e,
+///         VectorC::<Float, 3>::of(&[2.0, 3.0, 3.0].map(Float::of)).unwrap()
 ///     );
 ///     assert_eq!(
-///         ev[1],
-///         VectorC::<Float, 3>::of(&[2.0 / 3.0, 1.0, 0.0].map(Float::of)).unwrap()
-///     );
-///     assert_eq!(
-///         ev[2],
-///         VectorC::<Float, 3>::of(&[1.6, 2.5, 1.0].map(Float::of)).unwrap()
+///         ev,
+///         Matrix::<Float, 3, 3>::of(&[1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0].map(Float::of))
+///             .unwrap()
 ///     );
 /// }
 /// ```
-pub fn eigen_system_qr<N, const E: usize>(m: &Matrix<N, E, E>) -> (Vec<N>, Vec<VectorC<N, E>>)
+pub fn eigen_system_qr<N, const E: usize>(m: &Matrix<N, E, E>) -> (VectorC<N, E>, Matrix<N, E, E>)
 where
     N: RealFloat,
 {
@@ -720,19 +717,19 @@ where
         (q, r) = qr_decomposition_gr(&xk);
         x = xk;
         xk = r * q;
-        if x.equals(&xk) {
+        if x == xk {
             break;
         }
     }
-    let mut eigenvalues = Vec::with_capacity(E);
-    for e in (1..=E).map(|p| xk[(p, p)].clone()) {
-        if !eigenvalues.contains(&e) {
-            eigenvalues.push(e);
+    let eigenvalues =
+        VectorC::of(&(1..=E).map(|p| xk[(p, p)].clone()).collect::<Vec<_>>()).unwrap();
+    let mut eigenvectors = Matrix::<N, E, E>::default();
+    for column in 1..=E {
+        let v = nullspace(&(m.clone() - Matrix::eyes() * index_c(&eigenvalues, column).clone()))[0]
+            .clone();
+        for row in 1..=E {
+            eigenvectors[(row, column)] = index_c(&v, row).clone();
         }
     }
-    let eigenvectors = eigenvalues
-        .iter()
-        .map(|e| nullspace(&(m.clone() - Matrix::eyes() * e.clone()))[0].clone())
-        .collect::<Vec<VectorC<N, E>>>();
     (eigenvalues, eigenvectors)
 }

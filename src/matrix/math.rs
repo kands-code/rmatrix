@@ -9,10 +9,13 @@ use crate::{
         matrix::Matrix,
         utils::{points_2d, transpose},
     },
-    number::traits::{fractional::Fractional, number::Number, real::Real},
+    number::traits::{floating::Floating, fractional::Fractional, number::Number, real::Real},
 };
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
+#[cfg(feature = "extra")]
+use crate::{matrix::extra::eigen_system_power, number::traits::realfloat::RealFloat};
 
 /// Validate whether a matrix is a square matrix.
 ///
@@ -61,23 +64,61 @@ pub const fn is_square_matrix<N, const R: usize, const C: usize>(_: &Matrix<N, R
 ///         Double::of(1.0),
 ///     ])
 ///     .unwrap();
-///     assert!(is_symmetric_matrix(&m1, |e1, e2| e1 == e2));
-///     assert!(!is_symmetric_matrix(&m2, |e1, e2| e1 == e2));
-///     assert!(is_symmetric_matrix(&m3, |e1, e2| (e1.clone() - e2.clone()).is_zero()));
+///     assert!(is_symmetric_matrix(&m1));
+///     assert!(!is_symmetric_matrix(&m2));
+///     assert!(is_symmetric_matrix(&m3));
 /// }
 /// ```
-pub fn is_symmetric_matrix<N, F, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-    pred: F,
-) -> bool
+pub fn is_symmetric_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
 where
     N: PartialEq + Sync,
-    F: Fn(&N, &N) -> bool + Sync,
 {
     is_square_matrix(m)
         && points_2d((1, R), (1, C), |row, col| row < col)
             .par_iter()
-            .all(|&p @ (row, col)| pred(&m[p], &m[(col, row)]))
+            .all(|&p @ (row, col)| &m[p] == &m[(col, row)])
+}
+
+/// Validate whether a matrix is an anti-symmetric matrix.
+///
+/// trans(A) = -A
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::is_anti_symmetric_matrix, matrix::Matrix},
+///     number::{
+///         instances::{double::Double, int8::Int8},
+///         traits::zero::Zero,
+///     },
+/// };
+///
+/// fn main() {
+///     let m1 = Matrix::<Int8, 2, 2>::of(&[Int8::of(0), Int8::of(2), Int8::of(-2), Int8::of(0)])
+///         .unwrap();
+///     let m2 = Matrix::<Int8, 2, 2>::of(&[Int8::of(1), Int8::of(2), Int8::of(-2), Int8::of(1)])
+///         .unwrap();
+///     let m3 = Matrix::<Double, 2, 2>::of(&[
+///         Double::of(0.0),
+///         Double::of(0.0),
+///         Double::of(0.0),
+///         Double::of(0.0),
+///     ])
+///     .unwrap();
+///     assert!(is_anti_symmetric_matrix(&m1));
+///     assert!(!is_anti_symmetric_matrix(&m2));
+///     assert!(is_anti_symmetric_matrix(&m3));
+/// }
+/// ```
+pub fn is_anti_symmetric_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+where
+    N: Real,
+{
+    is_square_matrix(m)
+        && points_2d((1, R), (1, C), |row, col| row <= col)
+            .par_iter()
+            .all(|&p @ (row, col)| m[p] == -m[(col, row)].clone())
 }
 
 /// Validate whether a matrix is an upper triangular matrix.
@@ -199,6 +240,29 @@ where
             .all(|&p| m[p].is_one())
 }
 
+/// Validate whether a matrix is an normal matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::is_normal_matrix, matrix::Matrix},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 2, 2>::of(&[1.0, 2.0, -2.0, 1.0].map(Float::of)).unwrap();
+///     assert!(is_normal_matrix(&m));
+/// }
+/// ```
+pub fn is_normal_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+where
+    N: Real,
+{
+    let transposed = transpose(m);
+    is_square_matrix(m) && (transposed.clone() * m.clone() == m.clone() * transposed)
+}
+
 /// Validate whether a matrix is an orthogonal matrix.
 ///
 /// A matrix is called an orthogonal matrix
@@ -232,6 +296,164 @@ where
     }
 }
 
+/// Calculate the induced L-1 norm of the matrix.
+///
+/// The induced L-1 norm of a matrix is defined as
+/// the maximum sum of the absolute values of the elements of its column vectors.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::induced_l1_matrix_norm, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m =
+///         Matrix::<Double, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e))).unwrap();
+///     let l1_norm = induced_l1_matrix_norm(&m);
+///     assert_eq!(l1_norm, Double::of(12.0));
+/// }
+/// ```
+pub fn induced_l1_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
+where
+    N: Real,
+{
+    let mut norm = N::zero();
+    for e in (1..=C).map(|p| {
+        m.get_column(p)
+            .map(|c| {
+                c.linear_iter()
+                    .map(|e| e.absolute_value())
+                    .fold(N::zero(), |acc, e| acc + e)
+            })
+            .expect(concat!(
+                "Error[matrix::math::induced_l1_matrix_norm]: ",
+                "Failed to retrieve column vectors of the matrix."
+            ))
+    }) {
+        if e > norm {
+            norm = e;
+        }
+    }
+    norm
+}
+
+/// Calculate the induced L-inf norm of the matrix.
+///
+/// The induced L-inf norm of a matrix is defined as
+/// the maximum sum of the absolute values of the elements of its row vectors.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::induced_l_inf_matrix_norm, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m =
+///         Matrix::<Double, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e))).unwrap();
+///     let l_inf_norm = induced_l_inf_matrix_norm(&m);
+///     assert_eq!(l_inf_norm, Double::of(11.0));
+/// }
+/// ```
+pub fn induced_l_inf_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
+where
+    N: Real,
+{
+    let mut norm = N::zero();
+    for e in (1..=R).map(|p| {
+        m.get_row(p)
+            .map(|r| {
+                r.linear_iter()
+                    .map(|e| e.absolute_value())
+                    .fold(N::zero(), |acc, e| acc + e)
+            })
+            .expect(concat!(
+                "Error[matrix::math::induced_l_inf_matrix_norm]: ",
+                "Failed to retrieve row vectors of the matrix."
+            ))
+    }) {
+        if e > norm {
+            norm = e;
+        }
+    }
+    norm
+}
+
+#[doc(cfg(feature = "extra"))]
+/// Calculate the induced L-2 norm of the matrix.
+///
+/// The induced L-2 norm of a matrix is defined as
+/// the square root of the spectral radius of the product
+/// of the matrix and its transpose.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::induced_l2_matrix_norm, matrix::Matrix},
+///     number::{instances::float::Float, traits::floating::Floating},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
+///     let l_2_norm = induced_l2_matrix_norm(&m);
+///     assert_eq!(
+///         l_2_norm,
+///         Float::of((91.0 + 8185.0f32.sqrt()) / 2.0).square_root()
+///     );
+/// }
+/// ```
+#[cfg(feature = "extra")]
+pub fn induced_l2_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
+where
+    N: RealFloat,
+{
+    let transposed = transpose(m);
+    let e = if R > C {
+        eigen_system_power(&(transposed * m.clone())).0
+    } else {
+        eigen_system_power(&(m.clone() * transposed)).0
+    };
+    e.absolute_value().square_root()
+}
+
+/// Calculate the Frobenius norm of the matrix.
+///
+/// Both real matrix and complex matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::frobenius_norm, matrix::Matrix},
+///     number::{instances::float::Float, traits::floating::Floating},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 2, 2>::of(&[1.0, 2.0, 3.0, 4.0].map(Float::of)).unwrap();
+///     let f_norm = frobenius_norm(&m);
+///     assert_eq!(f_norm, Float::of(30.0).square_root());
+/// }
+/// ```
+pub fn frobenius_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
+where
+    N: Floating,
+{
+    m.inner
+        .par_iter()
+        .map(|e| {
+            let abs = e.absolute_value();
+            abs.clone() * abs
+        })
+        .reduce(|| N::zero(), |a, b| a + b)
+        .square_root()
+}
+
 /// Calculate the row-reduced form of the matrix.
 ///
 /// # Returns
@@ -260,8 +482,9 @@ where
 ///     )
 ///     .unwrap();
 ///     let (_, _, _, reduced) = row_reduce(&m);
-///     assert!(reduced.equals(
-///         &Matrix::<Double, 3, 3>::of(
+///     assert_eq!(
+///         reduced,
+///         Matrix::<Double, 3, 3>::of(
 ///             &[
 ///                 2.0, 1.0, -1.0, // r1
 ///                 0.0, 0.5, 0.5, // r2
@@ -270,7 +493,7 @@ where
 ///             .map(|e| Double::of(e))
 ///         )
 ///         .unwrap()
-///     ));
+///     );
 /// }
 /// ```
 pub fn row_reduce<N, const R: usize, const C: usize>(
@@ -426,7 +649,7 @@ where
 ///     )
 ///     .unwrap();
 ///     let inv = inverse(&m).unwrap();
-///     assert!((inv * m).equals(&Matrix::<Double, 3, 3>::eyes()));
+///     assert_eq!(inv * m, Matrix::<Double, 3, 3>::eyes());
 /// }
 /// ```
 pub fn inverse<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<Matrix<N, R, R>>
@@ -487,6 +710,7 @@ where
         None
     }
 }
+
 /// Calculate the adjugate matrix of the matrix.
 ///
 /// adj(m) * m = det(m) * I
@@ -529,11 +753,14 @@ where
 ///     )
 ///     .unwrap();
 ///     let det = determinant(&m).unwrap();
-///     assert!(adj.equals(&expect));
+///     assert_eq!(adj, expect);
 ///     // adj(m) * m = det(m) * I
-///     assert!((adj.clone() * m.clone()).equals(&(Matrix::eyes() * det)));
+///     assert_eq!(
+///         adj.clone() * m.clone(),
+///         Matrix::<Double, 3, 3>::eyes() * det
+///     );
 ///     // adj(m) * m = m * adj(m)
-///     assert!((adj.clone() * m.clone()).equals(&(m * adj)))
+///     assert_eq!(adj.clone() * m.clone(), m * adj)
 /// }
 /// ```
 pub fn adjugate_matrix<N, const R: usize, const C: usize>(

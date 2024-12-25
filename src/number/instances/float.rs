@@ -8,7 +8,7 @@ use crate::number::{
         floating::Floating, fractional::Fractional, integral::Integral, number::Number, one::One,
         real::Real, realfloat::RealFloat, realfrac::RealFrac, zero::Zero,
     },
-    utils::from_integral,
+    utils::{from_integral, non_negative_integral_power},
 };
 
 use rand::{
@@ -267,6 +267,23 @@ impl RealFrac for Float {
 
 /// Implement the concept of Real for Float.
 impl Real for Float {
+    /// Convert single-precision floating-point number to rational number.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{float::Float, ratio::Rational},
+    ///     traits::{floating::Floating, real::Real},
+    /// };
+    ///
+    /// fn main() {
+    ///     let m = Float::PI;
+    ///     let m_rat = m.to_rational();
+    ///     let rat_expect = Rational::of_str("13176795 % 4194304").unwrap();
+    ///     assert_eq!(m_rat, rat_expect);
+    /// }
+    /// ```
     fn to_rational(self) -> Rational {
         if self.is_not_a_number() || self.is_infinite_number() {
             panic!(
@@ -279,33 +296,15 @@ impl Real for Float {
                 denominator: Integer::one(),
             }
         } else {
-            let sign = !self.inner.is_sign_negative();
-            let str_inner = format!("{:?}", self.inner);
-            let p = str_inner.split(".").collect::<Vec<&str>>()[1].len();
-            let mut denominator = vec![0u8; p + 1];
-            denominator[0] = 1u8;
-            let numerator = str_inner
-                .chars()
-                .filter(|&c| c.is_ascii_digit())
-                .map(|c| c as u8 - '0' as u8)
-                .collect::<Vec<u8>>();
-            Rational::of(
-                Integer::of(sign, &numerator).expect(&format!(
+            let (sig, exp) = self.decode_float();
+            let denominator =
+                non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value()).expect(
                     concat!(
                         "Error[Float::to_rational]: ",
-                        "Each digit should be within the range [1, 9] ({:?})."
+                        "Failed to compute the denominator via exponentiation."
                     ),
-                    numerator
-                )),
-                Integer::of(true, &denominator).expect(&format!(
-                    concat!(
-                        "Error[Float::to_rational]: ",
-                        "Each digit should be within the range [1, 9] ({:?})."
-                    ),
-                    denominator
-                )),
-            )
-            .refine()
+                );
+            Rational::of(sig, denominator).refine()
         }
     }
 }

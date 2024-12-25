@@ -18,15 +18,12 @@ use std::{
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{matrix::Matrix, serde::to_file},
-///     number::instances::{complex::Complex, float::Float},
+///     number::instances::float::Float,
 /// };
 ///
 /// fn main() {
 ///     let path = "data/random.txt";
-///     let m = Matrix::<Complex<Float>, 16, 16>::rand(
-///         Complex::of(Float::of(-2.0), Float::of(-2.0)),
-///         Complex::of(Float::of(2.0), Float::of(2.0)),
-///     );
+///     let m = Matrix::<Float, 16, 16>::rand(Float::of(-2.0), Float::of(2.0));
 ///     to_file(&m, path);
 /// }
 /// ```
@@ -59,12 +56,12 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{matrix::Matrix, serde::from_file},
-///     number::instances::{complex::Complex, float::Float},
+///     number::instances::float::Float,
 /// };
 ///
 /// fn main() {
 ///     let path = "data/test.txt";
-///     let m: Option<Matrix<Complex<Float>, 16, 16>> = from_file(path);
+///     let m: Option<Matrix<Float, 16, 16>> = from_file(path);
 ///     assert!(m.is_some());
 /// }
 /// ```

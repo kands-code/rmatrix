@@ -375,7 +375,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     ///
     /// <div class="warning">
     ///
-    /// For the [Complex](crate::number::instances::complex::Complex), the ranges for the elements are defined by the real and imaginary parts.
+    /// For complex numbers, the ranges for the elements are defined by the real and imaginary parts.
     /// For example, if `lb` is passed as `Complex(-1.0, -3.0)` and `ub` as `Complex(3.0, 1.0)`,
     /// the real part of the matrix elements will be randomly selected from the range `[-1.0, 3.0)`,
     /// while the imaginary part will be randomly selected from the range `[-3.0, 1.0)`.
@@ -557,36 +557,6 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
             }
             Some(VectorC { inner })
         }
-    }
-
-    /// Determines whether two matrices are equal.
-    ///
-    /// For elements of the Floating type, which cannot be directly compared for equality using `==`,
-    /// this function can be used to assess their equality.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use rmatrix_ks::{
-    ///     matrix::matrix::Matrix,
-    ///     number::{instances::float::Float, traits::one::One},
-    /// };
-    ///
-    /// fn main() {
-    ///     let m = Matrix::<Float, 2, 2>::of(&[1.0, 2.0, 4.0, 6.0].map(|e| Float::of(e))).unwrap();
-    ///     let p = Matrix::<Float, 2, 2>::p_add(1, 2, Float::one());
-    ///     let n = Matrix::<Float, 2, 2>::of(&[1.0, 2.0, 3.0, 4.0].map(|e| Float::of(e))).unwrap();
-    ///     assert!(m.equals(&(p * n)));
-    /// }
-    /// ```
-    pub fn equals(&self, rhs: &Self) -> bool
-    where
-        N: Number,
-    {
-        self.inner
-            .par_iter()
-            .zip(rhs.inner.par_iter())
-            .all(|(e1, e2)| (e1.clone() - e2.clone()).is_zero())
     }
 
     /// Retrieves the diagonal elements of the matrix and returns them as a column vector.
