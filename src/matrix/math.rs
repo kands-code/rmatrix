@@ -15,7 +15,7 @@ use crate::{
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 #[cfg(feature = "extra")]
-use crate::{matrix::extra::eigen_system_power, number::traits::realfloat::RealFloat};
+use crate::matrix::extra;
 
 /// Validate whether a matrix is a square matrix.
 ///
@@ -289,10 +289,10 @@ where
     N: Real,
 {
     let transposed = transpose(m);
-    if R > C {
-        is_identity_matrix(&(transposed * m.clone()))
-    } else {
+    if R < C {
         is_identity_matrix(&(m.clone() * transposed))
+    } else {
+        is_identity_matrix(&(transposed * m.clone()))
     }
 }
 
@@ -411,13 +411,13 @@ where
 #[cfg(feature = "extra")]
 pub fn induced_l2_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
 where
-    N: RealFloat,
+    N: crate::number::traits::realfloat::RealFloat,
 {
     let transposed = transpose(m);
     let e = if R > C {
-        eigen_system_power(&(transposed * m.clone())).0
+        extra::eigen_system_power(&(transposed * m.clone())).0
     } else {
-        eigen_system_power(&(m.clone() * transposed)).0
+        extra::eigen_system_power(&(m.clone() * transposed)).0
     };
     e.absolute_value().square_root()
 }
@@ -447,6 +447,7 @@ where
     m.inner
         .par_iter()
         .map(|e| {
+            // Important for complex numbers.
             let abs = e.absolute_value();
             abs.clone() * abs
         })

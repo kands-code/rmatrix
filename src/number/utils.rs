@@ -255,7 +255,7 @@ pub fn integral_to_binary<I: Integral>(int_val: I) -> Option<Vec<u8>> {
                 || {
                     eprintln!(
                         concat!(
-                            "Error[number::utils::decimal_to_binary]:",
+                            "Error[number::utils::decimal_to_binary]: ",
                             "Failed to retrieve the value of the modulus ({})"
                         ),
                         m
@@ -269,7 +269,7 @@ pub fn integral_to_binary<I: Integral>(int_val: I) -> Option<Vec<u8>> {
 
     if int_val < I::zero() {
         eprintln!(concat!(
-            "Error[number::utils::decimal_to_binary]:",
+            "Error[number::utils::decimal_to_binary]: ",
             "Cannot convert a negative number to binary format"
         ));
         None

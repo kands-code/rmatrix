@@ -4,17 +4,17 @@
 //! such as matrix decomposition, eigenvalue computation,
 //! and solving systems of linear equations, etc.
 
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 use crate::{
     matrix::{
         math::{inverse, row_reduce},
         matrix::Matrix,
-        utils::{apply, transpose},
+        utils::{apply, nullspace, transpose},
         vector::{dot_product, euclidean_norm, index_c, layer_product, maximum_norm, VectorC},
     },
     number::traits::{fractional::Fractional, realfloat::RealFloat},
 };
-
-use super::utils::nullspace;
 
 /// Calculate the PLU decomposition of the matrix.
 ///
@@ -524,15 +524,20 @@ pub fn linear_solve_t<N, const R: usize, const C1: usize, const C2: usize>(
 where
     N: RealFloat,
 {
-    let (q, r) = qr_decomposition_gs(&m).expect(concat!(
-        "Error[matrix::extra::linear_solve_t]",
-        "Only high matrices or square matrices can use this function to solve linear equations."
-    ));
-    let r_inv = inverse(&r).expect(concat!(
-        "Error[matrix::extra::linear_solve_t]",
-        "Should be able to compute the inverse of an upper triangular matrix."
-    ));
-    r_inv * transpose(&q) * b.clone()
+    if b.inner.par_iter().all(|e| e.is_zero()) {
+        Matrix::default()
+    } else {
+        let (q, r) = qr_decomposition_gs(&m).expect(concat!(
+            "Error[matrix::extra::linear_solve_t]: ",
+            "Only high matrices or square matrices ",
+            "can use this function to solve linear equations."
+        ));
+        let r_inv = inverse(&r).expect(concat!(
+            "Error[matrix::extra::linear_solve_t]: ",
+            "Should be able to compute the inverse of an upper triangular matrix."
+        ));
+        r_inv * transpose(&q) * b.clone()
+    }
 }
 
 /// Use QR decomposition to solve linear equation problems for wide matrices.
@@ -606,15 +611,16 @@ pub fn linear_solve_w<N, const R: usize, const C1: usize, const C2: usize>(
 where
     N: RealFloat,
 {
-    if b.linear_iter().all(|e| e.is_zero()) {
-        Matrix::<N, C1, C2>::default()
+    if b.inner.par_iter().all(|e| e.is_zero()) {
+        Matrix::default()
     } else {
         let (q, r) = qr_decomposition_gs(&transpose(m)).expect(concat!(
-        "Error[matrix::extra::linear_solve_w]",
-        "Only high matrices or square matrices can use this function to solve linear equations."
-    ));
+            "Error[matrix::extra::linear_solve_w]: ",
+            "Only high matrices or square matrices ",
+            "can use this function to solve linear equations."
+        ));
         let l_inv = inverse(&transpose(&r)).expect(concat!(
-            "Error[matrix::extra::linear_solve_w]",
+            "Error[matrix::extra::linear_solve_w]: ",
             "Should be able to compute the inverse of an lower triangular matrix."
         ));
         q * l_inv * b.clone()
@@ -680,13 +686,11 @@ where
 
 /// Calculate the eigenvalues and eigenvectors of the matrix using the QR algorithm.
 ///
-/// Only one result will be returned for multiple eigenvalues.
-///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::eigen_system_qr, matrix::Matrix, vector::VectorC},
+///     matrix::{extra::eigen_system_qr, matrix::Matrix},
 ///     number::instances::float::Float,
 /// };
 ///
@@ -697,7 +701,10 @@ where
 ///     let (e, ev) = eigen_system_qr(&m);
 ///     assert_eq!(
 ///         e,
-///         VectorC::<Float, 3>::of(&[2.0, 3.0, 3.0].map(Float::of)).unwrap()
+///         [2.0, 3.0, 3.0]
+///             .iter()
+///             .map(|&e| Float::of(e))
+///             .collect::<Vec<_>>()
 ///     );
 ///     assert_eq!(
 ///         ev,
@@ -706,7 +713,7 @@ where
 ///     );
 /// }
 /// ```
-pub fn eigen_system_qr<N, const E: usize>(m: &Matrix<N, E, E>) -> (VectorC<N, E>, Matrix<N, E, E>)
+pub fn eigen_system_qr<N, const E: usize>(m: &Matrix<N, E, E>) -> (Vec<N>, Matrix<N, E, E>)
 where
     N: RealFloat,
 {
@@ -721,14 +728,12 @@ where
             break;
         }
     }
-    let eigenvalues =
-        VectorC::of(&(1..=E).map(|p| xk[(p, p)].clone()).collect::<Vec<_>>()).unwrap();
+    let eigenvalues = (1..=E).map(|p| xk[(p, p)].clone()).collect::<Vec<_>>();
     let mut eigenvectors = Matrix::<N, E, E>::default();
-    for column in 1..=E {
-        let v = nullspace(&(m.clone() - Matrix::eyes() * index_c(&eigenvalues, column).clone()))[0]
-            .clone();
+    for column in 0..E {
+        let v = nullspace(&(m.clone() - Matrix::eyes() * eigenvalues[column].clone()))[0].clone();
         for row in 1..=E {
-            eigenvectors[(row, column)] = index_c(&v, row).clone();
+            eigenvectors[(row, column + 1)] = index_c(&v, row).clone();
         }
     }
     (eigenvalues, eigenvectors)

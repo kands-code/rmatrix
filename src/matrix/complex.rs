@@ -17,6 +17,9 @@ use crate::{
 
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
+#[cfg(feature = "extra")]
+use crate::matrix::extra;
+
 /// Obtains the conjugate transpose of the matrix.
 ///
 /// # Examples
@@ -92,10 +95,10 @@ where
     F: RealFloat,
 {
     let conjugate_transposed = conjugate_transpose(m);
-    if R > C {
-        is_identity_matrix(&(conjugate_transposed * m.clone()))
-    } else {
+    if R < C {
         is_identity_matrix(&(m.clone() * conjugate_transposed))
+    } else {
+        is_identity_matrix(&(conjugate_transposed * m.clone()))
     }
 }
 
@@ -450,4 +453,46 @@ where
         }
     }
     norm
+}
+
+#[doc(cfg(feature = "extra"))]
+/// Calculate the induced L-2 norm of the complex matrix.
+///
+/// The induced L-2 norm of a matrix is defined as
+/// the square root of the spectral radius of the product
+/// of the matrix and its conjugate transpose.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{complex::induced_l2_matrix_norm, matrix::Matrix},
+///     number::instances::{complex::Complex, double::Double},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Double>, 2, 2>::of(
+///         &[(1.0, 2.0), (3.0, -1.0), (4.0, 5.0), (6.0, -3.0)]
+///             .map(|(r, i)| Complex::of(Double::of(r), Double::of(i))),
+///     )
+///     .unwrap();
+///     let l2_norm = induced_l2_matrix_norm(&m);
+///     assert_eq!(
+///         l2_norm,
+///         Double::of(((101.0 + 10085.0f64.sqrt()) / 2.0).sqrt())
+///     );
+/// }
+/// ```
+#[cfg(feature = "extra")]
+pub fn induced_l2_matrix_norm<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> F
+where
+    F: RealFloat,
+{
+    let conjugate_transposed = conjugate_transpose(m);
+    let e = if R < C {
+        extra::eigen_system_power(&apply(&(m.clone() * conjugate_transposed), |c| c.norm())).0
+    } else {
+        extra::eigen_system_power(&apply(&(conjugate_transposed * m.clone()), |c| c.norm())).0
+    };
+    e.absolute_value().square_root()
 }

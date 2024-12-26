@@ -587,6 +587,37 @@ impl<F: RealFloat> Fractional for Complex<F> {
     }
 }
 
+/// Implement PartialOrd for complex numbers with zero imaginary part.
+impl<F: RealFloat> std::cmp::PartialOrd for Complex<F> {
+    /// Only complex numbers with zero imaginary part can be compared,
+    /// otherwise, return None.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{complex::Complex, float::Float},
+    ///     traits::zero::Zero,
+    /// };
+    ///
+    /// fn main() {
+    ///     let c1 = Complex::of(Float::of(3.0), Float::zero());
+    ///     let c2 = Complex::of(Float::of(-2.0), Float::zero());
+    ///     let c3 = Complex::of(Float::of(2.0), Float::of(2.0));
+    ///
+    ///     assert_eq!(c1.partial_cmp(&c2), Some(std::cmp::Ordering::Greater));
+    ///     assert_eq!(c1.partial_cmp(&c3), None);
+    /// }
+    /// ```
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.imaginary.is_zero() && other.imaginary.is_zero() {
+            self.real.partial_cmp(&other.real)
+        } else {
+            None
+        }
+    }
+}
+
 /// Implement Display for complex numbers.
 impl<F: RealFloat> std::fmt::Display for Complex<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
