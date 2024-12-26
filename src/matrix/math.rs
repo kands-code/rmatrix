@@ -14,9 +14,6 @@ use crate::{
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
-#[cfg(feature = "extra")]
-use crate::matrix::extra;
-
 /// Validate whether a matrix is a square matrix.
 ///
 /// # Examples
@@ -384,43 +381,7 @@ where
     norm
 }
 
-#[doc(cfg(feature = "extra"))]
-/// Calculate the induced L-2 norm of the matrix.
-///
-/// The induced L-2 norm of a matrix is defined as
-/// the square root of the spectral radius of the product
-/// of the matrix and its transpose.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::{math::induced_l2_matrix_norm, matrix::Matrix},
-///     number::{instances::float::Float, traits::floating::Floating},
-/// };
-///
-/// fn main() {
-///     let m = Matrix::<Float, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
-///     let l_2_norm = induced_l2_matrix_norm(&m);
-///     assert_eq!(
-///         l_2_norm,
-///         Float::of((91.0 + 8185.0f32.sqrt()) / 2.0).square_root()
-///     );
-/// }
-/// ```
-#[cfg(feature = "extra")]
-pub fn induced_l2_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
-where
-    N: crate::number::traits::realfloat::RealFloat,
-{
-    let transposed = transpose(m);
-    let e = if R > C {
-        extra::eigen_system_power(&(transposed * m.clone())).0
-    } else {
-        extra::eigen_system_power(&(m.clone() * transposed)).0
-    };
-    e.absolute_value().square_root()
-}
+// **TODO** L-2 norm
 
 /// Calculate the Frobenius norm of the matrix.
 ///
@@ -797,4 +758,42 @@ where
         );
         None
     }
+}
+
+/// Calculate the PLU decomposition of the matrix.
+///
+/// p * m = l * u
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::plu_decomposition, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Double, 3, 3>::of(
+///         &[0.0, 5.0, 22.0 / 3.0, 4.0, 2.0, 1.0, 2.0, 7.0, 9.0].map(|e| Double::of(e)),
+///     )
+///     .unwrap();
+///     let (p, l, u) = plu_decomposition(&m);
+///     assert_eq!(p * m, l * u);
+/// }
+/// ```
+pub fn plu_decomposition<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> (Matrix<N, R, R>, Matrix<N, R, R>, Matrix<N, R, C>)
+where
+    N: Fractional,
+{
+    let (_, p, l_inv, reduced) = row_reduce(m);
+    (
+        p,
+        inverse(&l_inv).expect(concat!(
+            "Error[matrix::math::plu_decomposition]: ",
+            "Failed to retrieve the inverse."
+        )),
+        reduced,
+    )
 }

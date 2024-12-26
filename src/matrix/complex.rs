@@ -7,18 +7,15 @@ use crate::{
         math::{is_identity_matrix, is_square_matrix},
         matrix::Matrix,
         utils::{apply, points_2d, transpose},
-        vector::VectorC,
+        vector::{index_c, layer_product, VectorC},
     },
     number::{
         instances::complex::Complex,
-        traits::{floating::Floating, realfloat::RealFloat, zero::Zero},
+        traits::{floating::Floating, number::Number, one::One, realfloat::RealFloat, zero::Zero},
     },
 };
 
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
-
-#[cfg(feature = "extra")]
-use crate::matrix::extra;
 
 /// Obtains the conjugate transpose of the matrix.
 ///
@@ -266,14 +263,14 @@ where
 ///     )
 ///     .unwrap();
 ///     assert_eq!(
-///         dot_product(v1, v2),
+///         dot_product(&v1, &v2),
 ///         Complex::of(Float::of(1.0), Float::of(-5.0))
 ///     )
 /// }
 /// ```
 pub fn dot_product<F, const R: usize>(
-    v1: VectorC<Complex<F>, R>,
-    v2: VectorC<Complex<F>, R>,
+    v1: &VectorC<Complex<F>, R>,
+    v2: &VectorC<Complex<F>, R>,
 ) -> Complex<F>
 where
     F: RealFloat,
@@ -283,6 +280,104 @@ where
         .zip(v2.inner.par_iter())
         .map(|(e1, e2)| e1.clone().conjugate() * e2.clone())
         .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
+}
+
+/// Project one complex vector onto another complex vector.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{complex::project_to, vector::VectorC},
+///     number::instances::{complex::Complex, float::Float},
+/// };
+///
+/// fn main() {
+///     let v1 = VectorC::<Complex<Float>, 2>::of(
+///         &[(1.0, 2.0), (3.0, -1.0)].map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let v2 = VectorC::<Complex<Float>, 2>::of(
+///         &[(2.0, 1.0), (1.0, -3.0)].map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let p = project_to(&v1, &v2);
+///     let p_expect = VectorC::<Complex<Float>, 2>::of(
+///         &[(3.0 / 5.0, 32.0 / 15.0), (43.0 / 15.0, -19.0 / 15.0)]
+///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     assert_eq!(p, p_expect);
+/// }
+/// ```
+pub fn project_to<F, const R: usize>(
+    from: &VectorC<Complex<F>, R>,
+    to: &VectorC<Complex<F>, R>,
+) -> VectorC<Complex<F>, R>
+where
+    F: RealFloat,
+{
+    let p1 = dot_product(to, from);
+    let p2 = dot_product(to, to);
+    to.clone() * (p1 / p2)
+}
+
+/// Generate the corresponding Givens rotation matrix to eliminate the element at 'want' using 'by'.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{complex::givens_rotation_matrix, matrix::Matrix},
+///     number::instances::{complex::Complex, float::Float},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 2, 2>::of(
+///         &[(1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)]
+///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let g = givens_rotation_matrix(&m, (2, 1), (1, 1));
+///     let g_expect = Matrix::<Complex<Float>, 2, 2>::of(
+///         &[
+///             (1.0 / 10.0f32.sqrt(), 0.0),
+///             (3.0 / 10.0f32.sqrt(), 0.0),
+///             (-3.0 / 10.0f32.sqrt(), 0.0),
+///             (1.0 / 10.0f32.sqrt(), 0.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     assert_eq!(g, g_expect);
+/// }
+/// ```
+pub fn givens_rotation_matrix<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+    want: (usize, usize),
+    by: (usize, usize),
+) -> Matrix<Complex<F>, R, R>
+where
+    F: RealFloat,
+{
+    let mut givens = Matrix::<Complex<F>, R, R>::eyes();
+    // e1 is the element to be eliminated.
+    let e1 = m[want].clone();
+    // e2 is the element used for elimination.
+    let e2 = m[by].clone();
+    // v = (e2, e1), r = ||v||
+    let r =
+        (e1.clone().conjugate() * e1.clone() + e2.clone().conjugate() * e2.clone()).square_root();
+    // sin(theta) = y / r = e1 / r
+    let sin_theta = e1 / r.clone();
+    // cos(theta) = x / r = e2 / r
+    let cos_theta = e2 / r;
+    // rotation {{c.conj, s.conj}, {-s, c}}
+    givens[(want.0, want.0)] = cos_theta.clone();
+    givens[(by.0, by.0)] = cos_theta.conjugate();
+    givens[(want.0, by.0)] = -sin_theta.clone();
+    givens[(by.0, want.0)] = sin_theta.conjugate();
+    givens
 }
 
 /// Calculate the Euclidean norm for a complex vector.
@@ -455,44 +550,264 @@ where
     norm
 }
 
-#[doc(cfg(feature = "extra"))]
-/// Calculate the induced L-2 norm of the complex matrix.
-///
-/// The induced L-2 norm of a matrix is defined as
-/// the square root of the spectral radius of the product
-/// of the matrix and its conjugate transpose.
+// **TODO** L-2 norm
+
+/// Compute the QR decomposition of a complex matrix using the Gram-Schmidt process.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{complex::induced_l2_matrix_norm, matrix::Matrix},
-///     number::instances::{complex::Complex, double::Double},
+///     matrix::{
+///         complex::{is_unitary_matrix, qr_decomposition_gs},
+///         math::is_upper_triangular_matrix,
+///         matrix::Matrix,
+///     },
+///     number::instances::{complex::Complex, float::Float},
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Double>, 2, 2>::of(
-///         &[(1.0, 2.0), (3.0, -1.0), (4.0, 5.0), (6.0, -3.0)]
-///             .map(|(r, i)| Complex::of(Double::of(r), Double::of(i))),
+///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///         &[
+///             (1.0, 1.0),
+///             (2.0, 0.0),
+///             (3.0, 0.0),
+///             (4.0, 0.0),
+///             (5.0, 2.0),
+///             (6.0, 0.0),
+///             (7.0, 0.0),
+///             (8.0, 0.0),
+///             (1.0, 3.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
 ///     .unwrap();
-///     let l2_norm = induced_l2_matrix_norm(&m);
-///     assert_eq!(
-///         l2_norm,
-///         Double::of(((101.0 + 10085.0f64.sqrt()) / 2.0).sqrt())
-///     );
+///     let (q, r) = qr_decomposition_gs(&m).unwrap();
+///     assert!(is_unitary_matrix(&q));
+///     assert!(is_upper_triangular_matrix(&r));
+///     assert_eq!(q * r, m);
 /// }
 /// ```
-#[cfg(feature = "extra")]
-pub fn induced_l2_matrix_norm<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> F
+///
+/// ## Warnings
+///
+/// <div class="warning">
+///
+/// **_The Gram-Schmidt process is inherently numerically unstable._**
+///
+/// If the input matrix is a wide matrix,
+/// meaning the number of columns is greater than the number of rows,
+/// the function will return None,
+/// as the Gram-Schmidt process requires the columns of the matrix to be pairwise orthogonal,
+/// which is not possible for wide matrices.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{complex::qr_decomposition_gs, matrix::Matrix},
+///     number::instances::{complex::Complex, float::Float},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 2, 3>::of(
+///         &[
+///             (1.0, 1.0),
+///             (2.0, 0.0),
+///             (3.0, 0.0),
+///             (4.0, 0.0),
+///             (5.0, 2.0),
+///             (6.0, 0.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let qr = qr_decomposition_gs(&m);
+///     assert_eq!(qr, None);
+/// }
+/// ```
+///
+/// </div>
+pub fn qr_decomposition_gs<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> Option<(Matrix<Complex<F>, R, C>, Matrix<Complex<F>, C, C>)>
 where
     F: RealFloat,
 {
-    let conjugate_transposed = conjugate_transpose(m);
-    let e = if R < C {
-        extra::eigen_system_power(&apply(&(m.clone() * conjugate_transposed), |c| c.norm())).0
+    if R < C {
+        eprintln!(concat!(
+            "Error[matrix::extra::qr_decomposition_gs]: ",
+            "The matrix should be a tall matrix or a square matrix"
+        ));
+        None
     } else {
-        extra::eigen_system_power(&apply(&(conjugate_transposed * m.clone()), |c| c.norm())).0
-    };
-    e.absolute_value().square_root()
+        let mut u = Matrix::<Complex<F>, R, C>::default();
+        let mut q = Matrix::<Complex<F>, R, C>::default();
+        for column in 1..=C {
+            // A = [ a1 | a2 | ... | an ]
+            let ak = apply(
+                &m.get_column(column).expect(concat!(
+                    "Error[matrix::complex::qr_decomposition_gs]: ",
+                    "Failed to retrieve the column vector of M."
+                )),
+                |e: &Complex<F>| e.clone(),
+            );
+            // u1 = a1
+            // uk = ak - sum((ak . en) en, {n, 1, k - 1})
+            let mut uk = ak.clone();
+            for k in 1..column {
+                // U = [ u1 | u2 | ... | un ]
+                let uj = apply(
+                    &u.get_column(k).expect(concat!(
+                        "Error[matrix::complex::qr_decomposition_gs]: ",
+                        "Failed to retrieve the column vector of Q."
+                    )),
+                    |e: &Complex<F>| e.clone(),
+                );
+                // uk(n) = uk(n - 1) - en (uk(n - 1) . en)
+                uk = uk.clone() - project_to(&ak, &uj);
+            }
+            let u_norm = euclidean_norm(&uk);
+            for row in 1..=R {
+                u[(row, column)] = index_c(&uk, row).clone();
+                // ek = uk / ||uk||
+                q[(row, column)] = index_c(&uk, row).clone() / u_norm.clone();
+            }
+        }
+        // R = Upper {  a_c . e_r } and R = Q^T A
+        let r = conjugate_transpose(&q) * m.clone();
+        Some((q, r))
+    }
+}
+
+/// Compute the QR decomposition of a complex matrix using Householder transformations.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         complex::{is_unitary_matrix, qr_decomposition_h},
+///         math::is_upper_triangular_matrix,
+///         matrix::Matrix,
+///     },
+///     number::instances::{complex::Complex, float::Float},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///         &[
+///             (1.0, 1.0),
+///             (2.0, 0.0),
+///             (3.0, 0.0),
+///             (4.0, 0.0),
+///             (5.0, 2.0),
+///             (6.0, 0.0),
+///             (7.0, 0.0),
+///             (8.0, 0.0),
+///             (1.0, 3.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let (q, r) = qr_decomposition_h(&m);
+///     assert!(is_unitary_matrix(&q));
+///     assert!(is_upper_triangular_matrix(&r));
+///     assert_eq!(q * r, m);
+/// }
+/// ```
+pub fn qr_decomposition_h<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> (Matrix<Complex<F>, R, R>, Matrix<Complex<F>, R, C>)
+where
+    F: RealFloat,
+{
+    let mut q = Matrix::<Complex<F>, R, R>::eyes();
+    let mut r = m.clone();
+    let two = Complex::one() + Complex::one();
+    for column in 1..=C.min(R) {
+        // x = col(m, c)
+        let mut x = apply(
+            &r.get_column(column).expect(&format!(
+                concat!(
+                    "Error[matrix::extra::qr_decomposition_gs]: ",
+                    "Failed to retrieve the {}-th column of the matrix"
+                ),
+                column,
+            )),
+            |e| e.clone(),
+        );
+        // Forall ei in x where i < c is zero
+        for index in 1..column {
+            x[(index, 1)] = Complex::zero();
+        }
+        let x_norm = euclidean_norm(&x);
+        // v = x but v[col] = x[col] + x_norm * signum(x[col])
+        let mut v = x.clone();
+        v[(column, 1)] = x[(column, 1)].clone() + x_norm * x[(column, 1)].sign_number();
+        // p = I - 2 / (v^H . v) (v * v^H)
+        let p = Matrix::<Complex<F>, R, R>::eyes()
+            - layer_product(&v, &conjugate_transpose(&v)) * two.clone() / dot_product(&v, &v);
+        // r = pn p_{n - 1} ... p1 m
+        r = p.clone() * r;
+        // q = p1 p2 ... pn
+        q = q * p;
+    }
+    (q, r)
+}
+
+/// Compute the QR decomposition of a complex matrix using Givens rotation matrices.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         complex::{is_unitary_matrix, qr_decomposition_gr},
+///         math::is_upper_triangular_matrix,
+///         matrix::Matrix,
+///     },
+///     number::instances::{complex::Complex, float::Float},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///         &[
+///             (1.0, 1.0),
+///             (2.0, 0.0),
+///             (3.0, 0.0),
+///             (4.0, 0.0),
+///             (5.0, 2.0),
+///             (6.0, 0.0),
+///             (7.0, 0.0),
+///             (8.0, 0.0),
+///             (1.0, 3.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let (q, r) = qr_decomposition_gr(&m);
+///     assert!(is_unitary_matrix(&q));
+///     assert!(is_upper_triangular_matrix(&r));
+///     assert_eq!(q * r, m);
+/// }
+/// ```
+pub fn qr_decomposition_gr<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> (Matrix<Complex<F>, R, R>, Matrix<Complex<F>, R, C>)
+where
+    F: RealFloat,
+{
+    let mut q = Matrix::<Complex<F>, R, R>::eyes();
+    let mut r = m.clone();
+    for column in 1..=C {
+        for row in (column..R).rev() {
+            if r[(row, column)].is_zero() {
+                continue;
+            } else {
+                let rotation = givens_rotation_matrix(&r, (row + 1, column), (row, column));
+                r = rotation.clone() * r;
+                q = rotation * q;
+            }
+        }
+    }
+    (conjugate_transpose(&q), r)
 }

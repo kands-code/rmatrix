@@ -208,77 +208,6 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
         }
     }
 
-    /// Generate the corresponding Givens rotation matrix.
-    ///
-    /// use `M[(row, column)]` to eliminate `M[(row + 1, column)]`
-    ///
-    /// # Panics
-    ///
-    /// Both `row` and `column` should be within the range of `[1, R)` and `[1, C]`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::double::Double};
-    ///
-    /// fn main() {
-    ///     let a = Matrix::<Double, 4, 3>::of(
-    ///         &[
-    ///             1.0, -1.0, 4.0, 1.0, 4.0, -2.0, 1.0, 4.0, 2.0, 1.0, -1.0, 0.0,
-    ///         ]
-    ///         .map(Double::of),
-    ///     )
-    ///     .unwrap();
-    ///     // givens rotation matrix to use A[(3, 1)] to eliminate A[(4, 1)]
-    ///     let g34 = a.givens_rotation(3, 1);
-    ///     let g34_expect = Matrix::<Double, 4, 4>::of(
-    ///         &[
-    ///             1.0,
-    ///             0.0,
-    ///             0.0,
-    ///             0.0,
-    ///             0.0,
-    ///             1.0,
-    ///             0.0,
-    ///             0.0,
-    ///             0.0,
-    ///             0.0,
-    ///             1.0 / 2.0f64.sqrt(),
-    ///             1.0 / 2.0f64.sqrt(),
-    ///             0.0,
-    ///             0.0,
-    ///             -1.0 / 2.0f64.sqrt(),
-    ///             1.0 / 2.0f64.sqrt(),
-    ///         ]
-    ///         .map(Double::of),
-    ///     )
-    ///     .unwrap();
-    ///     assert_eq!(g34, g34_expect);
-    /// }
-    /// ```
-    pub fn givens_rotation(&self, row: usize, column: usize) -> Matrix<N, R, R>
-    where
-        N: Floating,
-    {
-        let mut givens = Matrix::<N, R, R>::eyes();
-        // e1 is the element to be eliminated.
-        let e1 = self[(row + 1, column)].clone();
-        // e2 is the element used for elimination.
-        let e2 = self[(row, column)].clone();
-        // v = (e2, e1), r = ||v||
-        let r = (e1.clone() * e1.clone() + e2.clone() * e2.clone()).square_root();
-        // sin(theta) = y / r = e1 / r
-        let sin_theta = e1 / r.clone();
-        // cos(theta) = x / r = e2 / r
-        let cos_theta = e2 / r;
-        // rotation
-        givens[(row, row)] = cos_theta.clone();
-        givens[(row + 1, row + 1)] = cos_theta;
-        givens[(row, row + 1)] = sin_theta.clone();
-        givens[(row + 1, row)] = -sin_theta;
-        givens
-    }
-
     /// Constructs a permutation matrix for row exchanges.
     ///
     /// # Examples
@@ -780,13 +709,13 @@ where
             .into_par_iter()
             .map(|k_index| {
                 layer_product(
-                    apply(
+                    &apply(
                         &self
                             .get_column(k_index)
                             .expect("Error[Matrix::mul]: k_index should be a valid index."),
                         |e| e.clone(),
                     ), // lhs[:, k]
-                    apply(
+                    &apply(
                         &rhs.get_row(k_index)
                             .expect("Error[Matrix::mul]: k_index should be a valid index."),
                         |e| e.clone(),

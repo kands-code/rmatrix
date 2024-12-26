@@ -10,8 +10,7 @@ pub mod serde;
 pub mod utils;
 pub mod vector;
 
-#[cfg(feature = "extra")]
-pub mod extra;
-
 #[cfg(feature = "complex")]
 pub mod complex;
+#[cfg(feature = "complex")]
+pub mod extra;

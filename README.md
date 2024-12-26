@@ -12,8 +12,8 @@ Simple example see: [main](./examples/main.rs)
 
 ## TODOS
 
-- [ ] Complex Matrix Decomposition
 - [ ] Complex Matrix Eigenvalues and Eigenvectors
+- [ ] L-2 norms
 
 [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
 [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust

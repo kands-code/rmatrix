@@ -14,7 +14,7 @@ use crate::{
     matrix::matrix::Matrix,
     number::{
         instances::integer::Integer,
-        traits::{number::Number, real::Real, realfloat::RealFloat},
+        traits::{number::Number, real::Real, realfloat::RealFloat, realfrac::RealFrac},
     },
 };
 
@@ -104,10 +104,10 @@ where
 /// fn main() {
 ///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
 ///     let v2: VectorC<Int8, 3> = VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
-///     assert_eq!(dot_product(v1, v2), Int8::of(32));
+///     assert_eq!(dot_product(&v1, &v2), Int8::of(32));
 /// }
 /// ```
-pub fn dot_product<N, const R: usize>(v1: VectorC<N, R>, v2: VectorC<N, R>) -> N
+pub fn dot_product<N, const R: usize>(v1: &VectorC<N, R>, v2: &VectorC<N, R>) -> N
 where
     N: Real,
 {
@@ -175,12 +175,12 @@ where
 ///     ]
 ///     .map(|e| Int8::of(e));
 ///     let m = Matrix::<Int8, 3, 3>::of(&data).unwrap();
-///     assert_eq!(layer_product(v1, v2), m);
+///     assert_eq!(layer_product(&v1, &v2), m);
 /// }
 /// ```
 pub fn layer_product<N, const R: usize, const C: usize>(
-    v1: VectorC<N, R>,
-    v2: VectorR<N, C>,
+    v1: &VectorC<N, R>,
+    v2: &VectorR<N, C>,
 ) -> Matrix<N, R, C>
 where
     N: Number,
@@ -377,6 +377,35 @@ where
         ));
         None
     } else {
-        Some((dot_product(v1.clone(), v2.clone()) / (v1_norm * v2_norm)).arc_cosine())
+        Some((dot_product(v1, v2) / (v1_norm * v2_norm)).arc_cosine())
     }
+}
+
+/// Project one vector onto another vector.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{project_to, VectorC},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let v1 = VectorC::<Float, 2>::of(&[3.0, 4.0].map(Float::of)).unwrap();
+///     let v2 = VectorC::<Float, 2>::of(&[1.0, 2.0].map(Float::of)).unwrap();
+///     let p = project_to(&v1, &v2);
+///     assert_eq!(
+///         p,
+///         VectorC::<Float, 2>::of(&[2.2, 4.4].map(Float::of)).unwrap()
+///     );
+/// }
+/// ```
+pub fn project_to<N, const R: usize>(from: &VectorC<N, R>, to: &VectorC<N, R>) -> VectorC<N, R>
+where
+    N: RealFrac,
+{
+    let p1 = dot_product(to, from);
+    let p2 = dot_product(to, to);
+    to.clone() * (p1 / p2)
 }

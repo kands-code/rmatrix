@@ -3,13 +3,15 @@
 //! Some util functions.
 
 use crate::{
-    matrix::{math::row_eliminate, matrix::Matrix},
-    number::traits::{fractional::Fractional, number::Number},
+    matrix::{
+        math::{row_eliminate, row_reduce},
+        matrix::Matrix,
+        vector::{euclidean_norm, layer_product, VectorC},
+    },
+    number::traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
 };
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-
-use super::{math::row_reduce, vector::VectorC};
 
 /// Generates coordinates within a specified inclusive-range that meet certain criteria.
 ///
@@ -136,6 +138,35 @@ where
         }
     }
     Matrix { inner }
+}
+
+/// Construct a projection matrix that can project all vectors onto the corresponding vector.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::project_matrix, vector::VectorC},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let v1 = VectorC::<Float, 3>::of(&[2.0, 3.0, 4.0].map(Float::of)).unwrap();
+///     let p = project_matrix(&v1);
+///     let p_expect = Matrix::<Float, 3, 3>::of(
+///         &[4.0, 6.0, 8.0, 6.0, 9.0, 12.0, 8.0, 12.0, 16.0].map(|e| Float::of(e / 29.0)),
+///     )
+///     .unwrap();
+///     assert_eq!(p, p_expect);
+/// }
+/// ```
+pub fn project_matrix<N, const R: usize>(to: &VectorC<N, R>) -> Matrix<N, R, R>
+where
+    N: RealFloat,
+{
+    let norm = euclidean_norm(to);
+    let normed = to.clone() / norm;
+    layer_product(&normed, &transpose(&normed))
 }
 
 /// Calculate the rank of the matrix.
