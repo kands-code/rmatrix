@@ -271,6 +271,35 @@ where
         .square_root()
 }
 
+/// Normalize the real vector.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::vector::{normalize, VectorC},
+///     number::{instances::float::Float, traits::floating::Floating},
+/// };
+///
+/// fn main() {
+///     let v1 = VectorC::<Float, 3>::of(&[1.0, 1.0, 1.0].map(Float::of)).unwrap();
+///     let normalized = normalize(&v1);
+///     let normalized_expect = v1 / Float::of(3.0).square_root();
+///     assert_eq!(normalized, normalized_expect);
+/// }
+/// ```
+pub fn normalize<N, const R: usize>(v: &VectorC<N, R>) -> VectorC<N, R>
+where
+    N: RealFloat,
+{
+    if v.inner.par_iter().all(|e| e.is_zero()) {
+        VectorC::default()
+    } else {
+        let v_norm = euclidean_norm(v);
+        v.clone() / v_norm
+    }
+}
+
 /// Calculate the maximum norm.
 ///
 /// Aka L_inf-norm.
@@ -352,7 +381,7 @@ where
 ///         VectorC::of(&[Double::of(8.0), Double::of(-4.0), Double::of(3.0)]).unwrap();
 ///     let angle = angle_between(&v1, &v2);
 ///     assert!(angle.is_some());
-///     assert!((angle.unwrap() - Double::of(core::f64::consts::PI / 2.0)).is_zero());
+///     assert_eq!(angle.unwrap(), Double::of(core::f64::consts::PI / 2.0));
 ///
 ///     // angle between a vector and itself is zero
 ///     let self_angle = angle_between(&v1, &v1);
@@ -368,16 +397,17 @@ pub fn angle_between<N, const R: usize>(v1: &VectorC<N, R>, v2: &VectorC<N, R>) 
 where
     N: RealFloat,
 {
-    let v1_norm = euclidean_norm(v1);
-    let v2_norm = euclidean_norm(v2);
-    if v1_norm.is_zero() || v2_norm.is_zero() {
+    let zero_vector = VectorC::<N, R>::default();
+    if v1 == &zero_vector || v2 == &zero_vector {
         eprintln!(concat!(
             "Error[matrix::vector::angle_between]: ",
             "The zero-vector has no angle with other vectors."
         ));
         None
+    } else if v1 == v2 {
+        Some(N::zero())
     } else {
-        Some((dot_product(v1, v2) / (v1_norm * v2_norm)).arc_cosine())
+        Some((dot_product(&normalize(v1), &normalize(v2))).arc_cosine())
     }
 }
 

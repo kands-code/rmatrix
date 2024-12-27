@@ -9,7 +9,10 @@ use crate::{
         matrix::Matrix,
         utils::{points_2d, transpose},
     },
-    number::traits::{floating::Floating, fractional::Fractional, number::Number, real::Real},
+    number::{
+        traits::{floating::Floating, fractional::Fractional, number::Number, real::Real},
+        utils::{inversion_count, permutation},
+    },
 };
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -669,6 +672,47 @@ where
         )
     } else {
         eprintln!("Error[matrix::math::determinant]: Only square matrices have determinants.");
+        None
+    }
+}
+
+/// Calculate the determinant of a matrix using the Leibniz formula.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::determinant_l, matrix::Matrix},
+///     number::instances::int::Int,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Int, 4, 4>::of(&[1, 2, 3, 4, 1, 3, 4, 1, 1, 4, 1, 2, 1, 1, 2, 3].map(Int::of))
+///         .unwrap();
+///     assert_eq!(determinant_l(&m), Some(Int::of(16)));
+/// }
+/// ```
+pub fn determinant_l<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<N>
+where
+    N: Number,
+{
+    if is_square_matrix(m) {
+        let mut det = N::zero();
+        let permutations_of_columns = permutation(&(1..=C).collect::<Vec<usize>>());
+        for p in permutations_of_columns {
+            let mut item = N::one();
+            for (row, &column) in (1..=R).zip(p.iter()) {
+                item = item * m[(row, column)].clone();
+            }
+            let ic = inversion_count(&p);
+            if (ic & 1) == 1 {
+                item = -item;
+            }
+            det = det + item;
+        }
+        Some(det)
+    } else {
+        eprintln!("Error[matrix::math::determinant_l]: Only square matrices have determinants.");
         None
     }
 }

@@ -13,8 +13,65 @@ use crate::{
         matrix::Matrix,
         utils::{apply, transpose},
     },
-    number::{instances::complex::Complex, traits::realfloat::RealFloat},
+    number::{
+        instances::complex::Complex,
+        traits::{number::Number, realfloat::RealFloat},
+    },
 };
+
+/// Compute the Kronecker product of two matrices.
+///
+/// # Panics
+///
+/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
+/// # Examples
+///
+/// ```rust
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::{extra::kronecker_product, matrix::Matrix},
+///     number::instances::int::Int,
+/// };
+///
+/// fn main() {
+///     let m1 = Matrix::<Int, 2, 2>::of(&[1, 2, 0, -1].map(Int::of)).unwrap();
+///     let m2 = Matrix::<Int, 2, 3>::of(&[1, 2, 3, 4, 5, 6].map(Int::of)).unwrap();
+///     let p = kronecker_product(&m1, &m2);
+///     let p_expect = Matrix::<Int, 4, 6>::of(
+///         &[
+///             1, 2, 3, 2, 4, 6, 4, 5, 6, 8, 10, 12, 0, 0, 0, -1, -2, -3, 0, 0, 0, -4, -5, -6,
+///         ]
+///         .map(Int::of),
+///     )
+///     .unwrap();
+///     assert_eq!(p, p_expect);
+/// }
+/// ```
+pub fn kronecker_product<N, const R1: usize, const C1: usize, const R2: usize, const C2: usize>(
+    m1: &Matrix<N, R1, C1>,
+    m2: &Matrix<N, R2, C2>,
+) -> Matrix<N, { R1 * R2 }, { C1 * C2 }>
+where
+    N: Number,
+    [(); R1 * R2]:,
+    [(); C1 * C2]:,
+{
+    let mut product = Matrix::default();
+    for row1 in 1..=R1 {
+        for column1 in 1..=C1 {
+            for row2 in 1..=R2 {
+                for column2 in 1..=C2 {
+                    product[((row1 - 1) * R2 + row2, (column1 - 1) * C2 + column2)] =
+                        m1[(row1, column1)].clone() * m2[(row2, column2)].clone();
+                }
+            }
+        }
+    }
+    product
+}
 
 /// Compute the QR decomposition of a real matrix using the Gram-Schmidt process.
 ///

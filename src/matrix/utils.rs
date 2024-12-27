@@ -6,7 +6,7 @@ use crate::{
     matrix::{
         math::{row_eliminate, row_reduce},
         matrix::Matrix,
-        vector::{euclidean_norm, layer_product, VectorC},
+        vector::{layer_product, normalize, project_to, VectorC},
     },
     number::traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
 };
@@ -164,9 +164,8 @@ pub fn project_matrix<N, const R: usize>(to: &VectorC<N, R>) -> Matrix<N, R, R>
 where
     N: RealFloat,
 {
-    let norm = euclidean_norm(to);
-    let normed = to.clone() / norm;
-    layer_product(&normed, &transpose(&normed))
+    let normalized = normalize(to);
+    layer_product(&normalized, &transpose(&normalized))
 }
 
 /// Calculate the rank of the matrix.
@@ -208,13 +207,13 @@ where
         .count()
 }
 
-/// Calculate the nullspace of the matrix.
+/// Calculate the null space of the matrix.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::nullspace, vector::VectorC},
+///     matrix::{matrix::Matrix, utils::null_space, vector::VectorC},
 ///     number::instances::double::Double,
 /// };
 ///
@@ -226,8 +225,8 @@ where
 ///         .map(Double::of),
 ///     )
 ///     .unwrap();
-///     let ns = nullspace(&a);
-///     // For this matrix, the nullspace contains only three elements.
+///     let ns = null_space(&a);
+///     // For this matrix, the null space contains only three elements.
 ///     assert_eq!(ns.len(), 3);
 ///     // Second column:
 ///     let n1 = VectorC::<Double, 5>::of(&[2.0, 1.0, 0.0, 0.0, 0.0].map(Double::of)).unwrap();
@@ -240,7 +239,7 @@ where
 ///     assert_eq!(ns[2], n3);
 /// }
 /// ```
-pub fn nullspace<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Vec<VectorC<N, C>>
+pub fn null_space<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Vec<VectorC<N, C>>
 where
     N: Fractional,
 {
@@ -250,8 +249,9 @@ where
     let mut row_flags: [usize; C] = [0; C];
     for row in 1..=R {
         for column in row..=C {
-            if !(row_flags.contains(&row) || refined[(row, column)].is_zero()) {
+            if !refined[(row, column)].is_zero() {
                 row_flags[column - 1] = row;
+                break;
             }
         }
     }
@@ -277,6 +277,96 @@ where
         }
     }
     space
+}
+
+/// Find the column space of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::column_space, vector::VectorC},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let a = Matrix::<Float, 3, 5>::of(
+///         &[
+///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     let column_space_a = column_space(&a);
+///     // The column space contains only two elements.
+///     assert_eq!(column_space_a.len(), 2);
+///     assert_eq!(
+///         column_space_a[0],
+///         VectorC::<Float, 3>::of(&[-3.0, 1.0, 2.0].map(Float::of)).unwrap()
+///     );
+///     assert_eq!(
+///         column_space_a[1],
+///         VectorC::<Float, 3>::of(&[-1.0, 2.0, 5.0].map(Float::of)).unwrap()
+///     );
+/// }
+/// ```
+pub fn column_space<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Vec<VectorC<N, R>>
+where
+    N: Fractional,
+{
+    // Reduce the matrix to its row echelon form.
+    let refined = row_eliminate(m);
+    // Set the markers for each row, which is the column index of the first non-zero element.
+    let mut cols = Vec::new();
+    for row in 1..=R {
+        for column in row..=C {
+            if !refined[(row, column)].is_zero() {
+                cols.push(column);
+                break;
+            }
+        }
+    }
+    cols.iter()
+        .map(|&c| apply(&m.get_column(c).expect("msg"), |e: &N| e.clone()))
+        .collect::<Vec<VectorC<N, R>>>()
+}
+
+/// Find the row space of the matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::row_space, vector::VectorC},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let a = Matrix::<Float, 3, 5>::of(
+///         &[
+///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     let row_space_a = row_space(&a);
+///     // The column space contains only two elements.
+///     assert_eq!(row_space_a.len(), 2);
+///     assert_eq!(
+///         row_space_a[0],
+///         VectorC::<Float, 5>::of(&[-3.0, 6.0, -1.0, 1.0, -7.0].map(Float::of)).unwrap()
+///     );
+///     assert_eq!(
+///         row_space_a[1],
+///         VectorC::<Float, 5>::of(&[1.0, -2.0, 2.0, 3.0, -1.0].map(Float::of)).unwrap()
+///     );
+/// }
+/// ```
+pub fn row_space<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Vec<VectorC<N, C>>
+where
+    N: Fractional,
+{
+    column_space(&transpose(m))
 }
 
 /// Horizontally concatenate two matrices.
@@ -365,4 +455,89 @@ where
         }
     }
     Matrix { inner }
+}
+
+/// Use the Gram-Schmidt process
+/// to find the orthogonal basis corresponding to the given set of vectors.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         matrix::Matrix,
+///         utils::{apply, gram_schmidt_process},
+///         vector::dot_product,
+///     },
+///     number::{
+///         instances::float::Float,
+///         traits::{one::One, zero::Zero},
+///     },
+/// };
+///
+/// fn main() {
+///     let basis = Matrix::<Float, 3, 2>::of(&[1.0, 0.0, 1.0, 1.0, 1.0, 1.0].map(Float::of)).unwrap();
+///     let ob = gram_schmidt_process(&basis);
+///     let c1 = apply(&ob.get_column(1).unwrap(), |e: &Float| e.clone());
+///     let c2 = apply(&ob.get_column(2).unwrap(), |e: &Float| e.clone());
+///     // Each column vector is normalized.
+///     assert_eq!(
+///         (dot_product(&c1, &c1), dot_product(&c2, &c2)),
+///         (Float::one(), Float::one())
+///     );
+///     // The column vectors are mutually orthogonal.
+///     assert_eq!(dot_product(&c1, &c2), Float::zero());
+///     // Corresponding orthogonal basis.
+///     let ob_expect = Matrix::<Float, 3, 2>::of(
+///         &[
+///             1.0 / 3.0f32.sqrt(),
+///             -2.0 / 6.0f32.sqrt(),
+///             1.0 / 3.0f32.sqrt(),
+///             1.0 / 6.0f32.sqrt(),
+///             1.0 / 3.0f32.sqrt(),
+///             1.0 / 6.0f32.sqrt(),
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     assert_eq!(ob, ob_expect);
+/// }
+/// ```
+pub fn gram_schmidt_process<N, const R: usize, const C: usize>(
+    basis: &Matrix<N, R, C>,
+) -> Matrix<N, R, C>
+where
+    N: RealFloat,
+{
+    let mut orthonormal_basis = Matrix::default();
+    for k in 1..=C {
+        // uk1 = bk
+        // where Basis = [b1 | b2 | ... | bc]
+        let mut uk = apply(
+            &basis.get_column(k).expect(concat!(
+                "Error[matrix::utils::gram_schmidt_process]: ",
+                "Failed to retrieve the column vector of basis."
+            )),
+            |e: &N| e.clone(),
+        );
+        // uk = bk - sum(proj(bk, uj), (j, 1, k - 1))
+        for j in 1..k {
+            // Use MGS, ukj = uk(j - 1) - proj(uk(j - 1), uj)
+            let uj = apply(
+                &orthonormal_basis.get_column(j).expect(concat!(
+                    "Error[matrix::utils::gram_schmidt_process]: ",
+                    "Failed to retrieve the column vector of orthonormal_basis."
+                )),
+                |e: &N| e.clone(),
+            );
+            uk = uk.clone() - project_to(&uk, &uj);
+        }
+        // Normalize uk.
+        uk = normalize(&uk);
+        for row in 1..=R {
+            // OB = [u1 | u2 | ... | uc]
+            orthonormal_basis[(row, k)] = uk[(row, 1)].clone();
+        }
+    }
+    orthonormal_basis
 }

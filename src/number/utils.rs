@@ -33,6 +33,88 @@ pub fn i8_div_mod(lhs: i8, rhs: i8) -> (i8, i8) {
     }
 }
 
+/// Generate all permutations of the given list.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::number::utils::permutation;
+///
+/// fn main() {
+///     let mut p = permutation(&[1, 2, 3]);
+///     p.sort();
+///     let p_expect = vec![
+///         vec![1, 2, 3],
+///         vec![1, 3, 2],
+///         vec![2, 1, 3],
+///         vec![2, 3, 1],
+///         vec![3, 1, 2],
+///         vec![3, 2, 1],
+///     ];
+///     assert_eq!(p, p_expect);
+/// }
+/// ```
+pub fn permutation<T>(elements: &[T]) -> Vec<Vec<T>>
+where
+    T: Clone,
+{
+    let mut exts = Vec::new();
+    if !elements.is_empty() {
+        for idx in 0..elements.len() {
+            let remain = [elements[..idx].to_vec(), elements[(idx + 1)..].to_vec()].concat();
+            let ps = permutation(&remain);
+            if ps.is_empty() {
+                exts.push(vec![elements[idx].clone()]);
+            } else {
+                for p in permutation(&remain) {
+                    let mut ext = p.clone();
+                    ext.push(elements[idx].clone());
+                    exts.push(ext);
+                }
+            }
+        }
+    }
+    exts
+}
+
+/// Calculate the number of inversions in the given list.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::number::utils::inversion_count;
+///
+/// fn main() {
+///     let p1 = [1, 3, 2];
+///     assert_eq!(inversion_count(&p1), 1);
+///     let p2 = [1, 2, 3];
+///     assert_eq!(inversion_count(&p2), 0);
+///     assert_eq!(inversion_count::<usize>(&[]), 0);
+/// }
+/// ```
+pub fn inversion_count<T>(elements: &[T]) -> usize
+where
+    T: Clone + PartialOrd,
+{
+    let mut exchange = 0;
+    if !elements.is_empty() {
+        let mut cloned = elements.to_vec();
+        for idx in 0..(elements.len() - 1) {
+            let mut min = idx;
+            for p in (idx + 1)..elements.len() {
+                if cloned[p] < cloned[min] {
+                    min = p;
+                }
+            }
+            if min != idx {
+                (cloned[idx], cloned[min]) = (cloned[min].clone(), cloned[idx].clone());
+                exchange = exchange + 1;
+            }
+        }
+    }
+    exchange
+}
+
 /// Calculate the non-negative power of a number.
 ///
 /// # Examples

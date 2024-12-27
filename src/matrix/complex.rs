@@ -7,7 +7,7 @@ use crate::{
         math::{is_identity_matrix, is_square_matrix},
         matrix::Matrix,
         utils::{apply, points_2d, transpose},
-        vector::{index_c, layer_product, VectorC},
+        vector::{layer_product, VectorC},
     },
     number::{
         instances::complex::Complex,
@@ -322,6 +322,120 @@ where
     to.clone() * (p1 / p2)
 }
 
+/// Apply the Gram-Schmidt process to the given basis
+/// to obtain the corresponding orthogonal basis.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         complex::{dot_product, gram_schmidt_process},
+///         matrix::Matrix,
+///         utils::apply,
+///     },
+///     number::{
+///         instances::{complex::Complex, float::Float},
+///         traits::{one::One, zero::Zero},
+///     },
+/// };
+///
+/// fn main() {
+///     let basis = Matrix::<Complex<Float>, 3, 3>::of(
+///         &[
+///             (1.0, 0.0),
+///             (-1.0, 0.0),
+///             (0.0, 0.0),
+///             (0.0, 0.0),
+///             (0.0, 1.0),
+///             (-1.0, 0.0),
+///             (0.0, 1.0),
+///             (1.0, 0.0),
+///             (1.0, 1.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let ob = gram_schmidt_process(&basis);
+///     let c1 = apply(&ob.get_column(1).unwrap(), |e: &Complex<Float>| e.clone());
+///     let c2 = apply(&ob.get_column(2).unwrap(), |e: &Complex<Float>| e.clone());
+///     let c3 = apply(&ob.get_column(3).unwrap(), |e: &Complex<Float>| e.clone());
+///     // Each column vector is normalized.
+///     assert_eq!(
+///         (
+///             dot_product(&c1, &c1),
+///             dot_product(&c2, &c2),
+///             dot_product(&c3, &c3),
+///         ),
+///         (Complex::one(), Complex::one(), Complex::one())
+///     );
+///     // The column vectors are mutually orthogonal.
+///     assert_eq!(
+///         (
+///             dot_product(&c1, &c2),
+///             dot_product(&c2, &c3),
+///             dot_product(&c3, &c1),
+///         ),
+///         (Complex::zero(), Complex::zero(), Complex::zero())
+///     );
+///     // Corresponding orthogonal basis.
+///     let ob_expect = Matrix::<Complex<Float>, 3, 3>::of(
+///         &[
+///             (1.0 / 2.0f32.sqrt(), 0.0),
+///             (-1.0 / 8.0f32.sqrt(), 1.0 / 8.0f32.sqrt()),
+///             (0.0, 0.5),
+///             (0.0, 0.0),
+///             (0.0, 1.0 / 2.0f32.sqrt()),
+///             (-0.5, -0.5),
+///             (0.0, 1.0 / 2.0f32.sqrt()),
+///             (1.0 / 8.0f32.sqrt(), 1.0 / 8.0f32.sqrt()),
+///             (0.5, 0.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     assert_eq!(ob, ob_expect);
+/// }
+/// ```
+pub fn gram_schmidt_process<F, const R: usize, const C: usize>(
+    basis: &Matrix<Complex<F>, R, C>,
+) -> Matrix<Complex<F>, R, C>
+where
+    F: RealFloat,
+{
+    let mut orthonormal_basis = Matrix::default();
+    for k in 1..=C {
+        // uk1 = bk
+        // where Basis = [b1 | b2 | ... | bc]
+        let mut uk = apply(
+            &basis.get_column(k).expect(concat!(
+                "Error[matrix::complex::gram_schmidt_process]: ",
+                "Failed to retrieve the column vector of basis."
+            )),
+            |e: &Complex<F>| e.clone(),
+        );
+        // uk = bk - sum(proj(bk, uj), (j, 1, k - 1))
+        for j in 1..k {
+            // Use MGS, ukj = uk(j - 1) - proj(uk(j - 1), uj)
+            let uj = apply(
+                &orthonormal_basis.get_column(j).expect(concat!(
+                    "Error[matrix::complex::gram_schmidt_process]: ",
+                    "Failed to retrieve the column vector of orthonormal_basis."
+                )),
+                |e: &Complex<F>| e.clone(),
+            );
+            uk = uk.clone() - project_to(&uk, &uj);
+        }
+        // Normalize uk.
+        uk = normalize(&uk);
+        for row in 1..=R {
+            // OB = [u1 | u2 | ... | uc]
+            orthonormal_basis[(row, k)] = uk[(row, 1)].clone();
+        }
+    }
+    orthonormal_basis
+}
+
 /// Generate the corresponding Givens rotation matrix to eliminate the element at 'want' using 'by'.
 ///
 /// # Examples
@@ -415,6 +529,41 @@ where
         .map(|e| e.clone().conjugate() * e.clone())
         .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
         .square_root()
+}
+
+/// Normalize the complex vector.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{complex::normalize, vector::VectorC},
+///     number::{
+///         instances::{complex::Complex, float::Float},
+///         traits::{floating::Floating, zero::Zero},
+///     },
+/// };
+///
+/// fn main() {
+///     let v1 = VectorC::<Complex<Float>, 2>::of(
+///         &[(1.0, 0.0), (0.0, -1.0)].map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let normalized = normalize(&v1);
+///     let normalized_expect = v1 / Complex::of(Float::of(2.0).square_root(), Float::zero());
+///     assert_eq!(normalized, normalized_expect);
+/// }
+/// ```
+pub fn normalize<F, const R: usize>(v: &VectorC<Complex<F>, R>) -> VectorC<Complex<F>, R>
+where
+    F: RealFloat,
+{
+    if v.inner.par_iter().all(|e| e.is_zero()) {
+        VectorC::default()
+    } else {
+        let v_norm = euclidean_norm(v);
+        v.clone() / v_norm
+    }
 }
 
 /// Calculate the maximum norm for complex vector.
@@ -639,39 +788,8 @@ where
         ));
         None
     } else {
-        let mut u = Matrix::<Complex<F>, R, C>::default();
-        let mut q = Matrix::<Complex<F>, R, C>::default();
-        for column in 1..=C {
-            // A = [ a1 | a2 | ... | an ]
-            let ak = apply(
-                &m.get_column(column).expect(concat!(
-                    "Error[matrix::complex::qr_decomposition_gs]: ",
-                    "Failed to retrieve the column vector of M."
-                )),
-                |e: &Complex<F>| e.clone(),
-            );
-            // u1 = a1
-            // uk = ak - sum((ak . en) en, {n, 1, k - 1})
-            let mut uk = ak.clone();
-            for k in 1..column {
-                // U = [ u1 | u2 | ... | un ]
-                let uj = apply(
-                    &u.get_column(k).expect(concat!(
-                        "Error[matrix::complex::qr_decomposition_gs]: ",
-                        "Failed to retrieve the column vector of Q."
-                    )),
-                    |e: &Complex<F>| e.clone(),
-                );
-                // uk(n) = uk(n - 1) - en (uk(n - 1) . en)
-                uk = uk.clone() - project_to(&ak, &uj);
-            }
-            let u_norm = euclidean_norm(&uk);
-            for row in 1..=R {
-                u[(row, column)] = index_c(&uk, row).clone();
-                // ek = uk / ||uk||
-                q[(row, column)] = index_c(&uk, row).clone() / u_norm.clone();
-            }
-        }
+        // Q = MGS(M)
+        let q = gram_schmidt_process(m);
         // R = Upper {  a_c . e_r } and R = Q^T A
         let r = conjugate_transpose(&q) * m.clone();
         Some((q, r))
