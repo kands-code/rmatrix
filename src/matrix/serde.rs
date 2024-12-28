@@ -3,13 +3,13 @@
 //! Serialize and deserialize the matrix,
 //! including obtaining the matrix from standard input.
 
-use crate::matrix::matrix::Matrix;
-
 use std::{
     fs::File,
     io::{BufReader, BufWriter},
     path::Path,
 };
+
+use crate::matrix::matrix::Matrix;
 
 /// Write the matrix to a file.
 ///

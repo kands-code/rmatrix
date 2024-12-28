@@ -2,14 +2,14 @@
 //!
 //! Functions and implementations related to 32-bit signed integers.
 
+use rand::{
+    Rng,
+    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
+};
+
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
     traits::{integral::Integral, number::Number, one::One, real::Real, zero::Zero},
-};
-
-use rand::{
-    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
-    Rng,
 };
 
 /// Int numbers are the wrapper type for i32.
@@ -26,13 +26,9 @@ impl Int {
     /// ```rust
     /// use rmatrix_ks::number::instances::int::Int;
     ///
-    /// fn main() {
-    ///     let _i = Int::of(12);
-    /// }
+    /// fn main() { let _i = Int::of(12); }
     /// ```
-    pub const fn of(num: i32) -> Self {
-        Self { inner: num }
-    }
+    pub const fn of(num: i32) -> Self { Self { inner: num } }
 
     /// Construct int numbers from string.
     ///
@@ -76,40 +72,28 @@ impl Int {
 
 /// Implement the concept of ZERO for the int number.
 impl Zero for Int {
-    fn zero() -> Self {
-        Self { inner: 0i32 }
-    }
+    fn zero() -> Self { Self { inner: 0i32 } }
 
-    fn is_zero(&self) -> bool {
-        self.inner == 0i32
-    }
+    fn is_zero(&self) -> bool { self.inner == 0i32 }
 }
 
 /// Implement the concept of ONE for the int number.
 impl One for Int {
-    fn one() -> Self {
-        Self { inner: 1i32 }
-    }
+    fn one() -> Self { Self { inner: 1i32 } }
 
-    fn is_one(&self) -> bool {
-        self.inner == 1i32
-    }
+    fn is_one(&self) -> bool { self.inner == 1i32 }
 }
 
 /// Implement Default for the int number.
 impl std::default::Default for Int {
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement the negation operation for the int number.
 impl std::ops::Neg for Int {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
-        Self { inner: -self.inner }
-    }
+    fn neg(self) -> Self::Output { Self { inner: -self.inner } }
 }
 
 /// Implement the addition operation for the int number.
@@ -162,6 +146,7 @@ impl Number for Int {
             -Self::one()
         }
     }
+
     /// Construct a int number from an integer.
     ///
     /// # Examples

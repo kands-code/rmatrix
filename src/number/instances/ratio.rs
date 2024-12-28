@@ -15,8 +15,13 @@
 use crate::number::{
     instances::integer::Integer,
     traits::{
-        fractional::Fractional, integral::Integral, number::Number, one::One, real::Real,
-        realfrac::RealFrac, zero::Zero,
+        fractional::Fractional,
+        integral::Integral,
+        number::Number,
+        one::One,
+        real::Real,
+        realfrac::RealFrac,
+        zero::Zero,
     },
     utils::{from_integral, gcd},
 };
@@ -94,7 +99,8 @@ impl<I: Integral> Ratio<I> {
         if self.is_zero() {
             Self::zero()
         } else {
-            let sign_number = if self.numerator.sign_number() == self.denominator.sign_number() {
+            let sign_number = if self.numerator.sign_number() == self.denominator.sign_number()
+            {
                 I::one()
             } else {
                 -I::one()
@@ -121,9 +127,7 @@ impl<I: Integral> Zero for Ratio<I> {
         }
     }
 
-    fn is_zero(&self) -> bool {
-        self.numerator.is_zero() && !self.denominator.is_zero()
-    }
+    fn is_zero(&self) -> bool { self.numerator.is_zero() && !self.denominator.is_zero() }
 }
 
 /// Implement the concept of ONE for the ratio.
@@ -154,16 +158,12 @@ impl<I: Integral> One for Ratio<I> {
     ///     assert!(r2.is_one());
     /// }
     /// ```
-    fn is_one(&self) -> bool {
-        self.numerator == self.denominator
-    }
+    fn is_one(&self) -> bool { self.numerator == self.denominator }
 }
 
 /// Implement Default for the ratio.
 impl<I: Integral> std::default::Default for Ratio<I> {
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement the concept of PartialEq for the ratio.
@@ -234,9 +234,7 @@ impl<I: Integral> std::ops::Add for Ratio<I> {
 impl<I: Integral> std::ops::Sub for Ratio<I> {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        self + (-rhs)
-    }
+    fn sub(self, rhs: Self) -> Self::Output { self + (-rhs) }
 }
 
 /// Implement the multiplication operation for the ratio.
@@ -274,9 +272,7 @@ impl<I: Integral> std::ops::Mul for Ratio<I> {
 impl<I: Integral> std::ops::Div for Ratio<I> {
     type Output = Self;
 
-    fn div(self, rhs: Self) -> Self::Output {
-        self * rhs.reciprocal()
-    }
+    fn div(self, rhs: Self) -> Self::Output { self * rhs.reciprocal() }
 }
 
 /// Implement the concept of NUMBER for the ratio.
@@ -307,13 +303,9 @@ impl<I: Integral> Number for Ratio<I> {
 
 /// Implement the concept of Fractional for Ratio.
 impl<I: Integral> Fractional for Ratio<I> {
-    fn half() -> Self {
-        Ratio::of(I::one(), I::one() + I::one())
-    }
+    fn half() -> Self { Ratio::of(I::one(), I::one() + I::one()) }
 
-    fn reciprocal(self) -> Self {
-        Self::of(self.denominator, self.numerator)
-    }
+    fn reciprocal(self) -> Self { Self::of(self.denominator, self.numerator) }
 
     fn from_rational(rational_number: Rational) -> Self {
         let refined = rational_number.refine();

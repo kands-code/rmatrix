@@ -2,14 +2,14 @@
 //!
 //! Functions and implementations related to 8-bit unsigned integers.
 
+use rand::{
+    Rng,
+    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
+};
+
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
     traits::{integral::Integral, number::Number, one::One, real::Real, zero::Zero},
-};
-
-use rand::{
-    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
-    Rng,
 };
 
 /// Word8 numbers are the wrapper type for u8.
@@ -26,13 +26,9 @@ impl Word8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::word8::Word8;
     ///
-    /// fn main() {
-    ///     let _w = Word8::of(12);
-    /// }
+    /// fn main() { let _w = Word8::of(12); }
     /// ```
-    pub const fn of(num: u8) -> Self {
-        Self { inner: num }
-    }
+    pub const fn of(num: u8) -> Self { Self { inner: num } }
 
     /// Construct word8 numbers from string.
     ///
@@ -75,31 +71,21 @@ impl Word8 {
 
 /// Implement the concept of ZERO for the word8 number.
 impl Zero for Word8 {
-    fn zero() -> Self {
-        Self { inner: 0u8 }
-    }
+    fn zero() -> Self { Self { inner: 0u8 } }
 
-    fn is_zero(&self) -> bool {
-        self.inner == 0u8
-    }
+    fn is_zero(&self) -> bool { self.inner == 0u8 }
 }
 
 /// Implement the concept of ONE for the word8 number.
 impl One for Word8 {
-    fn one() -> Self {
-        Self { inner: 1u8 }
-    }
+    fn one() -> Self { Self { inner: 1u8 } }
 
-    fn is_one(&self) -> bool {
-        self.inner == 1u8
-    }
+    fn is_one(&self) -> bool { self.inner == 1u8 }
 }
 
 /// Implement Default for the word8 number.
 impl std::default::Default for Word8 {
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement the negation operation for the word8 number.
@@ -166,9 +152,7 @@ impl std::ops::Mul for Word8 {
 
 /// Implement the concept of NUMBER for the word8 number.
 impl Number for Word8 {
-    fn absolute_value(&self) -> Self {
-        Self { inner: self.inner }
-    }
+    fn absolute_value(&self) -> Self { Self { inner: self.inner } }
 
     fn sign_number(&self) -> Self {
         if self.inner == 0u8 {

@@ -2,16 +2,16 @@
 //!
 //! Some util functions.
 
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 use crate::{
     matrix::{
         math::{row_eliminate, row_reduce},
         matrix::Matrix,
-        vector::{layer_product, normalize, project_to, VectorC},
+        vector::{VectorC, layer_product, normalize, project_to},
     },
     number::traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
 };
-
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 /// Generates coordinates within a specified inclusive-range that meet certain criteria.
 ///
@@ -69,7 +69,8 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+///         .unwrap();
 ///     assert_eq!(trace(&m), Word8::of(15));
 /// }
 /// ```
@@ -95,13 +96,18 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+///         .unwrap();
 ///     let n =
-///         Matrix::<Word8, 3, 3>::of(&[2, 4, 6, 8, 10, 12, 14, 16, 18].map(|e| Word8::of(e))).unwrap();
+///         Matrix::<Word8, 3, 3>::of(&[2, 4, 6, 8, 10, 12, 14, 16, 18].map(|e| Word8::of(e)))
+///             .unwrap();
 ///     assert_eq!(apply(&m, |e| e * Word8::of(2)), n);
 /// }
 /// ```
-pub fn apply<N, M, F, const R: usize, const C: usize>(m: &Matrix<N, R, C>, f: F) -> Matrix<M, R, C>
+pub fn apply<N, M, F, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+    f: F,
+) -> Matrix<M, R, C>
 where
     N: Sync + Clone,
     M: Send + Sync,
@@ -122,8 +128,10 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
-///     let n = Matrix::<Word8, 3, 3>::of(&[1, 4, 7, 2, 5, 8, 3, 6, 9].map(|e| Word8::of(e))).unwrap();
+///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+///         .unwrap();
+///     let n = Matrix::<Word8, 3, 3>::of(&[1, 4, 7, 2, 5, 8, 3, 6, 9].map(|e| Word8::of(e)))
+///         .unwrap();
 ///     assert_eq!(transpose(&m), n);
 /// }
 /// ```
@@ -174,7 +182,7 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{utils::rank, matrix::Matrix},
+///     matrix::{matrix::Matrix, utils::rank},
 ///     number::instances::double::Double,
 /// };
 ///
@@ -196,7 +204,10 @@ where
             reduced
                 .get_row(row_index)
                 .expect(&format!(
-                    "Error[matrix::utils::rank]: Failed to retrieve the {}-th row of the matrix.",
+                    concat!(
+                        "Error[matrix::utils::rank]: ",
+                        "Failed to retrieve the {}-th row of the matrix."
+                    ),
                     row_index
                 ))
                 .inner
@@ -220,7 +231,8 @@ where
 /// fn main() {
 ///     let a = Matrix::<Double, 3, 5>::of(
 ///         &[
-///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0,
+///             -4.0,
 ///         ]
 ///         .map(Double::of),
 ///     )
@@ -292,7 +304,8 @@ where
 /// fn main() {
 ///     let a = Matrix::<Float, 3, 5>::of(
 ///         &[
-///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0,
+///             -4.0,
 ///         ]
 ///         .map(Float::of),
 ///     )
@@ -310,7 +323,9 @@ where
 ///     );
 /// }
 /// ```
-pub fn column_space<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Vec<VectorC<N, R>>
+pub fn column_space<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> Vec<VectorC<N, R>>
 where
     N: Fractional,
 {
@@ -327,7 +342,18 @@ where
         }
     }
     cols.iter()
-        .map(|&c| apply(&m.get_column(c).expect("msg"), |e: &N| e.clone()))
+        .map(|&c| {
+            apply(
+                &m.get_column(c).expect(&format!(
+                    concat!(
+                        "Error[matrix::utils::column_space]: ",
+                        "Failed to retrieve the {}-th column of the matrix."
+                    ),
+                    c,
+                )),
+                |e: &N| e.clone(),
+            )
+        })
         .collect::<Vec<VectorC<N, R>>>()
 }
 
@@ -344,7 +370,8 @@ where
 /// fn main() {
 ///     let a = Matrix::<Float, 3, 5>::of(
 ///         &[
-///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0,
+///             -4.0,
 ///         ]
 ///         .map(Float::of),
 ///     )
@@ -389,7 +416,8 @@ where
 /// fn main() {
 ///     let m = Matrix::<Word8, 2, 2>::of(&[1, 2, 3, 4].map(|e| Word8::of(e))).unwrap();
 ///     let n = Matrix::<Word8, 2, 2>::of(&[5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
-///     let cat = Matrix::<Word8, 2, 4>::of(&[1, 2, 5, 6, 3, 4, 7, 8].map(|e| Word8::of(e))).unwrap();
+///     let cat =
+///         Matrix::<Word8, 2, 4>::of(&[1, 2, 5, 6, 3, 4, 7, 8].map(|e| Word8::of(e))).unwrap();
 ///     assert_eq!(horizontal_concat(&m, &n), cat);
 /// }
 /// ```
@@ -433,7 +461,8 @@ where
 /// fn main() {
 ///     let m = Matrix::<Word8, 2, 2>::of(&[1, 2, 3, 4].map(|e| Word8::of(e))).unwrap();
 ///     let n = Matrix::<Word8, 2, 2>::of(&[5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
-///     let cat = Matrix::<Word8, 4, 2>::of(&[1, 2, 3, 4, 5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
+///     let cat =
+///         Matrix::<Word8, 4, 2>::of(&[1, 2, 3, 4, 5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
 ///     assert_eq!(vertical_concat(&m, &n), cat);
 /// }
 /// ```
@@ -476,7 +505,8 @@ where
 /// };
 ///
 /// fn main() {
-///     let basis = Matrix::<Float, 3, 2>::of(&[1.0, 0.0, 1.0, 1.0, 1.0, 1.0].map(Float::of)).unwrap();
+///     let basis =
+///         Matrix::<Float, 3, 2>::of(&[1.0, 0.0, 1.0, 1.0, 1.0, 1.0].map(Float::of)).unwrap();
 ///     let ob = gram_schmidt_process(&basis);
 ///     let c1 = apply(&ob.get_column(1).unwrap(), |e: &Float| e.clone());
 ///     let c2 = apply(&ob.get_column(2).unwrap(), |e: &Float| e.clone());

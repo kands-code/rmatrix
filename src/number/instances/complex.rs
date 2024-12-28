@@ -3,20 +3,24 @@
 //! Functions and related implementations for complex numbers,
 //! where both the real and imaginary parts of the complex numbers are RealFloat numbers.
 
-use crate::number::{
-    instances::{integer::Integer, ratio::Rational},
-    traits::{
-        floating::Floating, fractional::Fractional, number::Number, one::One, realfloat::RealFloat,
-        zero::Zero,
+use rand::{
+    Rng,
+    distributions::{
+        Distribution,
+        uniform::{SampleBorrow, SampleUniform, Uniform, UniformSampler},
     },
 };
 
-use rand::{
-    distributions::{
-        uniform::{SampleBorrow, SampleUniform, Uniform, UniformSampler},
-        Distribution,
+use crate::number::{
+    instances::{integer::Integer, ratio::Rational},
+    traits::{
+        floating::Floating,
+        fractional::Fractional,
+        number::Number,
+        one::One,
+        realfloat::RealFloat,
+        zero::Zero,
     },
-    Rng,
 };
 
 /// A Complex number is a Number composed of two RealFloat numbers.
@@ -36,13 +40,9 @@ impl<F: RealFloat> Complex<F> {
     /// ```rust,no_run
     /// use rmatrix_ks::number::instances::{complex::Complex, double::Double};
     ///
-    /// fn main() {
-    ///     let _c = Complex::of(Double::of(2.0), Double::of(1.0));
-    /// }
+    /// fn main() { let _c = Complex::of(Double::of(2.0), Double::of(1.0)); }
     /// ```
-    pub const fn of(real: F, imaginary: F) -> Self {
-        Self { real, imaginary }
-    }
+    pub const fn of(real: F, imaginary: F) -> Self { Self { real, imaginary } }
 
     /// Construct a complex number from a string.
     ///
@@ -153,9 +153,7 @@ impl<F: RealFloat> Zero for Complex<F> {
     ///     assert!((c1 + c2).is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool {
-        self.real.is_zero() && self.imaginary.is_zero()
-    }
+    fn is_zero(&self) -> bool { self.real.is_zero() && self.imaginary.is_zero() }
 }
 
 /// Implement the concept of ONE for the complex number.
@@ -201,17 +199,13 @@ impl<F: RealFloat> One for Complex<F> {
     ///     assert!(((c1 / c2) - one).is_zero());
     /// }
     /// ```
-    fn is_one(&self) -> bool {
-        self.real.is_one() && self.imaginary.is_zero()
-    }
+    fn is_one(&self) -> bool { self.real.is_one() && self.imaginary.is_zero() }
 }
 
 /// Implement Default for the complex number.
 impl<F: RealFloat> std::default::Default for Complex<F> {
     /// Return the default value of the complex number, which is ZERO.
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement the negation operation for the complex number.
@@ -476,13 +470,12 @@ impl<F: RealFloat> Number for Complex<F> {
 
 /// Implement the concept of Floating for complex numbers.
 impl<F: RealFloat> Floating for Complex<F> {
-    const ZERO: Self = Self {
-        real: F::ZERO,
-        imaginary: F::ZERO,
-    };
-
     const PI: Self = Self {
         real: F::PI,
+        imaginary: F::ZERO,
+    };
+    const ZERO: Self = Self {
+        real: F::ZERO,
         imaginary: F::ZERO,
     };
 
@@ -520,7 +513,8 @@ impl<F: RealFloat> Floating for Complex<F> {
             imaginary: F::one(),
         };
         -i.clone()
-            * (i * self.clone() + (Self::one() - self.clone() * self).square_root()).logarithmic()
+            * (i * self.clone() + (Self::one() - self.clone() * self).square_root())
+                .logarithmic()
     }
 
     fn arc_cosine(self) -> Self {
@@ -529,7 +523,8 @@ impl<F: RealFloat> Floating for Complex<F> {
             imaginary: F::one(),
         };
         -i.clone()
-            * (self.clone() + i * (Self::one() - self.clone() * self).square_root()).logarithmic()
+            * (self.clone() + i * (Self::one() - self.clone() * self).square_root())
+                .logarithmic()
     }
 
     fn arc_tangent(self) -> Self {
@@ -539,7 +534,8 @@ impl<F: RealFloat> Floating for Complex<F> {
         };
         let two = Self::one() + Self::one();
         Self::one() / (two * i.clone())
-            * ((Self::one() + i.clone() * self.clone()) / (Self::one() - i * self)).logarithmic()
+            * ((Self::one() + i.clone() * self.clone()) / (Self::one() - i * self))
+                .logarithmic()
     }
 
     fn hyperbolic_sine(self) -> Self {

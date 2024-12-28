@@ -5,7 +5,13 @@
 use crate::number::{
     instances::{int::Int, integer::Integer},
     traits::{floating::Floating, realfrac::RealFrac, zero::Zero},
-    utils::{clamp, decimal_to_binary, from_integral, integral_power, non_negative_integral_power},
+    utils::{
+        clamp,
+        decimal_to_binary,
+        from_integral,
+        integral_power,
+        non_negative_integral_power,
+    },
 };
 
 /// Concepts of RealFloat.

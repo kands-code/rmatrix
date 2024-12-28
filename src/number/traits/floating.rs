@@ -19,9 +19,7 @@ pub trait Floating: Fractional {
     fn logarithmic(self) -> Self;
 
     /// Square root function.
-    fn square_root(self) -> Self {
-        self.power(Self::half())
-    }
+    fn square_root(self) -> Self { self.power(Self::half()) }
 
     /// Sine function, sin(x).
     fn sine(self) -> Self;
@@ -30,9 +28,7 @@ pub trait Floating: Fractional {
     fn cosine(self) -> Self;
 
     /// Tangent function, tan(x).
-    fn tangent(self) -> Self {
-        self.clone().sine() / self.cosine()
-    }
+    fn tangent(self) -> Self { self.clone().sine() / self.cosine() }
 
     /// Arcsine function, asin(x).
     fn arc_sine(self) -> Self;
@@ -64,34 +60,22 @@ pub trait Floating: Fractional {
     fn arc_hyperbolic_tangent(self) -> Self;
 
     /// Power function, pow(x, a).
-    fn power(self, exponents: Self) -> Self {
-        (self.logarithmic() * exponents).exponential()
-    }
+    fn power(self, exponents: Self) -> Self { (self.logarithmic() * exponents).exponential() }
 
     /// Logarithm function with base a, log(a, x).
-    fn logarithmic_base(self, base: Self) -> Self {
-        self.logarithmic() / base.logarithmic()
-    }
+    fn logarithmic_base(self, base: Self) -> Self { self.logarithmic() / base.logarithmic() }
 
     /// Logarithm function with base Euler's number plus one, ln(1 + x).
-    fn logarithmic_1p(self) -> Self {
-        (Self::one() + self).logarithmic()
-    }
+    fn logarithmic_1p(self) -> Self { (Self::one() + self).logarithmic() }
 
     /// Exponential function with base Euler's number minus one, exp(x) - 1.
-    fn exponential_1m(self) -> Self {
-        self.exponential() - Self::one()
-    }
+    fn exponential_1m(self) -> Self { self.exponential() - Self::one() }
 
     /// Logarithm function plus one of the exponential function
     /// with base Euler's number, ln(1 + exp(x)).
-    fn logarithmic_1p_exponential(self) -> Self {
-        self.exponential().logarithmic_1p()
-    }
+    fn logarithmic_1p_exponential(self) -> Self { self.exponential().logarithmic_1p() }
 
     /// Logarithm function minus one of the exponential function
     /// with base Euler's number, ln(1 - exp(x)).
-    fn logarithmic_1m_exponential(self) -> Self {
-        (-self.exponential()).logarithmic_1p()
-    }
+    fn logarithmic_1m_exponential(self) -> Self { (-self.exponential()).logarithmic_1p() }
 }

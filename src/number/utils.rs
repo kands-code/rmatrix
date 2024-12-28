@@ -5,7 +5,11 @@
 use crate::number::{
     instances::{int::Int, integer::Integer},
     traits::{
-        fractional::Fractional, integral::Integral, number::Number, one::One, real::Real,
+        fractional::Fractional,
+        integral::Integral,
+        number::Number,
+        one::One,
+        real::Real,
         realfloat::RealFloat,
     },
 };
@@ -120,8 +124,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// use rmatrix_ks::number::instances::int::Int;
-/// use rmatrix_ks::number::utils::non_negative_integral_power;
+/// use rmatrix_ks::number::{instances::int::Int, utils::non_negative_integral_power};
 ///
 /// fn main() {
 ///     let a = Int::of(8i32);
@@ -201,9 +204,7 @@ pub fn non_negative_integral_power<N: Number, I: Integral>(base: N, exponents: I
 ///     assert_eq!(clamp(m, n), Int::of(10));
 /// }
 /// ```
-pub fn clamp(first: Int, second: Int) -> Int {
-    (-first.clone()).max(first.min(second))
-}
+pub fn clamp(first: Int, second: Int) -> Int { (-first.clone()).max(first.min(second)) }
 
 /// Calculate the integral power of a number.
 ///
@@ -376,8 +377,9 @@ pub fn integral_to_binary<I: Integral>(int_val: I) -> Option<Vec<u8>> {
 ///         Some((
 ///             vec![1, 1],
 ///             vec![
-///                 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1,
-///                 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1
+///                 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+///                 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1,
+///                 1
 ///             ]
 ///         ))
 ///     );
@@ -392,7 +394,12 @@ pub fn decimal_to_binary<F: RealFloat>(rfp_val: F) -> Option<(Vec<u8>, Vec<u8>)>
     /// - Remaining available bits.
     /// - Number of bits already inserted.
     /// - Accumulative result cache
-    fn decimal_to_binary_inner<F: RealFloat>(rfp: F, rem: usize, ins: usize, acc: &mut Vec<u8>) {
+    fn decimal_to_binary_inner<F: RealFloat>(
+        rfp: F,
+        rem: usize,
+        ins: usize,
+        acc: &mut Vec<u8>,
+    ) {
         if rfp.is_zero() {
             acc.resize_with(rem, || 0u8);
         } else {
@@ -421,9 +428,9 @@ pub fn decimal_to_binary<F: RealFloat>(rfp_val: F) -> Option<(Vec<u8>, Vec<u8>)>
     let integral_digits = integral_to_binary(integral_part).expect(
         "Error[number::utils::decimal_to_binary]: Failed to convert integer to binary format.",
     );
-    let total_digits = format!("{:?}", F::FLOAT_DIGITS)
-        .parse::<usize>()
-        .expect("Error[number::utils::decimal_to_binary]: Failed to convert FLOAT_DIGITS to usize");
+    let total_digits = format!("{:?}", F::FLOAT_DIGITS).parse::<usize>().expect(
+        "Error[number::utils::decimal_to_binary]: Failed to convert FLOAT_DIGITS to usize",
+    );
     if integral_digits.len() > total_digits {
         eprintln!(
             concat!(

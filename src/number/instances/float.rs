@@ -2,18 +2,25 @@
 //!
 //! Functions and related implementations for single precision floating-point numbers.
 
+use rand::{
+    Rng,
+    distributions::uniform::{SampleBorrow, SampleUniform, UniformFloat, UniformSampler},
+};
+
 use crate::number::{
     instances::{int::Int, integer::Integer, ratio::Rational},
     traits::{
-        floating::Floating, fractional::Fractional, integral::Integral, number::Number, one::One,
-        real::Real, realfloat::RealFloat, realfrac::RealFrac, zero::Zero,
+        floating::Floating,
+        fractional::Fractional,
+        integral::Integral,
+        number::Number,
+        one::One,
+        real::Real,
+        realfloat::RealFloat,
+        realfrac::RealFrac,
+        zero::Zero,
     },
     utils::{from_integral, non_negative_integral_power},
-};
-
-use rand::{
-    distributions::uniform::{SampleBorrow, SampleUniform, UniformFloat, UniformSampler},
-    Rng,
 };
 
 /// Float numbers are the wrapper type for f32.
@@ -30,13 +37,9 @@ impl Float {
     /// ```rust
     /// use rmatrix_ks::number::instances::float::Float;
     ///
-    /// fn main() {
-    ///     let _f = Float::of(12.0);
-    /// }
+    /// fn main() { let _f = Float::of(12.0); }
     /// ```
-    pub const fn of(num: f32) -> Self {
-        Self { inner: num }
-    }
+    pub const fn of(num: f32) -> Self { Self { inner: num } }
 
     /// Construct float numbers from string.
     ///
@@ -58,9 +61,7 @@ impl Float {
 
 /// Implement the concept of ZERO for the float number.
 impl Zero for Float {
-    fn zero() -> Self {
-        Self { inner: 0.0f32 }
-    }
+    fn zero() -> Self { Self { inner: 0.0f32 } }
 
     /// Validate whether a float number is ZERO.
     ///
@@ -74,36 +75,26 @@ impl Zero for Float {
     ///     assert!(f.is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool {
-        self.inner.abs() <= core::f32::EPSILON.sqrt()
-    }
+    fn is_zero(&self) -> bool { self.inner.abs() <= core::f32::EPSILON.sqrt() }
 }
 
 /// Implement the concept of ONE for the float number.
 impl One for Float {
-    fn one() -> Self {
-        Self { inner: 1.0f32 }
-    }
+    fn one() -> Self { Self { inner: 1.0f32 } }
 
-    fn is_one(&self) -> bool {
-        (self.clone() - Self::one()).is_zero()
-    }
+    fn is_one(&self) -> bool { (self.clone() - Self::one()).is_zero() }
 }
 
 /// Implement Default for the float number.
 impl std::default::Default for Float {
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement the negation operation for the float number.
 impl std::ops::Neg for Float {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
-        Self { inner: -self.inner }
-    }
+    fn neg(self) -> Self::Output { Self { inner: -self.inner } }
 }
 
 /// Implement the addition operation for the float number.
@@ -152,9 +143,7 @@ impl std::ops::Div for Float {
 
 /// Implement equality for float numbers.
 impl std::cmp::PartialEq for Float {
-    fn eq(&self, other: &Self) -> bool {
-        (self.clone() - other.clone()).is_zero()
-    }
+    fn eq(&self, other: &Self) -> bool { (self.clone() - other.clone()).is_zero() }
 }
 
 /// Implement the concept of NUMBER for the float number.
@@ -209,10 +198,7 @@ impl Number for Float {
     /// fn main() {
     ///     let i2 = Integer::of_str("1234567891011121314151617181920").unwrap();
     ///     let f2 = Float::from_integer(i2);
-    ///     assert_eq!(
-    ///         f2,
-    ///         Float::of(1234567900000000000000000000000.0)
-    ///     );
+    ///     assert_eq!(f2, Float::of(1234567900000000000000000000000.0));
     /// }
     /// ```
     ///
@@ -235,24 +221,15 @@ impl Number for Float {
 /// Implement the concept of RealFloat for Float.
 impl RealFloat for Float {
     const FLOAT_DIGITS: Int = Int::of(24);
-
     const FLOAT_RANGE: (Int, Int) = (Int::of(-125), Int::of(128));
 
-    fn is_not_a_number(&self) -> bool {
-        self.inner.is_nan()
-    }
+    fn is_not_a_number(&self) -> bool { self.inner.is_nan() }
 
-    fn is_infinite_number(&self) -> bool {
-        self.inner.is_infinite()
-    }
+    fn is_infinite_number(&self) -> bool { self.inner.is_infinite() }
 
-    fn is_denormalized(&self) -> bool {
-        self.inner.is_subnormal()
-    }
+    fn is_denormalized(&self) -> bool { self.inner.is_subnormal() }
 
-    fn is_negative_zero(&self) -> bool {
-        self.is_zero() && self.inner.is_sign_negative()
-    }
+    fn is_negative_zero(&self) -> bool { self.is_zero() && self.inner.is_sign_negative() }
 }
 
 /// Implement the concept of RealFrac for Float.
@@ -298,12 +275,11 @@ impl Real for Float {
         } else {
             let (sig, exp) = self.decode_float();
             let denominator =
-                non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value()).expect(
-                    concat!(
+                non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value())
+                    .expect(concat!(
                         "Error[Float::to_rational]: ",
                         "Failed to compute the denominator via exponentiation."
-                    ),
-                );
+                    ));
             Rational::of(sig, denominator).refine()
         }
     }
@@ -311,9 +287,8 @@ impl Real for Float {
 
 /// Implement the concept of Floating for Float.
 impl Floating for Float {
-    const ZERO: Self = Self { inner: 0.0f32 };
-
     const PI: Self = Self::of(core::f32::consts::PI);
+    const ZERO: Self = Self { inner: 0.0f32 };
 
     fn exponential(self) -> Self {
         Self {
@@ -390,9 +365,7 @@ impl Floating for Float {
 
 /// Implement the concept of Fractional for Float.
 impl Fractional for Float {
-    fn half() -> Self {
-        Self { inner: 0.5f32 }
-    }
+    fn half() -> Self { Self { inner: 0.5f32 } }
 
     fn reciprocal(self) -> Self {
         let rational = self.to_rational();

@@ -2,18 +2,25 @@
 //!
 //! Functions and related implementations for double precision floating-point numbers.
 
+use rand::{
+    Rng,
+    distributions::uniform::{SampleBorrow, SampleUniform, UniformFloat, UniformSampler},
+};
+
 use crate::number::{
     instances::{int::Int, integer::Integer, ratio::Rational},
     traits::{
-        floating::Floating, fractional::Fractional, integral::Integral, number::Number, one::One,
-        real::Real, realfloat::RealFloat, realfrac::RealFrac, zero::Zero,
+        floating::Floating,
+        fractional::Fractional,
+        integral::Integral,
+        number::Number,
+        one::One,
+        real::Real,
+        realfloat::RealFloat,
+        realfrac::RealFrac,
+        zero::Zero,
     },
     utils::{from_integral, non_negative_integral_power},
-};
-
-use rand::{
-    distributions::uniform::{SampleBorrow, SampleUniform, UniformFloat, UniformSampler},
-    Rng,
 };
 
 /// Double numbers are the wrapper type for f64.
@@ -31,13 +38,9 @@ impl Double {
     /// ```rust
     /// use rmatrix_ks::number::instances::double::Double;
     ///
-    /// fn main() {
-    ///     let _d = Double::of(12.0);
-    /// }
+    /// fn main() { let _d = Double::of(12.0); }
     /// ```
-    pub const fn of(num: f64) -> Self {
-        Self { inner: num }
-    }
+    pub const fn of(num: f64) -> Self { Self { inner: num } }
 
     /// Construct double numbers from string.
     ///
@@ -59,9 +62,7 @@ impl Double {
 
 /// Implement the concept of ZERO for the double number.
 impl Zero for Double {
-    fn zero() -> Self {
-        Self { inner: 0.0f64 }
-    }
+    fn zero() -> Self { Self { inner: 0.0f64 } }
 
     /// Validate whether a double number is ZERO.
     ///
@@ -75,36 +76,26 @@ impl Zero for Double {
     ///     assert!(d.is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool {
-        self.inner.abs() <= core::f64::EPSILON.sqrt()
-    }
+    fn is_zero(&self) -> bool { self.inner.abs() <= core::f64::EPSILON.sqrt() }
 }
 
 /// Implement the concept of ONE for the double number.
 impl One for Double {
-    fn one() -> Self {
-        Self { inner: 1.0f64 }
-    }
+    fn one() -> Self { Self { inner: 1.0f64 } }
 
-    fn is_one(&self) -> bool {
-        (self.clone() - Self::one()).is_zero()
-    }
+    fn is_one(&self) -> bool { (self.clone() - Self::one()).is_zero() }
 }
 
 /// Implement Default for the double number.
 impl std::default::Default for Double {
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement the negation operation for the double number.
 impl std::ops::Neg for Double {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
-        Self { inner: -self.inner }
-    }
+    fn neg(self) -> Self::Output { Self { inner: -self.inner } }
 }
 
 /// Implement the addition operation for the double number.
@@ -153,9 +144,7 @@ impl std::ops::Div for Double {
 
 /// Implement equality for double numbers.
 impl std::cmp::PartialEq for Double {
-    fn eq(&self, other: &Self) -> bool {
-        (self.clone() - other.clone()).is_zero()
-    }
+    fn eq(&self, other: &Self) -> bool { (self.clone() - other.clone()).is_zero() }
 }
 
 /// Implement the concept of NUMBER for the double number.
@@ -236,24 +225,15 @@ impl Number for Double {
 /// Implement the concept of RealFloat for Double.
 impl RealFloat for Double {
     const FLOAT_DIGITS: Int = Int::of(53);
-
     const FLOAT_RANGE: (Int, Int) = (Int::of(-1021), Int::of(1024));
 
-    fn is_not_a_number(&self) -> bool {
-        self.inner.is_nan()
-    }
+    fn is_not_a_number(&self) -> bool { self.inner.is_nan() }
 
-    fn is_infinite_number(&self) -> bool {
-        self.inner.is_infinite()
-    }
+    fn is_infinite_number(&self) -> bool { self.inner.is_infinite() }
 
-    fn is_denormalized(&self) -> bool {
-        self.inner.is_subnormal()
-    }
+    fn is_denormalized(&self) -> bool { self.inner.is_subnormal() }
 
-    fn is_negative_zero(&self) -> bool {
-        self.is_zero() && self.inner.is_sign_negative()
-    }
+    fn is_negative_zero(&self) -> bool { self.is_zero() && self.inner.is_sign_negative() }
 }
 
 /// Implement the concept of RealFrac for Double.
@@ -302,12 +282,11 @@ impl Real for Double {
         } else {
             let (sig, exp) = self.decode_float();
             let denominator =
-                non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value()).expect(
-                    concat!(
+                non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value())
+                    .expect(concat!(
                         "Error[Double::to_rational]: ",
                         "Failed to compute the denominator via exponentiation."
-                    ),
-                );
+                    ));
             Rational::of(sig, denominator).refine()
         }
     }
@@ -315,9 +294,8 @@ impl Real for Double {
 
 /// Implement the concept of Floating for Double.
 impl Floating for Double {
-    const ZERO: Self = Self { inner: 0.0f64 };
-
     const PI: Self = Self::of(core::f64::consts::PI);
+    const ZERO: Self = Self { inner: 0.0f64 };
 
     fn exponential(self) -> Self {
         Self {
@@ -394,9 +372,7 @@ impl Floating for Double {
 
 /// Implement the concept of Fractional for Double.
 impl Fractional for Double {
-    fn half() -> Self {
-        Self { inner: 0.5f64 }
-    }
+    fn half() -> Self { Self { inner: 0.5f64 } }
 
     fn reciprocal(self) -> Self {
         let rational = self.to_rational();

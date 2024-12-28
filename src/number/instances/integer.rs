@@ -108,9 +108,7 @@ impl Integer {
     ///     assert_eq!(digits, Some(vec![1, 2, 3, 4, 5, 6]));
     /// }
     /// ```
-    pub fn digits(&self) -> Vec<u8> {
-        self.inner.iter().rev().cloned().collect::<Vec<u8>>()
-    }
+    pub fn digits(&self) -> Vec<u8> { self.inner.iter().rev().cloned().collect::<Vec<u8>>() }
 
     /// Non-negative integer addition.
     fn integer_add(self, rhs: Self) -> Self {
@@ -228,9 +226,7 @@ impl Zero for Integer {
     ///     assert!(!b.is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool {
-        self.inner.is_empty() || self.inner.iter().all(|&e| e == 0u8)
-    }
+    fn is_zero(&self) -> bool { self.inner.is_empty() || self.inner.iter().all(|&e| e == 0u8) }
 }
 
 impl One for Integer {
@@ -269,9 +265,7 @@ impl One for Integer {
 
 /// Implement Default for the integer number.
 impl std::default::Default for Integer {
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement PartialOrd for the integer number.
@@ -349,9 +343,7 @@ impl std::ops::Add for Integer {
 impl std::ops::Sub for Integer {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        self + (-rhs)
-    }
+    fn sub(self, rhs: Self) -> Self::Output { self + (-rhs) }
 }
 
 /// Implement the multiplication operation for the integer number.
@@ -402,16 +394,12 @@ impl Number for Integer {
         }
     }
 
-    fn from_integer(integer_number: Integer) -> Self {
-        integer_number
-    }
+    fn from_integer(integer_number: Integer) -> Self { integer_number }
 }
 
 /// Implement the concept of Real for Integer.
 impl Real for Integer {
-    fn to_rational(self) -> Rational {
-        Rational::of(self, Self::one())
-    }
+    fn to_rational(self) -> Rational { Rational::of(self, Self::one()) }
 }
 
 /// Implement the concept of Integral for Integer.
@@ -483,9 +471,7 @@ impl Integral for Integer {
         }
     }
 
-    fn to_integer(self) -> Integer {
-        self
-    }
+    fn to_integer(self) -> Integer { self }
 }
 
 /// Implement Display for Integer.

@@ -2,20 +2,26 @@
 //!
 //! Functions for handling vectors and matrices with complex elements.
 
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
+
 use crate::{
     matrix::{
         math::{is_identity_matrix, is_square_matrix},
         matrix::Matrix,
         utils::{apply, points_2d, transpose},
-        vector::{layer_product, VectorC},
+        vector::{VectorC, layer_product},
     },
     number::{
         instances::complex::Complex,
-        traits::{floating::Floating, number::Number, one::One, realfloat::RealFloat, zero::Zero},
+        traits::{
+            floating::Floating,
+            number::Number,
+            one::One,
+            realfloat::RealFloat,
+            zero::Zero,
+        },
     },
 };
-
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 /// Obtains the conjugate transpose of the matrix.
 ///
@@ -87,7 +93,9 @@ where
 ///     assert!(!is_unitary_matrix(&m2));
 /// }
 /// ```
-pub fn is_unitary_matrix<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> bool
+pub fn is_unitary_matrix<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> bool
 where
     F: RealFloat,
 {
@@ -183,7 +191,9 @@ where
 ///     assert!(!is_hermitian_matrix(&m2));
 /// }
 /// ```
-pub fn is_hermitian_matrix<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> bool
+pub fn is_hermitian_matrix<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> bool
 where
     F: RealFloat,
 {
@@ -480,8 +490,8 @@ where
     // e2 is the element used for elimination.
     let e2 = m[by].clone();
     // v = (e2, e1), r = ||v||
-    let r =
-        (e1.clone().conjugate() * e1.clone() + e2.clone().conjugate() * e2.clone()).square_root();
+    let r = (e1.clone().conjugate() * e1.clone() + e2.clone().conjugate() * e2.clone())
+        .square_root();
     // sin(theta) = y / r = e1 / r
     let sin_theta = e1 / r.clone();
     // cos(theta) = x / r = e2 / r
@@ -624,7 +634,9 @@ where
 ///     assert_eq!(l1_norm, Float::of(17.0f32.sqrt() + 2.0));
 /// }
 /// ```
-pub fn induced_l1_matrix_norm<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> F
+pub fn induced_l1_matrix_norm<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> F
 where
     F: RealFloat,
 {
@@ -928,4 +940,95 @@ where
         }
     }
     (conjugate_transpose(&q), r)
+}
+
+/// Compute the economy-sized QR decomposition of a complex matrix using Givens rotation matrices.
+///
+/// # Panics
+///
+/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
+/// # Examples
+///
+/// ```rust
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::{
+///         complex::{is_unitary_matrix, qr_decomposition_es},
+///         matrix::Matrix,
+///     },
+///     number::instances::{complex::Complex, float::Float},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 3, 2>::of(
+///         &[
+///             (1.0, 1.0),
+///             (2.0, 0.0),
+///             (3.0, 0.0),
+///             (4.0, 2.0),
+///             (5.0, 0.0),
+///             (6.0, 0.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let (q, r) = qr_decomposition_es(&m);
+///     let q_expect = Matrix::<Complex<Float>, 3, 2>::of(
+///         &[
+///             (1.0 / 6.0, 1.0 / 6.0),
+///             (4.0 / 117.0f32.sqrt(), -2.0 / 13.0f32.sqrt()),
+///             (0.5, 0.0),
+///             (1.0 / 52.0f32.sqrt(), 5.0 / 52.0f32.sqrt()),
+///             (5.0 / 6.0, 0.0),
+///             (-1.0 / 468.0f32.sqrt(), -5.0 / 468.0f32.sqrt()),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     assert!(is_unitary_matrix(&q));
+///     assert_eq!(q, q_expect);
+///     let r_expect = Matrix::<Complex<Float>, 2, 2>::of(
+///         &[
+///             (6.0, 0.0),
+///             (22.0 / 3.0, 2.0 / 3.0),
+///             (0.0, 0.0),
+///             (52.0f32.sqrt() / 3.0, 0.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     assert_eq!(r, r_expect);
+/// }
+/// ```
+pub fn qr_decomposition_es<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> (
+    Matrix<Complex<F>, R, { Matrix::<Complex<F>, R, C>::get_diagonal_length() }>,
+    Matrix<Complex<F>, { Matrix::<Complex<F>, R, C>::get_diagonal_length() }, C>,
+)
+where
+    F: RealFloat,
+    [(); Matrix::<Complex<F>, R, C>::get_diagonal_length()]:,
+{
+    let (basic_q, basic_r) = qr_decomposition_gr(m);
+    let thin = Matrix::<Complex<F>, R, C>::get_diagonal_length();
+    let mut q = Matrix::default();
+    let mut r = Matrix::default();
+    if R > C {
+        // If m > n, then qr computes only the first n columns of Q and the first n rows of R.
+        for row in 1..=R {
+            for column in 1..=thin {
+                q[(row, column)] = basic_q[(row, column)].clone();
+            }
+        }
+        r.inner = basic_r.inner[..(thin * C)].to_vec();
+    } else {
+        // Else the economy-size decomposition is the same as the regular decomposition.
+        q.inner = basic_q.inner;
+        r.inner = basic_r.inner;
+    }
+    (q, r)
 }

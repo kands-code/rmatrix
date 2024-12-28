@@ -24,46 +24,6 @@ pub type VectorR<N, const C: usize> = Matrix<N, 1, C>;
 /// A column vector is a matrix with a single column.
 pub type VectorC<N, const R: usize> = Matrix<N, R, 1>;
 
-/// Used to obtain a reference to the element
-/// at the corresponding position in the column vector.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::vector::{index_c, VectorC},
-///     number::instances::word8::Word8,
-/// };
-///
-/// fn main() {
-///     let v1: VectorC<Word8, 3> = VectorC::of(&[Word8::of(1), Word8::of(2), Word8::of(3)]).unwrap();
-///     assert_eq!(index_c(&v1, 2), &Word8::of(2));
-/// }
-/// ```
-pub fn index_c<N, const R: usize>(v: &VectorC<N, R>, row_index: usize) -> &N {
-    &v[(row_index, 1)]
-}
-
-/// Used to obtain a reference to the element
-/// at the corresponding position in the row vector.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::vector::{index_r, VectorR},
-///     number::instances::word8::Word8,
-/// };
-///
-/// fn main() {
-///     let v1: VectorR<Word8, 3> = VectorR::of(&[Word8::of(1), Word8::of(2), Word8::of(3)]).unwrap();
-///     assert_eq!(index_r(&v1, 2), &Word8::of(2));
-/// }
-/// ```
-pub fn index_r<N, const C: usize>(v: &VectorR<N, C>, column_index: usize) -> &N {
-    &v[(1, column_index)]
-}
-
 /// Used to obtain the basis vector.
 ///
 /// The `index` represents the index of the basis vector.
@@ -72,12 +32,13 @@ pub fn index_r<N, const C: usize>(v: &VectorR<N, C>, column_index: usize) -> &N 
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{basis_vector, VectorC},
+///     matrix::vector::{VectorC, basis_vector},
 ///     number::instances::int8::Int8,
 /// };
 ///
 /// pub fn main() {
-///     let e1_a: VectorC<Int8, 3> = VectorC::of(&[Int8::of(0), Int8::of(1), Int8::of(0)]).unwrap();
+///     let e1_a: VectorC<Int8, 3> =
+///         VectorC::of(&[Int8::of(0), Int8::of(1), Int8::of(0)]).unwrap();
 ///     let e1_b = basis_vector::<Int8, 3>(2);
 ///     assert_eq!(e1_a, e1_b);
 /// }
@@ -97,13 +58,15 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{dot_product, VectorC},
+///     matrix::vector::{VectorC, dot_product},
 ///     number::instances::int8::Int8,
 /// };
 ///
 /// fn main() {
-///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
-///     let v2: VectorC<Int8, 3> = VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+///     let v1: VectorC<Int8, 3> =
+///         VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+///     let v2: VectorC<Int8, 3> =
+///         VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
 ///     assert_eq!(dot_product(&v1, &v2), Int8::of(32));
 /// }
 /// ```
@@ -124,13 +87,15 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{cross_product, VectorC},
+///     matrix::vector::{VectorC, cross_product},
 ///     number::instances::int8::Int8,
 /// };
 ///
 /// fn main() {
-///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
-///     let v2: VectorC<Int8, 3> = VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+///     let v1: VectorC<Int8, 3> =
+///         VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+///     let v2: VectorC<Int8, 3> =
+///         VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
 ///     assert_eq!(
 ///         cross_product(v1, v2),
 ///         VectorC::<Int8, 3>::of(&[Int8::of(-3), Int8::of(6), Int8::of(-3)]).unwrap()
@@ -142,12 +107,12 @@ where
     N: Number,
 {
     let mut inner = vec![N::zero(); 3];
-    inner[0] = index_c(&v1, 2).clone() * index_c(&v2, 3).clone()
-        - index_c(&v1, 3).clone() * index_c(&v2, 2).clone();
-    inner[1] = index_c(&v1, 3).clone() * index_c(&v2, 1).clone()
-        - index_c(&v1, 1).clone() * index_c(&v2, 3).clone();
-    inner[2] = index_c(&v1, 1).clone() * index_c(&v2, 2).clone()
-        - index_c(&v1, 2).clone() * index_c(&v2, 1).clone();
+    inner[0] =
+        v1[(2, 1)].clone() * v2[(3, 1)].clone() - v1[(3, 1)].clone() * v2[(2, 1)].clone();
+    inner[1] =
+        v1[(3, 1)].clone() * v2[(1, 1)].clone() - v1[(1, 1)].clone() * v2[(3, 1)].clone();
+    inner[2] =
+        v1[(1, 1)].clone() * v2[(2, 1)].clone() - v1[(2, 1)].clone() * v2[(1, 1)].clone();
 
     VectorC { inner }
 }
@@ -160,14 +125,16 @@ where
 /// use rmatrix_ks::{
 ///     matrix::{
 ///         matrix::Matrix,
-///         vector::{layer_product, VectorC, VectorR},
+///         vector::{VectorC, VectorR, layer_product},
 ///     },
 ///     number::instances::int8::Int8,
 /// };
 ///
 /// fn main() {
-///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
-///     let v2: VectorR<Int8, 3> = VectorR::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+///     let v1: VectorC<Int8, 3> =
+///         VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+///     let v2: VectorR<Int8, 3> =
+///         VectorR::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
 ///     let data = [
 ///         4i8, 5i8, 6i8, // row1
 ///         8i8, 10i8, 12i8, // row2
@@ -188,7 +155,7 @@ where
     let mut inner = Vec::with_capacity(R * C);
     for row_index in 1..=R {
         for column_index in 1..=C {
-            inner.push(index_c(&v1, row_index).clone() * index_r(&v2, column_index).clone());
+            inner.push(v1[(row_index, 1)].clone() * v2[(1, column_index)].clone());
         }
     }
     Matrix { inner }
@@ -207,12 +174,13 @@ where
 /// #![feature(generic_const_exprs)]
 ///
 /// use rmatrix_ks::{
-///     matrix::vector::{convolution, VectorC},
+///     matrix::vector::{VectorC, convolution},
 ///     number::instances::int8::Int8,
 /// };
 ///
 /// fn main() {
-///     let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+///     let v1: VectorC<Int8, 3> =
+///         VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
 ///     let v2: VectorC<Int8, 2> = VectorC::of(&[Int8::of(4), Int8::of(5)]).unwrap();
 ///     let cv = VectorC::<Int8, 4>::of(&[4, 13, 22, 15].map(|e| Int8::of(e))).unwrap();
 ///     assert_eq!(convolution(v1, v2), cv);
@@ -231,7 +199,7 @@ where
         for p in 1..=R1.min(index) {
             let q = index + 1 - p;
             if (1..=R2).contains(&q) {
-                sum = sum + index_c(&v1, p).clone() * index_c(&v2, q).clone();
+                sum = sum + v1[(p, 1)].clone() * v2[(q, 1)].clone();
             }
         }
         inner.push(sum);
@@ -247,7 +215,7 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{euclidean_norm, VectorC},
+///     matrix::vector::{VectorC, euclidean_norm},
 ///     number::{
 ///         instances::float::Float,
 ///         traits::{floating::Floating, zero::Zero},
@@ -277,7 +245,7 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{normalize, VectorC},
+///     matrix::vector::{VectorC, normalize},
 ///     number::{instances::float::Float, traits::floating::Floating},
 /// };
 ///
@@ -308,7 +276,7 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{maximum_norm, VectorC},
+///     matrix::vector::{VectorC, maximum_norm},
 ///     number::instances::int8::Int8,
 /// };
 ///
@@ -336,7 +304,7 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{root_mean_square, VectorC},
+///     matrix::vector::{VectorC, root_mean_square},
 ///     number::{
 ///         instances::float::Float,
 ///         traits::{floating::Floating, zero::Zero},
@@ -370,7 +338,7 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{angle_between, VectorC},
+///     matrix::vector::{VectorC, angle_between},
 ///     number::{instances::double::Double, traits::zero::Zero},
 /// };
 ///
@@ -417,7 +385,7 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::vector::{project_to, VectorC},
+///     matrix::vector::{VectorC, project_to},
 ///     number::instances::float::Float,
 /// };
 ///

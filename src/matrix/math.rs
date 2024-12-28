@@ -4,6 +4,8 @@
 //! such as matrix validation, matrix simplification,
 //! and determinant calculation, etc.
 
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 use crate::{
     matrix::{
         matrix::Matrix,
@@ -14,8 +16,6 @@ use crate::{
         utils::{inversion_count, permutation},
     },
 };
-
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 /// Validate whether a matrix is a square matrix.
 ///
@@ -28,8 +28,13 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Word8, 2, 2>::of(&[Word8::of(1), Word8::of(2), Word8::of(2), Word8::of(1)])
-///         .unwrap();
+///     let m1 = Matrix::<Word8, 2, 2>::of(&[
+///         Word8::of(1),
+///         Word8::of(2),
+///         Word8::of(2),
+///         Word8::of(1),
+///     ])
+///     .unwrap();
 ///     let m2 = Matrix::<Word8, 2, 1>::of(&[Word8::of(1), Word8::of(3)]).unwrap();
 ///     assert!(is_square_matrix(&m1));
 ///     assert!(!is_square_matrix(&m2));
@@ -53,10 +58,20 @@ pub const fn is_square_matrix<N, const R: usize, const C: usize>(_: &Matrix<N, R
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Word8, 2, 2>::of(&[Word8::of(1), Word8::of(2), Word8::of(2), Word8::of(1)])
-///         .unwrap();
-///     let m2 = Matrix::<Word8, 2, 2>::of(&[Word8::of(1), Word8::of(2), Word8::of(1), Word8::of(1)])
-///         .unwrap();
+///     let m1 = Matrix::<Word8, 2, 2>::of(&[
+///         Word8::of(1),
+///         Word8::of(2),
+///         Word8::of(2),
+///         Word8::of(1),
+///     ])
+///     .unwrap();
+///     let m2 = Matrix::<Word8, 2, 2>::of(&[
+///         Word8::of(1),
+///         Word8::of(2),
+///         Word8::of(1),
+///         Word8::of(1),
+///     ])
+///     .unwrap();
 ///     let m3 = Matrix::<Double, 2, 2>::of(&[
 ///         Double::of(1.0),
 ///         Double::of(2.0),
@@ -95,10 +110,12 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Int8, 2, 2>::of(&[Int8::of(0), Int8::of(2), Int8::of(-2), Int8::of(0)])
-///         .unwrap();
-///     let m2 = Matrix::<Int8, 2, 2>::of(&[Int8::of(1), Int8::of(2), Int8::of(-2), Int8::of(1)])
-///         .unwrap();
+///     let m1 =
+///         Matrix::<Int8, 2, 2>::of(&[Int8::of(0), Int8::of(2), Int8::of(-2), Int8::of(0)])
+///             .unwrap();
+///     let m2 =
+///         Matrix::<Int8, 2, 2>::of(&[Int8::of(1), Int8::of(2), Int8::of(-2), Int8::of(1)])
+///             .unwrap();
 ///     let m3 = Matrix::<Double, 2, 2>::of(&[
 ///         Double::of(0.0),
 ///         Double::of(0.0),
@@ -141,7 +158,9 @@ where
 ///     assert!(!is_upper_triangular_matrix(&m2));
 /// }
 /// ```
-pub fn is_upper_triangular_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+pub fn is_upper_triangular_matrix<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> bool
 where
     N: Number,
 {
@@ -170,7 +189,9 @@ where
 ///     assert!(is_lower_triangular_matrix(&m2));
 /// }
 /// ```
-pub fn is_lower_triangular_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+pub fn is_lower_triangular_matrix<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> bool
 where
     N: Number,
 {
@@ -221,9 +242,15 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Word8, 2, 2>::of(&[Word8::of(1), Word8::of(0), Word8::of(0), Word8::of(1)])
-///         .unwrap();
-///     let m2 = Matrix::<Double, 2, 2>::of(&[1.0, 2.0, 2.0, 1.0].map(|e| Double::of(e))).unwrap();
+///     let m1 = Matrix::<Word8, 2, 2>::of(&[
+///         Word8::of(1),
+///         Word8::of(0),
+///         Word8::of(0),
+///         Word8::of(1),
+///     ])
+///     .unwrap();
+///     let m2 =
+///         Matrix::<Double, 2, 2>::of(&[1.0, 2.0, 2.0, 1.0].map(|e| Double::of(e))).unwrap();
 ///     assert!(is_identity_matrix(&m1));
 ///     assert!(!is_identity_matrix(&m2));
 ///     assert!(is_identity_matrix(&Matrix::<Double, 3, 3>::eyes()));
@@ -279,7 +306,8 @@ where
 ///
 /// fn main() {
 ///     let m1 = Matrix::<Double, 3, 3>::eyes();
-///     let m2 = Matrix::<Double, 2, 2>::of(&[1.0, 2.0, 2.0, 3.0].map(|e| Double::of(e))).unwrap();
+///     let m2 =
+///         Matrix::<Double, 2, 2>::of(&[1.0, 2.0, 2.0, 3.0].map(|e| Double::of(e))).unwrap();
 ///     assert!(is_orthogonal_matrix(&m1));
 ///     assert!(!is_orthogonal_matrix(&m2));
 /// }
@@ -311,7 +339,8 @@ where
 ///
 /// fn main() {
 ///     let m =
-///         Matrix::<Double, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e))).unwrap();
+///         Matrix::<Double, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e)))
+///             .unwrap();
 ///     let l1_norm = induced_l1_matrix_norm(&m);
 ///     assert_eq!(l1_norm, Double::of(12.0));
 /// }
@@ -355,7 +384,8 @@ where
 ///
 /// fn main() {
 ///     let m =
-///         Matrix::<Double, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e))).unwrap();
+///         Matrix::<Double, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e)))
+///             .unwrap();
 ///     let l_inf_norm = induced_l_inf_matrix_norm(&m);
 ///     assert_eq!(l_inf_norm, Double::of(11.0));
 /// }
@@ -617,7 +647,9 @@ where
 ///     assert_eq!(inv * m, Matrix::<Double, 3, 3>::eyes());
 /// }
 /// ```
-pub fn inverse<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<Matrix<N, R, R>>
+pub fn inverse<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> Option<Matrix<N, R, R>>
 where
     N: Fractional,
 {
@@ -687,8 +719,10 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Int, 4, 4>::of(&[1, 2, 3, 4, 1, 3, 4, 1, 1, 4, 1, 2, 1, 1, 2, 3].map(Int::of))
-///         .unwrap();
+///     let m = Matrix::<Int, 4, 4>::of(
+///         &[1, 2, 3, 4, 1, 3, 4, 1, 1, 4, 1, 2, 1, 1, 2, 3].map(Int::of),
+///     )
+///     .unwrap();
 ///     assert_eq!(determinant_l(&m), Some(Int::of(16)));
 /// }
 /// ```
@@ -712,7 +746,9 @@ where
         }
         Some(det)
     } else {
-        eprintln!("Error[matrix::math::determinant_l]: Only square matrices have determinants.");
+        eprintln!(
+            "Error[matrix::math::determinant_l]: Only square matrices have determinants."
+        );
         None
     }
 }
@@ -781,18 +817,19 @@ where
         let mut adjugate = Matrix::<N, R, R>::default();
         for row in 1..=R {
             for column in 1..=C {
-                adjugate[(row, column)] = determinant(&m.submatrix(column, row)).expect(&format!(
-                    concat!(
-                        "Error[matrix::math::adjugate_matrix]: ",
-                        "Failed to retrieve the determinant ",
-                        "of the submatrix({}, {}) of the matrix."
-                    ),
-                    row, column
-                )) * if (row + column) & 1 == 0 {
-                    N::one()
-                } else {
-                    -N::one()
-                }
+                adjugate[(row, column)] =
+                    determinant(&m.submatrix(column, row)).expect(&format!(
+                        concat!(
+                            "Error[matrix::math::adjugate_matrix]: ",
+                            "Failed to retrieve the determinant ",
+                            "of the submatrix({}, {}) of the matrix."
+                        ),
+                        row, column
+                    )) * if (row + column) & 1 == 0 {
+                        N::one()
+                    } else {
+                        -N::one()
+                    }
             }
         }
         Some(adjugate)

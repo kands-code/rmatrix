@@ -10,9 +10,7 @@ pub trait RealFrac: Real + Fractional {
     fn proper_fraction<I: Integral>(self) -> (I, Self);
 
     /// Return the nearest integral number between itself and zero.
-    fn truncate<I: Integral>(self) -> I {
-        self.proper_fraction().0
-    }
+    fn truncate<I: Integral>(self) -> I { self.proper_fraction().0 }
 
     /// Return the nearest integral number to itself.
     fn round<I: Integral>(self) -> I {

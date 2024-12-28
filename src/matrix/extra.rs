@@ -9,9 +9,10 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use crate::{
     matrix::{
         complex,
-        math::inverse,
+        math::{inverse, is_diagonal_matrix, is_symmetric_matrix},
         matrix::Matrix,
-        utils::{apply, transpose},
+        utils::{apply, null_space, transpose},
+        vector::VectorC,
     },
     number::{
         instances::complex::Complex,
@@ -50,7 +51,13 @@ use crate::{
 ///     assert_eq!(p, p_expect);
 /// }
 /// ```
-pub fn kronecker_product<N, const R1: usize, const C1: usize, const R2: usize, const C2: usize>(
+pub fn kronecker_product<
+    N,
+    const R1: usize,
+    const C1: usize,
+    const R2: usize,
+    const C2: usize,
+>(
     m1: &Matrix<N, R1, C1>,
     m2: &Matrix<N, R2, C2>,
 ) -> Matrix<N, { R1 * R2 }, { C1 * C2 }>
@@ -161,85 +168,6 @@ where
     (apply(&q, |e| e.real), apply(&r, |e| e.real))
 }
 
-/// Use the Householder method to compute the economy-size QR decomposition of a REAL matrix.
-///
-/// # Panics
-///
-/// This function requires the use of the `#![feature(generic_const_exprs)]`.
-///
-/// # Examples
-///
-/// ```rust
-/// #![allow(incomplete_features)]
-/// #![feature(generic_const_exprs)]
-///
-/// use rmatrix_ks::{
-///     matrix::{extra::qr_decomposition_es, matrix::Matrix},
-///     number::instances::double::Double,
-/// };
-///
-/// fn main() {
-///     let m = Matrix::<Double, 4, 3>::of(
-///         &[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, -1.0, 1.0, 0.0, 4.0].map(Double::of),
-///     )
-///     .unwrap();
-///     let (q, r) = qr_decomposition_es(&m);
-///     let q_expect = Matrix::<Double, 4, 3>::of(
-///         &[
-///             -0.5,
-///             -0.5,
-///             1.0 / (2.0 * 13.0f64.sqrt()),
-///             -0.5,
-///             -0.5,
-///             -1.0 / (2.0 * 13.0f64.sqrt()),
-///             -0.5,
-///             0.5,
-///             -5.0 / (2.0 * 13.0f64.sqrt()),
-///             -0.5,
-///             0.5,
-///             5.0 / (2.0 * 13.0f64.sqrt()),
-///         ]
-///         .map(Double::of),
-///     )
-///     .unwrap();
-///     assert_eq!(q, q_expect);
-///     let r_expect = Matrix::<Double, 3, 3>::of(
-///         &[-2.0, -1.0, -2.0, 0.0, -1.0, 1.0, 0.0, 0.0, 13.0f64.sqrt()].map(Double::of),
-///     )
-///     .unwrap();
-///     assert_eq!(r, r_expect);
-/// }
-/// ```
-pub fn qr_decomposition_es<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> (
-    Matrix<N, R, { Matrix::<N, R, C>::get_diagonal_length() }>,
-    Matrix<N, { Matrix::<N, R, C>::get_diagonal_length() }, C>,
-)
-where
-    N: RealFloat,
-    [(); Matrix::<N, R, C>::get_diagonal_length()]:,
-{
-    let (basic_q, basic_r) = qr_decomposition_h(m);
-    let thin = Matrix::<N, R, C>::get_diagonal_length();
-    let mut q = Matrix::default();
-    let mut r = Matrix::default();
-    if R > C {
-        // If m > n, then qr computes only the first n columns of Q and the first n rows of R.
-        for row in 1..=R {
-            for column in 1..=thin {
-                q[(row, column)] = basic_q[(row, column)].clone();
-            }
-        }
-        r.inner = basic_r.inner[..(thin * C)].to_vec();
-    } else {
-        // Else the economy-size decomposition is the same as the regular decomposition.
-        q.inner = basic_q.inner;
-        r.inner = basic_r.inner;
-    }
-    (q, r)
-}
-
 /// Compute the QR decomposition of a real matrix using Givens rotation matrices.
 ///
 /// # Examples
@@ -273,6 +201,71 @@ where
 {
     let complexed = apply(m, |e| Complex::of(e, N::zero()));
     let (q, r) = complex::qr_decomposition_gr(&complexed);
+    (apply(&q, |e| e.real), apply(&r, |e| e.real))
+}
+
+/// Compute the economy-sized QR decomposition of a real matrix using Givens rotation matrices.
+///
+/// # Panics
+///
+/// This function requires the use of the `#![feature(generic_const_exprs)]`.
+///
+/// # Examples
+///
+/// ```rust
+/// #![allow(incomplete_features)]
+/// #![feature(generic_const_exprs)]
+///
+/// use rmatrix_ks::{
+///     matrix::{extra::qr_decomposition_es, math::is_orthogonal_matrix, matrix::Matrix},
+///     number::instances::double::Double,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Double, 4, 3>::of(
+///         &[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, -1.0, 1.0, 0.0, 4.0].map(Double::of),
+///     )
+///     .unwrap();
+///     let (q, r) = qr_decomposition_es(&m);
+///     let q_expect = Matrix::<Double, 4, 3>::of(
+///         &[
+///             0.5,
+///             0.5,
+///             1.0 / (2.0 * 13.0f64.sqrt()),
+///             0.5,
+///             0.5,
+///             -1.0 / (2.0 * 13.0f64.sqrt()),
+///             0.5,
+///             -0.5,
+///             -5.0 / (2.0 * 13.0f64.sqrt()),
+///             0.5,
+///             -0.5,
+///             5.0 / (2.0 * 13.0f64.sqrt()),
+///         ]
+///         .map(Double::of),
+///     )
+///     .unwrap();
+///     assert!(is_orthogonal_matrix(&q));
+///     assert_eq!(q, q_expect);
+///     let r_expect = Matrix::<Double, 3, 3>::of(
+///         &[2.0, 1.0, 2.0, 0.0, 1.0, -1.0, 0.0, 0.0, 13.0f64.sqrt()].map(Double::of),
+///     )
+///     .unwrap();
+///     assert_eq!(r, r_expect);
+/// }
+/// ```
+pub fn qr_decomposition_es<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> (
+    Matrix<N, R, { Matrix::<Complex<N>, R, C>::get_diagonal_length() }>,
+    Matrix<N, { Matrix::<Complex<N>, R, C>::get_diagonal_length() }, C>,
+)
+where
+    N: RealFloat,
+    [(); Matrix::<Complex<N>, R, C>::get_diagonal_length()]:,
+{
+    let complexed = apply(m, |e| Complex::of(e, N::zero()));
+    let (q, r) = complex::qr_decomposition_es(&complexed);
     (apply(&q, |e| e.real), apply(&r, |e| e.real))
 }
 
@@ -329,8 +322,10 @@ where
 ///
 /// fn main() {
 ///     // M
-///     let m = Matrix::<Float, 5, 2>::vandermonde(&[208.0, 152.0, 113.0, 227.0, 137.0].map(Float::of))
-///         .unwrap();
+///     let m = Matrix::<Float, 5, 2>::vandermonde(
+///         &[208.0, 152.0, 113.0, 227.0, 137.0].map(Float::of),
+///     )
+///     .unwrap();
 ///     // b
 ///     let b = Matrix::<Float, 5, 1>::default();
 ///     let sol = linear_solve_t(&m, &b);
@@ -389,18 +384,20 @@ where
 ///
 /// fn main() {
 ///     // M
-///     let m = Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
+///     let m =
+///         Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
 ///     // b
 ///     let b = Matrix::<Float, 2, 1>::of(&[7.0, 8.0].map(Float::of)).unwrap();
 ///     let sol = linear_solve_w(&m, &b);
 ///     // Will return one of the possible solutions.
-///     let sol_expect = Matrix::<Float, 3, 1>::of(&[-3.0556, 0.1111, 3.2778].map(Float::of)).unwrap();
+///     let sol_expect =
+///         Matrix::<Float, 3, 1>::of(&[-3.0556, 0.1111, 3.2778].map(Float::of)).unwrap();
 ///     assert_eq!(sol, sol_expect);
 /// }
 /// ```
 ///
 /// The information for the complete solution
-/// can be computed in conjunction with the [nullspace](crate::matrix::utils::nullspace).
+/// can be computed in conjunction with the [null_space].
 ///
 /// ## Warnings
 ///
@@ -416,8 +413,7 @@ where
 ///
 /// fn main() {
 ///     // M
-///     let m = Matrix::<Float, 2, 2>::vandermonde(&[208.0, 137.0].map(Float::of))
-///         .unwrap();
+///     let m = Matrix::<Float, 2, 2>::vandermonde(&[208.0, 137.0].map(Float::of)).unwrap();
 ///     // b
 ///     let b = Matrix::<Float, 2, 1>::default();
 ///     let sol = linear_solve_w(&m, &b);
@@ -448,5 +444,235 @@ where
             "Should be able to compute the inverse of an lower triangular matrix."
         ));
         q * l_inv * b.clone()
+    }
+}
+
+/// Use the QR algorithm with Givens rotation matrices
+/// to compute the eigenvalues and eigenvectors of a matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         extra::eigen_system_symmetric,
+///         matrix::Matrix,
+///         utils::transpose,
+///         vector::VectorC,
+///     },
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 3, 3>::of(
+///         &[1.0, 3.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 4.0].map(Float::of),
+///     )
+///     .unwrap();
+///     let Some((es, evs)) = eigen_system_symmetric(&(transpose(&m) * m)) else {
+///         unreachable!()
+///     };
+///     assert_eq!(
+///         es,
+///         VectorC::<Float, 3>::of(&[20.2907, 9.2791, 0.4302].map(Float::of)).unwrap()
+///     );
+///     let evs_expect = Matrix::<Float, 3, 3>::of(
+///         &[
+///             0.39185, -0.40899, -4.17221, 0.44383, -1.89201, 1.43042, 1.0, 1.0, 1.0,
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     assert_eq!(evs, evs_expect);
+/// }
+/// ```
+///
+/// ## Warnings
+///
+/// <div class="warning">
+///
+/// This function can only be used to
+/// compute the eigenvalues and eigenvectors of symmetric real matrices.
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{extra::eigen_system_symmetric, matrix::Matrix},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 3, 3>::of(
+///         &[1.0, 3.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 4.0].map(Float::of),
+///     )
+///     .unwrap();
+///     // Will return None for non-symmetric matrices.
+///     assert_eq!(eigen_system_symmetric(&m), None);
+/// }
+/// ```
+///
+/// </div>
+pub fn eigen_system_symmetric<N, const E: usize>(
+    m: &Matrix<N, E, E>,
+) -> Option<(VectorC<N, E>, Matrix<N, E, E>)>
+where
+    N: RealFloat,
+{
+    if is_symmetric_matrix(m) {
+        let (mut q, mut r) = qr_decomposition_gr(m);
+        let mut diag = r * q;
+        while !is_diagonal_matrix(&diag) {
+            (q, r) = qr_decomposition_gr(&diag);
+            diag = r * q;
+        }
+        let eigenvalues =
+            VectorC::of(&(1..=E).map(|p| diag[(p, p)].clone()).collect::<Vec<N>>())
+                .expect("msg");
+        let mut eigenvectors = Matrix::default();
+        for idx in 1..=E {
+            let eigenequation = m.clone() - Matrix::eyes() * eigenvalues[(idx, 1)].clone();
+            let nullspace_eq = null_space(&eigenequation);
+            let eigenvector = if nullspace_eq.is_empty() {
+                let (ev, _) = qr_decomposition_gr(&eigenequation);
+                apply(
+                    &ev.get_column(idx).expect(&format!(
+                        concat!(
+                            "Error[matrix::extra::eigen_system_symmetric]: ",
+                            "Failed to obtain the {}-th column vector of ev."
+                        ),
+                        idx
+                    )),
+                    |e: &N| e.clone(),
+                )
+            } else {
+                nullspace_eq[0].clone()
+            };
+            for row in 1..=E {
+                eigenvectors[(row, idx)] = eigenvector[(row, 1)].clone();
+            }
+        }
+        Some((eigenvalues, eigenvectors))
+    } else {
+        eprintln!(concat!(
+            "Error[matrix::extra::eigen_system_symmetric]: ",
+            "This function can only be used to compute ",
+            "the eigenvalues and eigenvectors of symmetric real matrices."
+        ));
+        None
+    }
+}
+
+/// Compute the singular value decomposition of the matrix
+///
+/// The orthogonal basis part is based on the Givens rotation matrices.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{extra::singular_value_decomposition, matrix::Matrix, utils::transpose},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 2, 2>::of(&[2.0, 8.0, 6.0, 0.0].map(Float::of)).unwrap();
+///     let (u, s, v) = singular_value_decomposition(&m);
+///     let u_expect = Matrix::<Float, 2, 2>::of(
+///         &[
+///             3.0 / 10.0f32.sqrt(),
+///             1.0 / 10.0f32.sqrt(),
+///             1.0 / 10.0f32.sqrt(),
+///             -3.0 / 10.0f32.sqrt(),
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     assert_eq!(u, u_expect);
+///     let s_expect = Matrix::<Float, 2, 2>::of(
+///         &[6.0 * 2.0f32.sqrt(), 0.0, 0.0, 4.0 * 2.0f32.sqrt()].map(Float::of),
+///     )
+///     .unwrap();
+///     assert_eq!(s, s_expect);
+///     let v_expect = Matrix::<Float, 2, 2>::of(
+///         &[
+///             1.0 / 5.0f32.sqrt(),
+///             -2.0 / 5.0f32.sqrt(),
+///             2.0 / 5.0f32.sqrt(),
+///             1.0 / 5.0f32.sqrt(),
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     assert_eq!(v, v_expect);
+///     assert_eq!(m, u * s * transpose(&v));
+/// }
+/// ```
+pub fn singular_value_decomposition<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> (Matrix<N, R, R>, Matrix<N, R, C>, Matrix<N, C, C>)
+where
+    N: RealFloat,
+{
+    let left_sym = m.clone() * transpose(m);
+    let right_sym = transpose(m) * m.clone();
+    let (sig1, u) = eigen_system_symmetric(&left_sym).expect(concat!(
+        "Error[matrix::extra::singular_value_decomposition]: ",
+        "Failed to compute the eigen system of (A A^T)."
+    ));
+    let (sig2, v) = eigen_system_symmetric(&right_sym).expect(concat!(
+        "Error[matrix::extra::singular_value_decomposition]: ",
+        "Failed to compute the eigen system of (A^T A)."
+    ));
+    let mut sigma = Matrix::<N, R, C>::default();
+    for idx in 1..=(R.min(C)) {
+        // Take the average to reduce the error.
+        sigma[(idx, idx)] =
+            ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * N::half()).square_root();
+    }
+    // Obtain the corresponding orthogonal basis.
+    let (u, _) = qr_decomposition_gr(&u);
+    let (v, _) = qr_decomposition_gr(&v);
+    if R > C {
+        // Use U as a reference to correct V.
+        // A^T U = V (S^T) = V S'
+        // => A^T ui = si vi
+        let mut modified_v = Matrix::default();
+        for idx in 1..=C {
+            let ui = apply(
+                &u.get_column(idx).expect(&format!(
+                    concat!(
+                        "Error[matrix::extra::singular_value_decomposition]: ",
+                        "Failed to obtain the {}-th column vector of U."
+                    ),
+                    idx
+                )),
+                |e: &N| e.clone(),
+            );
+            let vi = transpose(m) * ui / sigma[(idx, idx)].clone();
+            for row in 1..=C {
+                modified_v[(row, idx)] = vi[(row, 1)].clone();
+            }
+        }
+        (u, sigma, modified_v)
+    } else {
+        // Use V as a reference to correct U.
+        // A V = S U
+        // => A vi = si ui
+        let mut modified_u = Matrix::default();
+        for idx in 1..=R {
+            let vi = apply(
+                &v.get_column(idx).expect(&format!(
+                    concat!(
+                        "Error[matrix::extra::singular_value_decomposition]: ",
+                        "Failed to obtain the {}-th column vector of V."
+                    ),
+                    idx
+                )),
+                |e: &N| e.clone(),
+            );
+            let ui = m.clone() * vi / sigma[(idx, idx)].clone();
+            for row in 1..=R {
+                modified_u[(row, idx)] = ui[(row, 1)].clone();
+            }
+        }
+        (modified_u, sigma, v)
     }
 }

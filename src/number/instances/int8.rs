@@ -2,14 +2,14 @@
 //!
 //! Functions and implementations related to 8-bit signed integers.
 
+use rand::{
+    Rng,
+    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
+};
+
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
     traits::{integral::Integral, number::Number, one::One, real::Real, zero::Zero},
-};
-
-use rand::{
-    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
-    Rng,
 };
 
 /// Int8 numbers are the wrapper type for i8.
@@ -26,13 +26,9 @@ impl Int8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::int8::Int8;
     ///
-    /// fn main() {
-    ///     let _i = Int8::of(12);
-    /// }
+    /// fn main() { let _i = Int8::of(12); }
     /// ```
-    pub const fn of(num: i8) -> Self {
-        Self { inner: num }
-    }
+    pub const fn of(num: i8) -> Self { Self { inner: num } }
 
     /// Construct int8 numbers from string.
     ///
@@ -75,40 +71,28 @@ impl Int8 {
 
 /// Implement the concept of ZERO for the int8 number.
 impl Zero for Int8 {
-    fn zero() -> Self {
-        Self { inner: 0i8 }
-    }
+    fn zero() -> Self { Self { inner: 0i8 } }
 
-    fn is_zero(&self) -> bool {
-        self.inner == 0i8
-    }
+    fn is_zero(&self) -> bool { self.inner == 0i8 }
 }
 
 /// Implement the concept of ONE for the int8 number.
 impl One for Int8 {
-    fn one() -> Self {
-        Self { inner: 1i8 }
-    }
+    fn one() -> Self { Self { inner: 1i8 } }
 
-    fn is_one(&self) -> bool {
-        self.inner == 1i8
-    }
+    fn is_one(&self) -> bool { self.inner == 1i8 }
 }
 
 /// Implement Default for the int8 number.
 impl std::default::Default for Int8 {
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement the negation operation for the int8 number.
 impl std::ops::Neg for Int8 {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
-        Self { inner: -self.inner }
-    }
+    fn neg(self) -> Self::Output { Self { inner: -self.inner } }
 }
 
 /// Implement the addition operation for the int8 number.

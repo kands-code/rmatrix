@@ -2,17 +2,20 @@
 //!
 //! Definition of the matrix along with related functions and implementations.
 
+use rand::distributions::{Distribution, Uniform, uniform::SampleUniform};
+use rayon::iter::{
+    IndexedParallelIterator,
+    IntoParallelIterator,
+    IntoParallelRefIterator,
+    ParallelIterator,
+};
+
 use crate::{
     matrix::{
         utils::apply,
-        vector::{layer_product, VectorC, VectorR},
+        vector::{VectorC, VectorR, layer_product},
     },
     number::traits::{floating::Floating, fractional::Fractional, number::Number},
-};
-
-use rand::distributions::{uniform::SampleUniform, Distribution, Uniform};
-use rayon::iter::{
-    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
 };
 
 /// A matrix is a container of a single type that has two dimensions: rows and columns.
@@ -39,13 +42,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     ///     assert_eq!(Matrix::<Word8, 3, 2>::get_diagonal_length(), 2);
     /// }
     /// ```
-    pub const fn get_diagonal_length() -> usize {
-        if R > C {
-            C
-        } else {
-            R
-        }
-    }
+    pub const fn get_diagonal_length() -> usize { if R > C { C } else { R } }
 
     /// Construct the matrix by passing in data.
     ///
@@ -166,8 +163,8 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::double::Double};
     ///
     /// fn main() {
-    ///     let m =
-    ///         Matrix::<Double, 5, 2>::vandermonde(&[1.0, 2.0, 4.0, 6.0, 8.0].map(Double::of)).unwrap();
+    ///     let m = Matrix::<Double, 5, 2>::vandermonde(&[1.0, 2.0, 4.0, 6.0, 8.0].map(Double::of))
+    ///         .unwrap();
     ///     let m_expect = Matrix::<Double, 5, 2>::of(
     ///         &[1.0, 1.0, 1.0, 2.0, 1.0, 4.0, 1.0, 6.0, 1.0, 8.0].map(Double::of),
     ///     )
@@ -216,9 +213,11 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::word8::Word8};
     ///
     /// fn main() {
-    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     let p = Matrix::<Word8, 3, 3>::p_change(1, 3);
-    ///     let n = Matrix::<Word8, 3, 3>::of(&[7, 8, 9, 4, 5, 6, 1, 2, 3].map(|e| Word8::of(e))).unwrap();
+    ///     let n = Matrix::<Word8, 3, 3>::of(&[7, 8, 9, 4, 5, 6, 1, 2, 3].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     assert_eq!(p * m, n);
     /// }
     /// ```
@@ -242,10 +241,11 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::word8::Word8};
     ///
     /// fn main() {
-    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     let p = Matrix::<Word8, 3, 3>::p_muls(2, Word8::of(2));
-    ///     let n =
-    ///         Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 8, 10, 12, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+    ///     let n = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 8, 10, 12, 7, 8, 9].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     assert_eq!(p * m, n);
     /// }
     /// ```
@@ -267,9 +267,11 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::int8::Int8};
     ///
     /// fn main() {
-    ///     let m = Matrix::<Int8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Int8::of(e))).unwrap();
+    ///     let m = Matrix::<Int8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Int8::of(e)))
+    ///         .unwrap();
     ///     let p = Matrix::<Int8, 3, 3>::p_add(1, 2, Int8::of(-4));
-    ///     let n = Matrix::<Int8, 3, 3>::of(&[1, 2, 3, 0, -3, -6, 7, 8, 9].map(|e| Int8::of(e))).unwrap();
+    ///     let n = Matrix::<Int8, 3, 3>::of(&[1, 2, 3, 0, -3, -6, 7, 8, 9].map(|e| Int8::of(e)))
+    ///         .unwrap();
     ///     assert_eq!(p * m, n);
     /// }
     /// ```
@@ -294,9 +296,10 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     ///
     /// fn main() {
     ///     let m = Matrix::<Float, 3, 3>::rand(Float::of(-1.0), Float::of(3.0));
-    ///     assert!(m
-    ///         .linear_iter()
-    ///         .all(|e| Float::of(-1.0) < e.clone() && e.clone() < Float::of(3.0)));
+    ///     assert!(
+    ///         m.linear_iter()
+    ///             .all(|e| Float::of(-1.0) < e.clone() && e.clone() < Float::of(3.0))
+    ///     );
     /// }
     /// ```
     ///
@@ -332,9 +335,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     ///     assert_eq!(m.shape(), (2, 3));
     /// }
     /// ```
-    pub fn shape(&self) -> (usize, usize) {
-        (R, C)
-    }
+    pub fn shape(&self) -> (usize, usize) { (R, C) }
 
     /// Returns the internal data of the matrix as an iterator.
     ///
@@ -347,9 +348,7 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     ///     assert!(m.linear_iter().zip(data.iter()).all(|(e1, e2)| e1 == e2));
     /// }
     /// ```
-    pub fn linear_iter(&self) -> std::slice::Iter<'_, N> {
-        self.inner.iter()
-    }
+    pub fn linear_iter(&self) -> std::slice::Iter<'_, N> { self.inner.iter() }
 
     /// Retrieves the element at a specific position in the matrix.
     ///
@@ -359,7 +358,8 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::word8::Word8};
     ///
     /// fn main() {
-    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     assert_eq!(m.get(2, 1), Some(&Word8::of(4)));
     ///     assert_eq!(m.get(3, 2), Some(&Word8::of(8)));
     ///     // Returns `None` when the position exceeds the boundaries.
@@ -388,11 +388,12 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     ///
     /// fn main() {
     ///     let mut m =
-    ///         Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+    ///         Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+    ///             .unwrap();
     ///     m.set(2, 1, Word8::of(12));
     ///     m.set(3, 2, Word8::of(16));
-    ///     let n =
-    ///         Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 12, 5, 6, 7, 16, 9].map(|e| Word8::of(e))).unwrap();
+    ///     let n = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 12, 5, 6, 7, 16, 9].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     assert_eq!(m, n);
     /// }
     /// ```
@@ -419,7 +420,8 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// };
     ///
     /// fn main() {
-    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     // What is retrieved is a reference to the element, not the value of the element.
     ///     let r2 = m.get_row(2).unwrap();
     ///     let v1 = Word8::of(4);
@@ -459,7 +461,8 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// };
     ///
     /// fn main() {
-    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     // What is retrieved is a reference to the element, not the value of the element.
     ///     let c2 = m.get_column(2).unwrap();
     ///     let v1 = Word8::of(2);
@@ -537,7 +540,8 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::word8::Word8};
     ///
     /// fn main() {
-    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+    ///     let m = Matrix::<Word8, 3, 3>::of(&[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
+    ///         .unwrap();
     ///     let sub = m.submatrix(1, 2);
     ///     let n = Matrix::<Word8, 2, 2>::of(&[4, 6, 7, 9].map(|e| Word8::of(e))).unwrap();
     ///     assert_eq!(sub, n);
@@ -652,9 +656,7 @@ where
 {
     type Output = Self;
 
-    fn div(self, rhs: N) -> Self::Output {
-        apply(&self, |e| e / rhs.clone())
-    }
+    fn div(self, rhs: N) -> Self::Output { apply(&self, |e| e / rhs.clone()) }
 }
 
 /// Calculates the matrix added to another matrix,

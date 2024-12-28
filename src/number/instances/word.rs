@@ -2,14 +2,14 @@
 //!
 //! Functions and implementations related to 32-bit unsigned integers.
 
+use rand::{
+    Rng,
+    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
+};
+
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
     traits::{integral::Integral, number::Number, one::One, real::Real, zero::Zero},
-};
-
-use rand::{
-    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
-    Rng,
 };
 
 /// Word numbers are the wrapper type for u32.
@@ -26,13 +26,9 @@ impl Word {
     /// ```rust
     /// use rmatrix_ks::number::instances::word::Word;
     ///
-    /// fn main() {
-    ///     let _w = Word::of(12);
-    /// }
+    /// fn main() { let _w = Word::of(12); }
     /// ```
-    pub const fn of(num: u32) -> Self {
-        Self { inner: num }
-    }
+    pub const fn of(num: u32) -> Self { Self { inner: num } }
 
     /// Construct word numbers from string.
     ///
@@ -76,31 +72,21 @@ impl Word {
 
 /// Implement the concept of ZERO for the word number.
 impl Zero for Word {
-    fn zero() -> Self {
-        Self { inner: 0u32 }
-    }
+    fn zero() -> Self { Self { inner: 0u32 } }
 
-    fn is_zero(&self) -> bool {
-        self.inner == 0u32
-    }
+    fn is_zero(&self) -> bool { self.inner == 0u32 }
 }
 
 /// Implement the concept of ONE for the word number.
 impl One for Word {
-    fn one() -> Self {
-        Self { inner: 1u32 }
-    }
+    fn one() -> Self { Self { inner: 1u32 } }
 
-    fn is_one(&self) -> bool {
-        self.inner == 1u32
-    }
+    fn is_one(&self) -> bool { self.inner == 1u32 }
 }
 
 /// Implement Default for the word number.
 impl std::default::Default for Word {
-    fn default() -> Self {
-        Self::zero()
-    }
+    fn default() -> Self { Self::zero() }
 }
 
 /// Implement the negation operation for the word number.
@@ -167,9 +153,7 @@ impl std::ops::Mul for Word {
 
 /// Implement the concept of NUMBER for the word number.
 impl Number for Word {
-    fn absolute_value(&self) -> Self {
-        Self { inner: self.inner }
-    }
+    fn absolute_value(&self) -> Self { Self { inner: self.inner } }
 
     fn sign_number(&self) -> Self {
         if self.inner == 0u32 {
