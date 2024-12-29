@@ -571,3 +571,122 @@ where
     }
     orthonormal_basis
 }
+
+/// Generate the corresponding real Givens rotation matrix
+/// to eliminate the element at '(row, column)' using '(row - 1, column)'.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::is_orthogonal_matrix, matrix::Matrix, utils::givens_rotation_matrix},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 4, 4>::of(
+///         &[
+///             1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 9.2, 10.1, 11.0, 12.9, 13.8, 14.7,
+///             15.6, 16.5,
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     let g = givens_rotation_matrix(&m, 4, 1);
+///     assert!(is_orthogonal_matrix(&g));
+///     let p = g * m;
+///     let p_expect = Matrix::<Float, 4, 4>::of(
+///         &[
+///             1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 16.5855, 17.8336, 19.0817, 20.8845,
+///             0.0, -0.2496, -0.4992, -1.5809,
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     assert_eq!(p, p_expect);
+/// }
+/// ```
+pub fn givens_rotation_matrix<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+    row: usize,
+    column: usize,
+) -> Matrix<N, R, R>
+where
+    N: RealFloat,
+{
+    let mut givens = Matrix::<N, R, R>::eyes();
+    // e1 is the element to be eliminated.
+    let e1 = m[(row, column)].clone();
+    // e2 is the element used for elimination.
+    let e2 = m[(row - 1, column)].clone();
+    // v = (e2, e1), r = ||v||
+    let r = (e1.clone() * e1.clone() + e2.clone() * e2.clone()).square_root();
+    // sin(theta) = y / r = e1 / r
+    let sin_theta = e1 / r.clone();
+    // cos(theta) = x / r = e2 / r
+    let cos_theta = e2 / r;
+    // rotation {{c, s}, {-s, c}}
+    givens[(row, row)] = cos_theta.clone();
+    givens[(row - 1, row - 1)] = cos_theta;
+    givens[(row, row - 1)] = -sin_theta.clone();
+    givens[(row - 1, row)] = sin_theta;
+    givens
+}
+
+/// Decompose the real matrix into
+/// an orthogonal matrix and the corresponding Hessenberg matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+/// use rmatrix_ks::{
+///     matrix::{
+///         math::is_orthogonal_matrix,
+///         matrix::Matrix,
+///         utils::{hessenberg_decomposition, points_2d, transpose},
+///     },
+///     number::{instances::float::Float, traits::zero::Zero},
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 4, 4>::of(
+///         &[
+///             1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 9.2, 10.1, 11.0, 12.9, 13.8, 14.7,
+///             15.6, 16.5,
+///         ]
+///         .map(Float::of),
+///     )
+///     .unwrap();
+///     let (p, h) = hessenberg_decomposition(&m);
+///     assert!(
+///         points_2d((1, 4), (1, 4), |r, c| r > c + 1)
+///             .par_iter()
+///             .all(|&p| h[p].is_zero())
+///     );
+///     assert!(is_orthogonal_matrix(&p));
+///     // P . H . P^T == M
+///     assert!(p.clone() * h * transpose(&p) == m);
+/// }
+/// ```
+pub fn hessenberg_decomposition<N, const E: usize>(
+    m: &Matrix<N, E, E>,
+) -> (Matrix<N, E, E>, Matrix<N, E, E>)
+where
+    N: RealFloat,
+{
+    if E < 3 {
+        (Matrix::eyes(), m.clone())
+    } else {
+        let mut hessen = m.clone();
+        let mut p = Matrix::eyes();
+        for column in 1..=E {
+            for row in (column + 1..E).rev() {
+                let pi = transpose(&givens_rotation_matrix(&hessen, row + 1, column));
+                hessen = transpose(&pi) * hessen * pi.clone();
+                p = p * pi;
+            }
+        }
+        (p, hessen)
+    }
+}

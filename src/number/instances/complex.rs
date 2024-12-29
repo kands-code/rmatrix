@@ -64,6 +64,30 @@ impl<F: RealFloat> Complex<F> {
         std::str::FromStr::from_str(complex_number).ok()
     }
 
+    /// Obtain the imaginary unit.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::{
+    ///     instances::{complex::Complex, float::Float},
+    ///     traits::one::One,
+    /// };
+    ///
+    /// fn main() {
+    ///     let a = Complex::<Float>::unit_i();
+    ///     let b = -Complex::unit_i();
+    ///     // i * (-i) = 1
+    ///     assert_eq!(a * b, Complex::one());
+    /// }
+    /// ```
+    pub fn unit_i() -> Self {
+        Complex {
+            real: F::zero(),
+            imaginary: F::one(),
+        }
+    }
+
     /// Get its conjugate complex number.
     ///
     /// # Examples

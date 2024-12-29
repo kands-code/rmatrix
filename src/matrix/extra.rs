@@ -9,10 +9,10 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use crate::{
     matrix::{
         complex,
-        math::{inverse, is_diagonal_matrix, is_symmetric_matrix},
+        math::inverse,
         matrix::Matrix,
-        utils::{apply, null_space, transpose},
-        vector::VectorC,
+        utils::{apply, transpose},
+        vector::{VectorC, normalize},
     },
     number::{
         instances::complex::Complex,
@@ -455,9 +455,9 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
-///         extra::eigen_system_symmetric,
+///         extra::eigen_system_qr,
 ///         matrix::Matrix,
-///         utils::transpose,
+///         utils::{apply, transpose},
 ///         vector::VectorC,
 ///     },
 ///     number::instances::float::Float,
@@ -468,11 +468,9 @@ where
 ///         &[1.0, 3.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 4.0].map(Float::of),
 ///     )
 ///     .unwrap();
-///     let Some((es, evs)) = eigen_system_symmetric(&(transpose(&m) * m)) else {
-///         unreachable!()
-///     };
+///     let (es, evs) = eigen_system_qr(&(transpose(&m) * m), 1024);
 ///     assert_eq!(
-///         es,
+///         apply(&es, |e| e.real.clone()),
 ///         VectorC::<Float, 3>::of(&[20.2907, 9.2791, 0.4302].map(Float::of)).unwrap()
 ///     );
 ///     let evs_expect = Matrix::<Float, 3, 3>::of(
@@ -482,82 +480,18 @@ where
 ///         .map(Float::of),
 ///     )
 ///     .unwrap();
-///     assert_eq!(evs, evs_expect);
+///     assert_eq!(apply(&evs, |e| e.real.clone()), evs_expect);
 /// }
 /// ```
-///
-/// ## Warnings
-///
-/// <div class="warning">
-///
-/// This function can only be used to
-/// compute the eigenvalues and eigenvectors of symmetric real matrices.
-///
-/// ```rust
-/// use rmatrix_ks::{
-///     matrix::{extra::eigen_system_symmetric, matrix::Matrix},
-///     number::instances::float::Float,
-/// };
-///
-/// fn main() {
-///     let m = Matrix::<Float, 3, 3>::of(
-///         &[1.0, 3.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 4.0].map(Float::of),
-///     )
-///     .unwrap();
-///     // Will return None for non-symmetric matrices.
-///     assert_eq!(eigen_system_symmetric(&m), None);
-/// }
-/// ```
-///
-/// </div>
-pub fn eigen_system_symmetric<N, const E: usize>(
+pub fn eigen_system_qr<N, const E: usize>(
     m: &Matrix<N, E, E>,
-) -> Option<(VectorC<N, E>, Matrix<N, E, E>)>
+    max_iter: usize,
+) -> (VectorC<Complex<N>, E>, Matrix<Complex<N>, E, E>)
 where
     N: RealFloat,
 {
-    if is_symmetric_matrix(m) {
-        let (mut q, mut r) = qr_decomposition_gr(m);
-        let mut diag = r * q;
-        while !is_diagonal_matrix(&diag) {
-            (q, r) = qr_decomposition_gr(&diag);
-            diag = r * q;
-        }
-        let eigenvalues =
-            VectorC::of(&(1..=E).map(|p| diag[(p, p)].clone()).collect::<Vec<N>>())
-                .expect("msg");
-        let mut eigenvectors = Matrix::default();
-        for idx in 1..=E {
-            let eigenequation = m.clone() - Matrix::eyes() * eigenvalues[(idx, 1)].clone();
-            let nullspace_eq = null_space(&eigenequation);
-            let eigenvector = if nullspace_eq.is_empty() {
-                let (ev, _) = qr_decomposition_gr(&eigenequation);
-                apply(
-                    &ev.get_column(idx).expect(&format!(
-                        concat!(
-                            "Error[matrix::extra::eigen_system_symmetric]: ",
-                            "Failed to obtain the {}-th column vector of ev."
-                        ),
-                        idx
-                    )),
-                    |e: &N| e.clone(),
-                )
-            } else {
-                nullspace_eq[0].clone()
-            };
-            for row in 1..=E {
-                eigenvectors[(row, idx)] = eigenvector[(row, 1)].clone();
-            }
-        }
-        Some((eigenvalues, eigenvectors))
-    } else {
-        eprintln!(concat!(
-            "Error[matrix::extra::eigen_system_symmetric]: ",
-            "This function can only be used to compute ",
-            "the eigenvalues and eigenvectors of symmetric real matrices."
-        ));
-        None
-    }
+    let complexed = apply(m, |e| Complex::of(e, N::zero()));
+    complex::eigen_system_qr(&complexed, max_iter)
 }
 
 /// Compute the singular value decomposition of the matrix
@@ -613,19 +547,24 @@ where
 {
     let left_sym = m.clone() * transpose(m);
     let right_sym = transpose(m) * m.clone();
-    let (sig1, u) = eigen_system_symmetric(&left_sym).expect(concat!(
-        "Error[matrix::extra::singular_value_decomposition]: ",
-        "Failed to compute the eigen system of (A A^T)."
-    ));
-    let (sig2, v) = eigen_system_symmetric(&right_sym).expect(concat!(
-        "Error[matrix::extra::singular_value_decomposition]: ",
-        "Failed to compute the eigen system of (A^T A)."
-    ));
+    // Compute the eigenvectors and eigenvalues of the left matrix.
+    let (sig1, u) = eigen_system_qr(&left_sym, 1024);
+    // Convert them to real numbers.
+    let sig1 = apply(&sig1, |e| e.real.clone());
+    let u = apply(&u, |e| e.real.clone());
+    // Compute the eigenvectors and eigenvalues of the right matrix.
+    let (sig2, v) = eigen_system_qr(&right_sym, 1024);
+    // Convert them to real numbers.
+    let sig2 = apply(&sig2, |e| e.real.clone());
+    let v = apply(&v, |e| e.real.clone());
     let mut sigma = Matrix::<N, R, C>::default();
     for idx in 1..=(R.min(C)) {
         // Take the average to reduce the error.
-        sigma[(idx, idx)] =
-            ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * N::half()).square_root();
+        sigma[(idx, idx)] = if sig1[(idx, 1)].is_zero() || sig2[(idx, 1)].is_zero() {
+            N::zero()
+        } else {
+            ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * N::half()).square_root()
+        };
     }
     // Obtain the corresponding orthogonal basis.
     let (u, _) = qr_decomposition_gr(&u);
@@ -646,7 +585,11 @@ where
                 )),
                 |e: &N| e.clone(),
             );
-            let vi = transpose(m) * ui / sigma[(idx, idx)].clone();
+            let vi = if sigma[(idx, idx)].is_zero() {
+                normalize(&(transpose(m) * ui))
+            } else {
+                transpose(m) * ui / sigma[(idx, idx)].clone()
+            };
             for row in 1..=C {
                 modified_v[(row, idx)] = vi[(row, 1)].clone();
             }
@@ -668,7 +611,11 @@ where
                 )),
                 |e: &N| e.clone(),
             );
-            let ui = m.clone() * vi / sigma[(idx, idx)].clone();
+            let ui = if sigma[(idx, idx)].is_zero() {
+                normalize(&(m.clone() * vi))
+            } else {
+                m.clone() * vi / sigma[(idx, idx)].clone()
+            };
             for row in 1..=R {
                 modified_u[(row, idx)] = ui[(row, 1)].clone();
             }

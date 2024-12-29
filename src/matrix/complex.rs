@@ -6,20 +6,22 @@ use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIter
 
 use crate::{
     matrix::{
-        math::{is_identity_matrix, is_square_matrix},
+        math::{is_identity_matrix, is_square_matrix, is_upper_triangular_matrix},
         matrix::Matrix,
-        utils::{apply, points_2d, transpose},
+        utils::{apply, null_space, points_2d, transpose},
         vector::{VectorC, layer_product},
     },
     number::{
-        instances::complex::Complex,
+        instances::{complex::Complex, word8::Word8},
         traits::{
             floating::Floating,
+            fractional::Fractional,
             number::Number,
             one::One,
             realfloat::RealFloat,
             zero::Zero,
         },
+        utils::from_integral,
     },
 };
 
@@ -446,7 +448,8 @@ where
     orthonormal_basis
 }
 
-/// Generate the corresponding Givens rotation matrix to eliminate the element at 'want' using 'by'.
+/// Generate the corresponding complex Givens rotation matrix
+/// to eliminate the element at '(row, column)' using '(row - 1, column)'.
 ///
 /// # Examples
 ///
@@ -462,7 +465,7 @@ where
 ///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
 ///     .unwrap();
-///     let g = givens_rotation_matrix(&m, (2, 1), (1, 1));
+///     let g = givens_rotation_matrix(&m, 2, 1);
 ///     let g_expect = Matrix::<Complex<Float>, 2, 2>::of(
 ///         &[
 ///             (1.0 / 10.0f32.sqrt(), 0.0),
@@ -478,17 +481,17 @@ where
 /// ```
 pub fn givens_rotation_matrix<F, const R: usize, const C: usize>(
     m: &Matrix<Complex<F>, R, C>,
-    want: (usize, usize),
-    by: (usize, usize),
+    row: usize,
+    column: usize,
 ) -> Matrix<Complex<F>, R, R>
 where
     F: RealFloat,
 {
     let mut givens = Matrix::<Complex<F>, R, R>::eyes();
     // e1 is the element to be eliminated.
-    let e1 = m[want].clone();
+    let e1 = m[(row, column)].clone();
     // e2 is the element used for elimination.
-    let e2 = m[by].clone();
+    let e2 = m[(row - 1, column)].clone();
     // v = (e2, e1), r = ||v||
     let r = (e1.clone().conjugate() * e1.clone() + e2.clone().conjugate() * e2.clone())
         .square_root();
@@ -497,10 +500,10 @@ where
     // cos(theta) = x / r = e2 / r
     let cos_theta = e2 / r;
     // rotation {{c.conj, s.conj}, {-s, c}}
-    givens[(want.0, want.0)] = cos_theta.clone();
-    givens[(by.0, by.0)] = cos_theta.conjugate();
-    givens[(want.0, by.0)] = -sin_theta.clone();
-    givens[(by.0, want.0)] = sin_theta.conjugate();
+    givens[(row, row)] = cos_theta.clone();
+    givens[(row - 1, row - 1)] = cos_theta.conjugate();
+    givens[(row, row - 1)] = -sin_theta.clone();
+    givens[(row - 1, row)] = sin_theta.conjugate();
     givens
 }
 
@@ -930,10 +933,10 @@ where
     let mut r = m.clone();
     for column in 1..=C {
         for row in (column..R).rev() {
-            if r[(row, column)].is_zero() {
+            if r[(row + 1, column)].is_zero() {
                 continue;
             } else {
-                let rotation = givens_rotation_matrix(&r, (row + 1, column), (row, column));
+                let rotation = givens_rotation_matrix(&r, row + 1, column);
                 r = rotation.clone() * r;
                 q = rotation * q;
             }
@@ -1031,4 +1034,172 @@ where
         r.inner = basic_r.inner;
     }
     (q, r)
+}
+
+/// Decompose the complex matrix into
+/// an orthogonal matrix and the corresponding Hessenberg matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+/// use rmatrix_ks::{
+///     matrix::{
+///         complex::{conjugate_transpose, hessenberg_decomposition, is_unitary_matrix},
+///         matrix::Matrix,
+///         utils::points_2d,
+///     },
+///     number::{
+///         instances::{complex::Complex, float::Float},
+///         traits::zero::Zero,
+///     },
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 4, 4>::of(
+///         &[
+///             (1.0, 1.0),
+///             (2.0, 0.0),
+///             (3.0, 0.0),
+///             (4.0, 0.0),
+///             (5.0, 0.0),
+///             (6.0, 1.0),
+///             (7.0, 0.0),
+///             (8.0, 0.0),
+///             (9.0, 0.0),
+///             (10.0, 0.0),
+///             (11.0, 1.0),
+///             (12.0, 0.0),
+///             (13.0, 0.0),
+///             (14.0, 0.0),
+///             (15.0, 0.0),
+///             (16.0, 0.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let (p, h) = hessenberg_decomposition(&m);
+///     assert!(
+///         points_2d((1, 4), (1, 4), |r, c| r > c + 1)
+///             .par_iter()
+///             .all(|&p| h[p].is_zero())
+///     );
+///     assert!(is_unitary_matrix(&p));
+///     // P . H . P^H = M
+///     assert_eq!(p.clone() * h * conjugate_transpose(&p), m);
+/// }
+/// ```
+pub fn hessenberg_decomposition<F, const E: usize>(
+    m: &Matrix<Complex<F>, E, E>,
+) -> (Matrix<Complex<F>, E, E>, Matrix<Complex<F>, E, E>)
+where
+    F: RealFloat,
+{
+    if E < 3 {
+        (Matrix::eyes(), m.clone())
+    } else {
+        let mut hessen = m.clone();
+        let mut p = Matrix::eyes();
+        for column in 1..=E {
+            for row in (column + 1..E).rev() {
+                let pi = conjugate_transpose(&givens_rotation_matrix(&hessen, row + 1, column));
+                hessen = conjugate_transpose(&pi) * hessen * pi.clone();
+                p = p * pi;
+            }
+        }
+        (p, hessen)
+    }
+}
+
+/// Calculate the eigenvalues and eigenvectors of the complex matrix
+/// using the QR algorithm based on Givens rotation matrices.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{complex::eigen_system_qr, matrix::Matrix, vector::VectorC},
+///     number::{
+///         instances::{complex::Complex, float::Float},
+///         traits::{one::One, zero::Zero},
+///     },
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 2, 2>::of(&[
+///         Complex::zero(),
+///         -Complex::unit_i(),
+///         Complex::unit_i(),
+///         Complex::zero(),
+///     ])
+///     .unwrap();
+///     let (es, evs) = eigen_system_qr(&m, 1024);
+///     assert_eq!(
+///         es,
+///         VectorC::<Complex<Float>, 2>::of(&[Complex::one(), -Complex::one()]).unwrap()
+///     );
+///     let evs_expect = Matrix::<Complex<Float>, 2, 2>::of(&[
+///         -Complex::unit_i(),
+///         Complex::unit_i(),
+///         Complex::one(),
+///         Complex::one(),
+///     ])
+///     .unwrap();
+///     assert_eq!(evs, evs_expect);
+/// }
+/// ```
+pub fn eigen_system_qr<F, const E: usize>(
+    m: &Matrix<Complex<F>, E, E>,
+    max_iter: usize,
+) -> (VectorC<Complex<F>, E>, Matrix<Complex<F>, E, E>)
+where
+    F: RealFloat,
+{
+    let mut eigenvalues = VectorC::default();
+    if E < 3 {
+        let four = from_integral::<Complex<F>, Word8>(Word8::of(4));
+        let b = -m[(1, 1)].clone() - m[(2, 2)].clone();
+        let c = m[(1, 1)].clone() * m[(2, 2)].clone() - m[(1, 2)].clone() * m[(2, 1)].clone();
+        let delta = b.clone().conjugate() * b.clone() - four * c;
+        eigenvalues[(1, 1)] = (-b.clone() + delta.clone().square_root()) * Complex::half();
+        eigenvalues[(2, 1)] = (-b - delta.square_root()) * Complex::half();
+    } else {
+        let (_, hm) = hessenberg_decomposition(m);
+        let (mut q, mut r) = qr_decomposition_gr(&hm);
+        let mut hmp = r * q;
+        for _ in 0..max_iter {
+            if is_upper_triangular_matrix(&hmp) {
+                break;
+            }
+            (q, r) = qr_decomposition_gr(&hmp);
+            hmp = r * q;
+        }
+        for idx in 1..=E {
+            eigenvalues[(idx, 1)] = hmp[(idx, idx)].clone();
+        }
+    }
+    let mut eigenvectors = Matrix::default();
+    for idx in 1..=E {
+        let eigen_equation = m.clone() - Matrix::eyes() * eigenvalues[(idx, 1)].clone();
+        let null_space_eq = null_space(&eigen_equation);
+        let eigenvector = if null_space_eq.is_empty() {
+            let (ev, _) = qr_decomposition_gr(&eigen_equation);
+            apply(
+                &ev.get_column(idx).expect(&format!(
+                    concat!(
+                        "Error[matrix::extra::eigen_system_qr]: ",
+                        "Failed to obtain the {}-th column vector of ev."
+                    ),
+                    idx
+                )),
+                |e: &Complex<F>| e.clone(),
+            )
+        } else {
+            null_space_eq[0].clone()
+        };
+        for row in 1..=E {
+            eigenvectors[(row, idx)] = eigenvector[(row, 1)].clone();
+        }
+    }
+    (eigenvalues, eigenvectors)
 }
