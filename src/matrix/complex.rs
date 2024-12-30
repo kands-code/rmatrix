@@ -1267,3 +1267,154 @@ where
     let (rho_square, _) = eigen_system_qr(&p, DEFAULT_MAX_ITER);
     rho_square[(1, 1)].real.clone().square_root()
 }
+
+/// Compute the singular value decomposition of the complex matrix
+///
+/// The orthogonal basis part is based on the Gram-Schmidt process.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         complex::{conjugate_transpose, singular_value_decomposition},
+///         matrix::Matrix,
+///     },
+///     number::{
+///         instances::{complex::Complex, float::Float},
+///         traits::zero::Zero,
+///     },
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///         &[
+///             (1.0, -2.0),
+///             (3.0, -4.0),
+///             (5.0, 6.0),
+///             (7.0, -8.0),
+///             (9.0, 10.0),
+///             (11.0, -12.0),
+///             (13.0, 14.0),
+///             (15.0, -16.0),
+///             (17.0, 18.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let (u, s, v) = singular_value_decomposition(&m);
+///     let s_expect = Matrix::<Complex<Float>, 3, 3>::diagonal(
+///         &[40.2086, 21.4557, 5.64978].map(|e| Complex::of(Float::of(e), Float::zero())),
+///     )
+///     .unwrap();
+///     assert_eq!(s, s_expect);
+///     assert_eq!(u * s * conjugate_transpose(&v), m);
+/// }
+/// ```
+pub fn singular_value_decomposition<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> (
+    Matrix<Complex<F>, R, R>,
+    Matrix<Complex<F>, R, C>,
+    Matrix<Complex<F>, C, C>,
+)
+where
+    F: RealFloat,
+{
+    let left_sym = m.clone() * conjugate_transpose(m);
+    let right_sym = conjugate_transpose(m) * m.clone();
+    let edge = R.min(C);
+    // Compute the eigenvectors and eigenvalues of the left matrix.
+    let (sig1, mut u) = eigen_system_qr(&left_sym, DEFAULT_MAX_ITER);
+    // Compute the eigenvectors and eigenvalues of the right matrix.
+    let (sig2, mut v) = eigen_system_qr(&right_sym, DEFAULT_MAX_ITER);
+    let mut sigma = Matrix::<Complex<F>, R, C>::default();
+    // Sort singular values.
+    let mut sd = (1..=edge)
+        .map(|idx| {
+            // Take the average to reduce the error.
+            if sig1[(idx, 1)].is_zero() || sig2[(idx, 1)].is_zero() {
+                Complex::zero()
+            } else {
+                ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * Complex::half())
+                    .square_root()
+            }
+        })
+        .collect::<Vec<Complex<F>>>();
+    for idx in 0..(edge - 1) {
+        let mut max = idx;
+        for p in (idx + 1)..edge {
+            if sd[max] < sd[p] {
+                max = p;
+            }
+        }
+        if max != idx {
+            let temp = sd[idx].clone();
+            sd[idx] = sd[max].clone();
+            sd[max] = temp;
+            let p_left = Matrix::<Complex<F>, R, R>::p_change(idx, max);
+            u = u * p_left;
+            let p_right = Matrix::<Complex<F>, C, C>::p_change(idx, max);
+            v = v * p_right;
+        }
+    }
+    for idx in 1..=edge {
+        sigma[(idx, idx)] = sd[idx - 1].clone();
+    }
+    // Obtain the corresponding orthogonal basis.
+    let u = gram_schmidt_process(&u);
+    let v = gram_schmidt_process(&v);
+    if R > C {
+        // Use U as a reference to correct V.
+        // A^T U = V (S^T) = V S'
+        // => A^T ui = si vi
+        let mut modified_v = Matrix::default();
+        for idx in 1..=C {
+            let ui = apply(
+                &u.get_column(idx).expect(&format!(
+                    concat!(
+                        "Error[matrix::extra::singular_value_decomposition]: ",
+                        "Failed to obtain the {}-th column vector of U."
+                    ),
+                    idx
+                )),
+                |e: &Complex<F>| e.clone(),
+            );
+            let vi = if sigma[(idx, idx)].is_zero() {
+                normalize(&(conjugate_transpose(m) * ui))
+            } else {
+                conjugate_transpose(m) * ui / sigma[(idx, idx)].clone()
+            };
+            for row in 1..=C {
+                modified_v[(row, idx)] = vi[(row, 1)].clone();
+            }
+        }
+        (u, sigma, modified_v)
+    } else {
+        // Use V as a reference to correct U.
+        // A V = S U
+        // => A vi = si ui
+        let mut modified_u = Matrix::default();
+        for idx in 1..=R {
+            let vi = apply(
+                &v.get_column(idx).expect(&format!(
+                    concat!(
+                        "Error[matrix::extra::singular_value_decomposition]: ",
+                        "Failed to obtain the {}-th column vector of V."
+                    ),
+                    idx
+                )),
+                |e: &Complex<F>| e.clone(),
+            );
+            let ui = if sigma[(idx, idx)].is_zero() {
+                normalize(&(m.clone() * vi))
+            } else {
+                m.clone() * vi / sigma[(idx, idx)].clone()
+            };
+            for row in 1..=R {
+                modified_u[(row, idx)] = ui[(row, 1)].clone();
+            }
+        }
+        (modified_u, sigma, v)
+    }
+}

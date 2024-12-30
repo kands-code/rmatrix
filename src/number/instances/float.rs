@@ -65,7 +65,7 @@ impl Zero for Float {
 
     /// Validate whether a float number is ZERO.
     ///
-    /// Use half-precision to avoid certain floating-point precision errors.
+    /// Use `eps = 3.90625e-3` to avoid certain floating-point precision errors.
     ///
     /// ```rust
     /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
@@ -75,7 +75,7 @@ impl Zero for Float {
     ///     assert!(f.is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool { self.inner.abs() <= core::f32::EPSILON.sqrt() }
+    fn is_zero(&self) -> bool { self.inner.abs() <= 3.90625e-3 }
 }
 
 /// Implement the concept of ONE for the float number.

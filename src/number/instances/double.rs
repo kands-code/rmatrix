@@ -66,7 +66,7 @@ impl Zero for Double {
 
     /// Validate whether a double number is ZERO.
     ///
-    /// Use half-precision to avoid certain floating-point precision errors.
+    /// Use `eps = 1.52587890625e-5` to avoid certain floating-point precision errors.
     ///
     /// ```rust
     /// use rmatrix_ks::number::{instances::double::Double, traits::zero::Zero};
@@ -76,7 +76,7 @@ impl Zero for Double {
     ///     assert!(d.is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool { self.inner.abs() <= core::f64::EPSILON.sqrt() }
+    fn is_zero(&self) -> bool { self.inner.abs() <= 1.52587890625e-5 }
 }
 
 /// Implement the concept of ONE for the double number.

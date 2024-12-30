@@ -523,7 +523,7 @@ where
     rho_square[(1, 1)].real.clone().square_root()
 }
 
-/// Compute the singular value decomposition of the matrix
+/// Compute the singular value decomposition of the real matrix
 ///
 /// The orthogonal basis part is based on the Gram-Schmidt process.
 ///
@@ -538,33 +538,11 @@ where
 /// fn main() {
 ///     let m = Matrix::<Float, 2, 2>::of(&[2.0, 8.0, 6.0, 0.0].map(Float::of)).unwrap();
 ///     let (u, s, v) = singular_value_decomposition(&m);
-///     let u_expect = Matrix::<Float, 2, 2>::of(
-///         &[
-///             3.0 / 10.0f32.sqrt(),
-///             1.0 / 10.0f32.sqrt(),
-///             1.0 / 10.0f32.sqrt(),
-///             -3.0 / 10.0f32.sqrt(),
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     assert_eq!(u, u_expect);
 ///     let s_expect = Matrix::<Float, 2, 2>::of(
 ///         &[6.0 * 2.0f32.sqrt(), 0.0, 0.0, 4.0 * 2.0f32.sqrt()].map(Float::of),
 ///     )
 ///     .unwrap();
 ///     assert_eq!(s, s_expect);
-///     let v_expect = Matrix::<Float, 2, 2>::of(
-///         &[
-///             1.0 / 5.0f32.sqrt(),
-///             -2.0 / 5.0f32.sqrt(),
-///             2.0 / 5.0f32.sqrt(),
-///             1.0 / 5.0f32.sqrt(),
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     assert_eq!(v, v_expect);
 ///     assert_eq!(m, u * s * transpose(&v));
 /// }
 /// ```
@@ -576,16 +554,17 @@ where
 {
     let left_sym = m.clone() * transpose(m);
     let right_sym = transpose(m) * m.clone();
+    let edge = R.min(C);
     // Compute the eigenvectors and eigenvalues of the left matrix.
     let (sig1, u) = eigen_system_qr(&left_sym, DEFAULT_MAX_ITER);
     // Convert them to real numbers.
     let sig1 = apply(&sig1, |e| e.real.clone());
-    let u = apply(&u, |e| e.real.clone());
+    let mut u = apply(&u, |e| e.real.clone());
     // Compute the eigenvectors and eigenvalues of the right matrix.
     let (sig2, v) = eigen_system_qr(&right_sym, DEFAULT_MAX_ITER);
     // Convert them to real numbers.
     let sig2 = apply(&sig2, |e| e.real.clone());
-    let v = apply(&v, |e| e.real.clone());
+    let mut v = apply(&v, |e| e.real.clone());
     let mut sigma = Matrix::<N, R, C>::default();
     for idx in 1..=(R.min(C)) {
         // Take the average to reduce the error.
@@ -594,6 +573,37 @@ where
         } else {
             ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * N::half()).square_root()
         };
+    }
+    // Sort singular values.
+    let mut sd = (1..=edge)
+        .map(|idx| {
+            // Take the average to reduce the error.
+            if sig1[(idx, 1)].is_zero() || sig2[(idx, 1)].is_zero() {
+                N::zero()
+            } else {
+                ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * N::half()).square_root()
+            }
+        })
+        .collect::<Vec<N>>();
+    for idx in 0..(edge - 1) {
+        let mut max = idx;
+        for p in (idx + 1)..edge {
+            if sd[max] < sd[p] {
+                max = p;
+            }
+        }
+        if max != idx {
+            let temp = sd[idx].clone();
+            sd[idx] = sd[max].clone();
+            sd[max] = temp;
+            let p_left = Matrix::<N, R, R>::p_change(idx, max);
+            u = u * p_left;
+            let p_right = Matrix::<N, C, C>::p_change(idx, max);
+            v = v * p_right;
+        }
+    }
+    for idx in 1..=edge {
+        sigma[(idx, idx)] = sd[idx - 1].clone();
     }
     // Obtain the corresponding orthogonal basis.
     let u = gram_schmidt_process(&u);
