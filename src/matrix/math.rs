@@ -414,8 +414,6 @@ where
     norm
 }
 
-// **TODO** L-2 norm
-
 /// Calculate the Frobenius norm of the matrix.
 ///
 /// Both real matrix and complex matrix.

@@ -8,10 +8,11 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
     matrix::{
+        DEFAULT_MAX_ITER,
         complex,
         math::inverse,
         matrix::Matrix,
-        utils::{apply, transpose},
+        utils::{apply, gram_schmidt_process, transpose},
         vector::{VectorC, normalize},
     },
     number::{
@@ -397,7 +398,7 @@ where
 /// ```
 ///
 /// The information for the complete solution
-/// can be computed in conjunction with the [null_space].
+/// can be computed in conjunction with the [null_space](crate::matrix::utils::null_space).
 ///
 /// ## Warnings
 ///
@@ -471,11 +472,11 @@ where
 ///     let (es, evs) = eigen_system_qr(&(transpose(&m) * m), 1024);
 ///     assert_eq!(
 ///         apply(&es, |e| e.real.clone()),
-///         VectorC::<Float, 3>::of(&[20.2907, 9.2791, 0.4302].map(Float::of)).unwrap()
+///         VectorC::<Float, 3>::of(&[20.2907, 0.4302, 9.2791].map(Float::of)).unwrap()
 ///     );
 ///     let evs_expect = Matrix::<Float, 3, 3>::of(
 ///         &[
-///             0.39185, -0.40899, -4.17221, 0.44383, -1.89201, 1.43042, 1.0, 1.0, 1.0,
+///             0.39185, -4.17221, -0.40899, 0.44383, 1.43042, -1.89201, 1.0, 1.0, 1.0,
 ///         ]
 ///         .map(Float::of),
 ///     )
@@ -494,9 +495,37 @@ where
     complex::eigen_system_qr(&complexed, max_iter)
 }
 
+/// Calculate the induced L-2 norm of the real matrix.
+///
+/// aka. spectral norm.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{extra::induced_l2_matrix_norm, matrix::Matrix},
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let m =
+///         Matrix::<Float, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
+///     let n = induced_l2_matrix_norm(&m);
+///     assert_eq!(n, Float::of(9.5255));
+/// }
+/// ```
+pub fn induced_l2_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
+where
+    N: RealFloat,
+{
+    let p = transpose(m) * m.clone();
+    let (rho_square, _) = eigen_system_qr(&p, DEFAULT_MAX_ITER);
+    rho_square[(1, 1)].real.clone().square_root()
+}
+
 /// Compute the singular value decomposition of the matrix
 ///
-/// The orthogonal basis part is based on the Givens rotation matrices.
+/// The orthogonal basis part is based on the Gram-Schmidt process.
 ///
 /// # Examples
 ///
@@ -548,12 +577,12 @@ where
     let left_sym = m.clone() * transpose(m);
     let right_sym = transpose(m) * m.clone();
     // Compute the eigenvectors and eigenvalues of the left matrix.
-    let (sig1, u) = eigen_system_qr(&left_sym, 1024);
+    let (sig1, u) = eigen_system_qr(&left_sym, DEFAULT_MAX_ITER);
     // Convert them to real numbers.
     let sig1 = apply(&sig1, |e| e.real.clone());
     let u = apply(&u, |e| e.real.clone());
     // Compute the eigenvectors and eigenvalues of the right matrix.
-    let (sig2, v) = eigen_system_qr(&right_sym, 1024);
+    let (sig2, v) = eigen_system_qr(&right_sym, DEFAULT_MAX_ITER);
     // Convert them to real numbers.
     let sig2 = apply(&sig2, |e| e.real.clone());
     let v = apply(&v, |e| e.real.clone());
@@ -567,8 +596,8 @@ where
         };
     }
     // Obtain the corresponding orthogonal basis.
-    let (u, _) = qr_decomposition_gr(&u);
-    let (v, _) = qr_decomposition_gr(&v);
+    let u = gram_schmidt_process(&u);
+    let v = gram_schmidt_process(&v);
     if R > C {
         // Use U as a reference to correct V.
         // A^T U = V (S^T) = V S'
