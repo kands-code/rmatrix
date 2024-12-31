@@ -19,8 +19,6 @@
 //! <div class="warning">
 //!
 //! Unstable features used:
-//! - doc_cfg
-//! - doc_auto_cfg
 //! - generic_const_exprs
 //!
 //! If you want to use this library, please use Rust Nightly
@@ -30,9 +28,9 @@
 //!
 //! # Description
 //!
-//! This library is used for numerical computing,
-//! mainly matrix operations as well as numerical ordinary differential equations
-//! and some optimization problems, just for learning and self using.
+//! This library primarily contains the definitions and implementations
+//! of matrix operations and numerical types,
+//! and is intended for personal use only.
 
 pub mod matrix;
 pub mod number;

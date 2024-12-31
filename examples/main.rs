@@ -7,7 +7,7 @@
 #![feature(generic_const_exprs)]
 
 use rmatrix_ks::{
-    matrix::{math::row_eliminate, matrix::Matrix, utils::transpose},
+    matrix::{math::row_eliminate, matrix::Matrix},
     number::instances::float::Float,
 };
 
