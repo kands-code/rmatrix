@@ -1,8 +1,6 @@
 #![warn(missing_docs)]
-#![allow(incomplete_features)]
 #![feature(doc_cfg)]
 #![feature(doc_auto_cfg)]
-#![feature(generic_const_exprs)]
 
 //! # rmatrix_ks
 //!
@@ -14,25 +12,11 @@
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs
 //!
-//! ## Warnings
-//!
-//! <div class="warning">
-//!
-//! Unstable features used:
-//! - doc_cfg
-//! - doc_auto_cfg
-//! - generic_const_exprs
-//!
-//! If you want to use this library, please use Rust Nightly
-//! and make sure to add `#![feature(generic_const_exprs)]`.
-//!
-//! </div>
-//!
 //! # Description
 //!
-//! This library is used for numerical computing,
-//! mainly matrix operations as well as numerical ordinary differential equations
-//! and some optimization problems, just for learning and self using.
+//! This library primarily contains the definitions and implementations
+//! of matrix operations and numerical types,
+//! and is intended for personal use only.
 
 pub mod matrix;
 pub mod number;

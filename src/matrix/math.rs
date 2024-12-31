@@ -4,7 +4,7 @@
 //! such as matrix validation, matrix simplification,
 //! and determinant calculation, etc.
 
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
     matrix::{
@@ -28,21 +28,13 @@ use crate::{
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Word8, 2, 2>::of(&[
-///         Word8::of(1),
-///         Word8::of(2),
-///         Word8::of(2),
-///         Word8::of(1),
-///     ])
-///     .unwrap();
-///     let m2 = Matrix::<Word8, 2, 1>::of(&[Word8::of(1), Word8::of(3)]).unwrap();
+///     let m1 = Matrix::<Word8>::of(2, 2, &[1, 2, 2, 1].map(Word8::of)).unwrap();
+///     let m2 = Matrix::<Word8>::of(2, 1, &[1, 3].map(Word8::of)).unwrap();
 ///     assert!(is_square_matrix(&m1));
 ///     assert!(!is_square_matrix(&m2));
 /// }
 /// ```
-pub const fn is_square_matrix<N, const R: usize, const C: usize>(_: &Matrix<N, R, C>) -> bool {
-    R == C
-}
+pub const fn is_square_matrix<N>(m: &Matrix<N>) -> bool { m.row == m.column }
 
 /// Validate whether a matrix is a symmetric matrix.
 ///
@@ -58,38 +50,20 @@ pub const fn is_square_matrix<N, const R: usize, const C: usize>(_: &Matrix<N, R
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Word8, 2, 2>::of(&[
-///         Word8::of(1),
-///         Word8::of(2),
-///         Word8::of(2),
-///         Word8::of(1),
-///     ])
-///     .unwrap();
-///     let m2 = Matrix::<Word8, 2, 2>::of(&[
-///         Word8::of(1),
-///         Word8::of(2),
-///         Word8::of(1),
-///         Word8::of(1),
-///     ])
-///     .unwrap();
-///     let m3 = Matrix::<Double, 2, 2>::of(&[
-///         Double::of(1.0),
-///         Double::of(2.0),
-///         Double::of(2.0),
-///         Double::of(1.0),
-///     ])
-///     .unwrap();
+///     let m1 = Matrix::<Word8>::of(2, 2, &[1, 2, 2, 1].map(Word8::of)).unwrap();
+///     let m2 = Matrix::<Word8>::of(2, 2, &[1, 2, 1, 1].map(Word8::of)).unwrap();
+///     let m3 = Matrix::<Double>::of(2, 2, &[1.0, 2.0, 2.0, 1.0].map(Double::of)).unwrap();
 ///     assert!(is_symmetric_matrix(&m1));
 ///     assert!(!is_symmetric_matrix(&m2));
 ///     assert!(is_symmetric_matrix(&m3));
 /// }
 /// ```
-pub fn is_symmetric_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+pub fn is_symmetric_matrix<N>(m: &Matrix<N>) -> bool
 where
     N: PartialEq + Sync,
 {
     is_square_matrix(m)
-        && points_2d((1, R), (1, C), |row, col| row < col)
+        && points_2d((1, m.row), (1, m.column), |row, col| row < col)
             .par_iter()
             .all(|&p @ (row, col)| &m[p] == &m[(col, row)])
 }
@@ -111,29 +85,23 @@ where
 ///
 /// fn main() {
 ///     let m1 =
-///         Matrix::<Int8, 2, 2>::of(&[Int8::of(0), Int8::of(2), Int8::of(-2), Int8::of(0)])
+///         Matrix::<Int8>::of(2, 2, &[Int8::of(0), Int8::of(2), Int8::of(-2), Int8::of(0)])
 ///             .unwrap();
 ///     let m2 =
-///         Matrix::<Int8, 2, 2>::of(&[Int8::of(1), Int8::of(2), Int8::of(-2), Int8::of(1)])
+///         Matrix::<Int8>::of(2, 2, &[Int8::of(1), Int8::of(2), Int8::of(-2), Int8::of(1)])
 ///             .unwrap();
-///     let m3 = Matrix::<Double, 2, 2>::of(&[
-///         Double::of(0.0),
-///         Double::of(0.0),
-///         Double::of(0.0),
-///         Double::of(0.0),
-///     ])
-///     .unwrap();
+///     let m3 = Matrix::<Double>::of(2, 2, &[0.0, 0.0, 0.0, 0.0].map(Double::of)).unwrap();
 ///     assert!(is_anti_symmetric_matrix(&m1));
 ///     assert!(!is_anti_symmetric_matrix(&m2));
 ///     assert!(is_anti_symmetric_matrix(&m3));
 /// }
 /// ```
-pub fn is_anti_symmetric_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+pub fn is_anti_symmetric_matrix<N>(m: &Matrix<N>) -> bool
 where
     N: Real,
 {
     is_square_matrix(m)
-        && points_2d((1, R), (1, C), |row, col| row <= col)
+        && points_2d((1, m.row), (1, m.column), |row, col| row <= col)
             .par_iter()
             .all(|&p @ (row, col)| m[p] == -m[(col, row)].clone())
 }
@@ -149,22 +117,17 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1: Matrix<Word8, 2, 2> =
-///         Matrix::of(&[Word8::of(1), Word8::of(1), Word8::of(0), Word8::of(1)]).unwrap();
+///     let m1: Matrix<Word8> = Matrix::of(2, 2, &[1, 1, 0, 1].map(Word8::of)).unwrap();
 ///     assert!(is_upper_triangular_matrix(&m1));
-///
-///     let m2: Matrix<Word8, 2, 2> =
-///         Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(1), Word8::of(1)]).unwrap();
+///     let m2: Matrix<Word8> = Matrix::of(2, 2, &[1, 0, 1, 1].map(Word8::of)).unwrap();
 ///     assert!(!is_upper_triangular_matrix(&m2));
 /// }
 /// ```
-pub fn is_upper_triangular_matrix<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> bool
+pub fn is_upper_triangular_matrix<N>(m: &Matrix<N>) -> bool
 where
     N: Number,
 {
-    points_2d((1, R), (1, C), |row, col| row > col)
+    points_2d((1, m.row), (1, m.column), |row, col| row > col)
         .par_iter()
         .all(|&p| m[p].is_zero())
 }
@@ -180,22 +143,17 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1: Matrix<Word8, 2, 2> =
-///         Matrix::of(&[Word8::of(1), Word8::of(1), Word8::of(0), Word8::of(1)]).unwrap();
+///     let m1: Matrix<Word8> = Matrix::of(2, 2, &[1, 1, 0, 1].map(Word8::of)).unwrap();
 ///     assert!(!is_lower_triangular_matrix(&m1));
-///
-///     let m2: Matrix<Word8, 2, 2> =
-///         Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(1), Word8::of(1)]).unwrap();
+///     let m2: Matrix<Word8> = Matrix::of(2, 2, &[1, 0, 1, 1].map(Word8::of)).unwrap();
 ///     assert!(is_lower_triangular_matrix(&m2));
 /// }
 /// ```
-pub fn is_lower_triangular_matrix<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> bool
+pub fn is_lower_triangular_matrix<N>(m: &Matrix<N>) -> bool
 where
     N: Number,
 {
-    points_2d((1, R), (1, C), |row, col| row < col)
+    points_2d((1, m.row), (1, m.column), |row, col| row < col)
         .par_iter()
         .all(|&p| m[p].is_zero())
 }
@@ -211,20 +169,18 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1: Matrix<Word8, 2, 2> =
-///         Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(0), Word8::of(2)]).unwrap();
+///     let m1: Matrix<Word8> = Matrix::of(2, 2, &[1, 0, 0, 2].map(Word8::of)).unwrap();
 ///     assert!(is_diagonal_matrix(&m1));
 ///
-///     let m2: Matrix<Word8, 2, 2> =
-///         Matrix::of(&[Word8::of(1), Word8::of(0), Word8::of(1), Word8::of(1)]).unwrap();
+///     let m2: Matrix<Word8> = Matrix::of(2, 2, &[1, 0, 1, 1].map(Word8::of)).unwrap();
 ///     assert!(!is_diagonal_matrix(&m2));
 /// }
 /// ```
-pub fn is_diagonal_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+pub fn is_diagonal_matrix<N>(m: &Matrix<N>) -> bool
 where
     N: Number,
 {
-    points_2d((1, R), (1, C), |row, col| row != col)
+    points_2d((1, m.row), (1, m.column), |row, col| row != col)
         .par_iter()
         .cloned()
         .map(|p| &m[p])
@@ -242,27 +198,21 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Word8, 2, 2>::of(&[
-///         Word8::of(1),
-///         Word8::of(0),
-///         Word8::of(0),
-///         Word8::of(1),
-///     ])
-///     .unwrap();
+///     let m1 = Matrix::<Word8>::of(2, 2, &[1, 0, 0, 1].map(Word8::of)).unwrap();
 ///     let m2 =
-///         Matrix::<Double, 2, 2>::of(&[1.0, 2.0, 2.0, 1.0].map(|e| Double::of(e))).unwrap();
+///         Matrix::<Double>::of(2, 2, &[1.0, 2.0, 2.0, 1.0].map(|e| Double::of(e))).unwrap();
 ///     assert!(is_identity_matrix(&m1));
 ///     assert!(!is_identity_matrix(&m2));
-///     assert!(is_identity_matrix(&Matrix::<Double, 3, 3>::eyes()));
+///     assert!(is_identity_matrix(&Matrix::<Double>::eyes(3, 3)));
 /// }
 /// ```
-pub fn is_identity_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+pub fn is_identity_matrix<N>(m: &Matrix<N>) -> bool
 where
     N: Number,
 {
     is_square_matrix(m)
         && is_diagonal_matrix(m)
-        && points_2d((1, R), (1, C), |row, col| row == col)
+        && points_2d((1, m.row), (1, m.column), |row, col| row == col)
             .par_iter()
             .all(|&p| m[p].is_one())
 }
@@ -278,11 +228,11 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Float, 2, 2>::of(&[1.0, 2.0, -2.0, 1.0].map(Float::of)).unwrap();
+///     let m = Matrix::<Float>::of(2, 2, &[1.0, 2.0, -2.0, 1.0].map(Float::of)).unwrap();
 ///     assert!(is_normal_matrix(&m));
 /// }
 /// ```
-pub fn is_normal_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+pub fn is_normal_matrix<N>(m: &Matrix<N>) -> bool
 where
     N: Real,
 {
@@ -305,19 +255,19 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Double, 3, 3>::eyes();
+///     let m1 = Matrix::<Double>::eyes(3, 3);
 ///     let m2 =
-///         Matrix::<Double, 2, 2>::of(&[1.0, 2.0, 2.0, 3.0].map(|e| Double::of(e))).unwrap();
+///         Matrix::<Double>::of(2, 2, &[1.0, 2.0, 2.0, 3.0].map(|e| Double::of(e))).unwrap();
 ///     assert!(is_orthogonal_matrix(&m1));
 ///     assert!(!is_orthogonal_matrix(&m2));
 /// }
 /// ```
-pub fn is_orthogonal_matrix<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> bool
+pub fn is_orthogonal_matrix<N>(m: &Matrix<N>) -> bool
 where
     N: Real,
 {
     let transposed = transpose(m);
-    if R < C {
+    if m.row < m.column {
         is_identity_matrix(&(m.clone() * transposed))
     } else {
         is_identity_matrix(&(transposed * m.clone()))
@@ -339,18 +289,18 @@ where
 ///
 /// fn main() {
 ///     let m =
-///         Matrix::<Double, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e)))
+///         Matrix::<Double>::of(3, 2, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e)))
 ///             .unwrap();
 ///     let l1_norm = induced_l1_matrix_norm(&m);
 ///     assert_eq!(l1_norm, Double::of(12.0));
 /// }
 /// ```
-pub fn induced_l1_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
+pub fn induced_l1_matrix_norm<N>(m: &Matrix<N>) -> N
 where
     N: Real,
 {
     let mut norm = N::zero();
-    for e in (1..=C).map(|p| {
+    for e in (1..=m.column).map(|p| {
         m.get_column(p)
             .map(|c| {
                 c.linear_iter()
@@ -384,18 +334,18 @@ where
 ///
 /// fn main() {
 ///     let m =
-///         Matrix::<Double, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e)))
+///         Matrix::<Double>::of(3, 2, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(|e| Double::of(e)))
 ///             .unwrap();
 ///     let l_inf_norm = induced_l_inf_matrix_norm(&m);
 ///     assert_eq!(l_inf_norm, Double::of(11.0));
 /// }
 /// ```
-pub fn induced_l_inf_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
+pub fn induced_l_inf_matrix_norm<N>(m: &Matrix<N>) -> N
 where
     N: Real,
 {
     let mut norm = N::zero();
-    for e in (1..=R).map(|p| {
+    for e in (1..=m.row).map(|p| {
         m.get_row(p)
             .map(|r| {
                 r.linear_iter()
@@ -427,17 +377,18 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Float, 2, 2>::of(&[1.0, 2.0, 3.0, 4.0].map(Float::of)).unwrap();
+///     let m = Matrix::<Float>::of(2, 2, &[1.0, 2.0, 3.0, 4.0].map(Float::of)).unwrap();
 ///     let f_norm = frobenius_norm(&m);
 ///     assert_eq!(f_norm, Float::of(30.0).square_root());
 /// }
 /// ```
-pub fn frobenius_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
+pub fn frobenius_norm<N>(m: &Matrix<N>) -> N
 where
     N: Floating,
 {
     m.inner
         .par_iter()
+        .take(m.row * m.column)
         .map(|e| {
             // Important for complex numbers.
             let abs = e.absolute_value();
@@ -465,7 +416,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Double, 3, 3>::of(
+///     let m = Matrix::<Double>::of(
+///         3,
+///         3,
 ///         &[
 ///             2.0, 1.0, -1.0, // r1
 ///             -3.0, -1.0, 2.0, // r2
@@ -477,7 +430,9 @@ where
 ///     let (_, _, _, reduced) = row_reduce(&m);
 ///     assert_eq!(
 ///         reduced,
-///         Matrix::<Double, 3, 3>::of(
+///         Matrix::<Double>::of(
+///             3,
+///             3,
 ///             &[
 ///                 2.0, 1.0, -1.0, // r1
 ///                 0.0, 0.5, 0.5, // r2
@@ -489,33 +444,31 @@ where
 ///     );
 /// }
 /// ```
-pub fn row_reduce<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> (usize, Matrix<N, R, R>, Matrix<N, R, R>, Matrix<N, R, C>)
+pub fn row_reduce<N>(m: &Matrix<N>) -> (usize, Matrix<N>, Matrix<N>, Matrix<N>)
 where
     N: Fractional,
 {
     let mut t = 0;
-    let mut p = Matrix::<N, R, R>::eyes();
-    let mut lt = Matrix::<N, R, R>::eyes();
+    let mut p = Matrix::<N>::eyes(m.row, m.row);
+    let mut lt = Matrix::<N>::eyes(m.row, m.row);
     let mut reduced = m.clone();
 
-    if !(is_upper_triangular_matrix(&reduced) || R < 2) {
+    if !(is_upper_triangular_matrix(&reduced) || m.row < 2) {
         // Deviation of the pivot.
         let mut deviation = 0;
-        for row in 1..R {
+        for row in 1..m.row {
             // Boundary check.
-            if row + deviation > C {
+            if row + deviation > m.column {
                 break;
             }
             // Pivot check.
             let mut pivot_check = reduced[(row, row + deviation)].is_zero();
-            while pivot_check && (row + deviation) <= C {
+            while pivot_check && (row + deviation) <= m.column {
                 // Find the row where the pivot at the corresponding position is non-zero.
-                for next in (row + 1)..=R {
+                for next in (row + 1)..=m.row {
                     // Perform row swapping.
                     if !reduced[(next, row + deviation)].is_zero() {
-                        let swap = Matrix::<N, R, R>::p_change(row, next);
+                        let swap = Matrix::<N>::p_change(m.row, m.row, row, next);
                         p = swap.clone() * p;
                         reduced = swap * reduced;
                         t = t + 1;
@@ -535,11 +488,11 @@ where
             } else {
                 // Perform row reduce.
                 let pivot = reduced[(row, row + deviation)].clone();
-                for next in (row + 1)..=R {
+                for next in (row + 1)..=m.row {
                     let next_pivot = reduced[(next, row + deviation)].clone();
                     if !next_pivot.is_zero() {
                         let factor = next_pivot / pivot.clone();
-                        let add = Matrix::<N, R, R>::p_add(row, next, -factor);
+                        let add = Matrix::<N>::p_add(m.row, m.row, row, next, -factor);
                         lt = add.clone() * lt;
                         reduced = add * reduced;
                     }
@@ -560,22 +513,20 @@ where
 ///
 /// - Transform matrix
 /// - Row-eliminated matrix
-fn row_eliminate_inner<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> (Matrix<N, R, R>, Matrix<N, R, C>)
+fn row_eliminate_inner<N>(m: &Matrix<N>) -> (Matrix<N>, Matrix<N>)
 where
     N: Fractional,
 {
     let (_, p, lt, mut eliminate) = row_reduce(&m);
     // Record the elimination process.
     let mut trans = p * lt;
-    for row in (1..=R).rev() {
+    for row in (1..=m.row).rev() {
         let mut column = 1;
         // Find the pivot of this row.
-        while column <= C && eliminate[(row, column)].is_zero() {
+        while column <= m.column && eliminate[(row, column)].is_zero() {
             column = column + 1;
         }
-        if column == C + 1 {
+        if column == m.column + 1 {
             // Skip the row that is all zeros.
             continue;
         } else {
@@ -585,13 +536,13 @@ where
                 let prev_pivot = eliminate[(prev, column)].clone();
                 if !prev_pivot.is_zero() {
                     let factor = prev_pivot / pivot.clone();
-                    let add = Matrix::<N, R, R>::p_add(row, prev, -factor);
+                    let add = Matrix::<N>::p_add(m.row, m.row, row, prev, -factor);
                     trans = add.clone() * trans;
                     eliminate = add * eliminate;
                 }
             }
             // Make the pivot to ONE.
-            let mul = Matrix::<N, R, R>::p_muls(row, N::one() / pivot);
+            let mul = Matrix::<N>::p_muls(m.row, m.row, row, N::one() / pivot);
             trans = mul.clone() * trans;
             eliminate = mul * eliminate;
         }
@@ -611,15 +562,17 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Double, 3, 3>::of(
+///     let m = Matrix::<Double>::of(
+///         3,
+///         3,
 ///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
 ///     )
 ///     .unwrap();
 ///     let eliminated = row_eliminate(&m);
-///     assert_eq!(eliminated, Matrix::<Double, 3, 3>::eyes());
+///     assert_eq!(eliminated, Matrix::<Double>::eyes(3, 3));
 /// }
 /// ```
-pub fn row_eliminate<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Matrix<N, R, C>
+pub fn row_eliminate<N>(m: &Matrix<N>) -> Matrix<N>
 where
     N: Fractional,
 {
@@ -637,33 +590,45 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Double, 3, 3>::of(
+///     let m = Matrix::<Double>::of(
+///         3,
+///         3,
 ///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
 ///     )
 ///     .unwrap();
 ///     let inv = inverse(&m).unwrap();
-///     assert_eq!(inv * m, Matrix::<Double, 3, 3>::eyes());
+///     assert_eq!(inv * m, Matrix::<Double>::eyes(3, 3));
 /// }
 /// ```
-pub fn inverse<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> Option<Matrix<N, R, R>>
+pub fn inverse<N>(m: &Matrix<N>) -> Option<Matrix<N>>
 where
     N: Fractional,
 {
-    let det = determinant(m);
-    if det.is_none_or(|e| e.is_zero()) {
+    if is_square_matrix(m) {
+        let det = determinant(m);
+        if det.is_zero() {
+            eprintln!(concat!(
+                "Error[matrix::math::inverse]: ",
+                "The singular matrix does not have an inverse."
+            ));
+            None
+        } else {
+            Some(row_eliminate_inner(m).0)
+        }
+    } else {
         eprintln!(concat!(
             "Error[matrix::math::inverse]: ",
-            "The singular matrix does not have an inverse."
+            "Non-square matrices are not invertible."
         ));
         None
-    } else {
-        Some(row_eliminate_inner(m).0)
     }
 }
 
 /// Calculate the determinant of the matrix.
+///
+/// # Panics
+///
+/// Only square matrices can have a determinant calculated.
 ///
 /// # Examples
 ///
@@ -674,7 +639,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Double, 4, 4>::of(
+///     let m = Matrix::<Double>::of(
+///         4,
+///         4,
 ///         &[
 ///             2.0, 1.0, 3.0, 4.0, // r1
 ///             1.0, 0.0, 2.0, 3.0, // r2
@@ -684,29 +651,33 @@ where
 ///         .map(|e| Double::of(e)),
 ///     )
 ///     .unwrap();
-///     let det = determinant(&m).unwrap();
+///     let det = determinant(&m);
 ///     assert!((det - Double::of(-8.0)).is_zero());
 /// }
 /// ```
-pub fn determinant<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<N>
+pub fn determinant<N>(m: &Matrix<N>) -> N
 where
     N: Fractional,
 {
     if is_square_matrix(m) {
         let (t, _, _, reduced) = row_reduce(m);
-        Some(
-            (1..=R)
-                .map(|index| reduced[(index, index)].clone())
-                .fold(N::one(), |acc, e| acc * e.clone())
-                * if t & 1 == 0 { N::one() } else { -N::one() },
-        )
+        (1..=m.row)
+            .map(|index| reduced[(index, index)].clone())
+            .fold(N::one(), |acc, e| acc * e.clone())
+            * if t & 1 == 0 { N::one() } else { -N::one() }
     } else {
-        eprintln!("Error[matrix::math::determinant]: Only square matrices have determinants.");
-        None
+        panic!(concat!(
+            "Error[matrix::math::determinant]: ",
+            "Only square matrices can have a determinant calculated."
+        ));
     }
 }
 
 /// Calculate the determinant of a matrix using the Leibniz formula.
+///
+/// # Panics
+///
+/// Only square matrices can have a determinant calculated.
 ///
 /// # Examples
 ///
@@ -717,23 +688,25 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Int, 4, 4>::of(
+///     let m = Matrix::<Int>::of(
+///         4,
+///         4,
 ///         &[1, 2, 3, 4, 1, 3, 4, 1, 1, 4, 1, 2, 1, 1, 2, 3].map(Int::of),
 ///     )
 ///     .unwrap();
-///     assert_eq!(determinant_l(&m), Some(Int::of(16)));
+///     assert_eq!(determinant_l(&m), Int::of(16));
 /// }
 /// ```
-pub fn determinant_l<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<N>
+pub fn determinant_l<N>(m: &Matrix<N>) -> N
 where
     N: Number,
 {
     if is_square_matrix(m) {
         let mut det = N::zero();
-        let permutations_of_columns = permutation(&(1..=C).collect::<Vec<usize>>());
+        let permutations_of_columns = permutation(&(1..=m.column).collect::<Vec<usize>>());
         for p in permutations_of_columns {
             let mut item = N::one();
-            for (row, &column) in (1..=R).zip(p.iter()) {
+            for (row, &column) in (1..=m.row).zip(p.iter()) {
                 item = item * m[(row, column)].clone();
             }
             let ic = inversion_count(&p);
@@ -742,12 +715,12 @@ where
             }
             det = det + item;
         }
-        Some(det)
+        det
     } else {
-        eprintln!(
-            "Error[matrix::math::determinant_l]: Only square matrices have determinants."
-        );
-        None
+        panic!(concat!(
+            "Error[matrix::math::determinant_l]: ",
+            "Only square matrices can have a determinant calculated."
+        ));
     }
 }
 
@@ -755,16 +728,9 @@ where
 ///
 /// adj(m) * m = det(m) * I
 ///
-/// # Panics
-///
-/// This function requires the use of the `#![feature(generic_const_exprs)]`.
-///
 /// # Examples
 ///
 /// ```rust
-/// #![allow(incomplete_features)]
-/// #![feature(generic_const_exprs)]
-///
 /// use rmatrix_ks::{
 ///     matrix::{
 ///         math::{adjugate_matrix, determinant},
@@ -773,7 +739,9 @@ where
 ///     number::instances::double::Double,
 /// };
 /// fn main() {
-///     let m = Matrix::<Double, 3, 3>::of(
+///     let m = Matrix::<Double>::of(
+///         3,
+///         3,
 ///         &[
 ///             -3.0, 2.0, -5.0, // r1
 ///             -1.0, 0.0, -2.0, // r2
@@ -783,7 +751,9 @@ where
 ///     )
 ///     .unwrap();
 ///     let adj = adjugate_matrix(&m).unwrap();
-///     let expect = Matrix::<Double, 3, 3>::of(
+///     let expect = Matrix::<Double>::of(
+///         3,
+///         3,
 ///         &[
 ///             -8.0, 18.0, -4.0, // r1
 ///             -5.0, 12.0, -1.0, // r2
@@ -792,38 +762,24 @@ where
 ///         .map(|e| Double::of(e)),
 ///     )
 ///     .unwrap();
-///     let det = determinant(&m).unwrap();
+///     let det = determinant(&m);
 ///     assert_eq!(adj, expect);
 ///     // adj(m) * m = det(m) * I
-///     assert_eq!(
-///         adj.clone() * m.clone(),
-///         Matrix::<Double, 3, 3>::eyes() * det
-///     );
+///     assert_eq!(adj.clone() * m.clone(), Matrix::<Double>::eyes(3, 3) * det);
 ///     // adj(m) * m = m * adj(m)
 ///     assert_eq!(adj.clone() * m.clone(), m * adj)
 /// }
 /// ```
-pub fn adjugate_matrix<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> Option<Matrix<N, R, R>>
+pub fn adjugate_matrix<N>(m: &Matrix<N>) -> Option<Matrix<N>>
 where
     N: Fractional,
-    [(); R - 1]:,
-    [(); C - 1]:,
 {
     if is_square_matrix(m) {
-        let mut adjugate = Matrix::<N, R, R>::default();
-        for row in 1..=R {
-            for column in 1..=C {
-                adjugate[(row, column)] =
-                    determinant(&m.submatrix(column, row)).expect(&format!(
-                        concat!(
-                            "Error[matrix::math::adjugate_matrix]: ",
-                            "Failed to retrieve the determinant ",
-                            "of the submatrix({}, {}) of the matrix."
-                        ),
-                        row, column
-                    )) * if (row + column) & 1 == 0 {
+        let mut adjugate = Matrix::<N>::defaults(m.row, m.column);
+        for row in 1..=m.row {
+            for column in 1..=m.column {
+                adjugate[(row, column)] = determinant(&m.submatrix(column, row))
+                    * if (row + column) & 1 == 0 {
                         N::one()
                     } else {
                         -N::one()
@@ -832,9 +788,10 @@ where
         }
         Some(adjugate)
     } else {
-        eprintln!(
-            "Error[matrix::math::adjugate_matrix]: Only square matrices have adjugate matrices."
-        );
+        eprintln!(concat!(
+            "Error[matrix::math::adjugate_matrix]: ",
+            "Only square matrices have adjugate matrices."
+        ));
         None
     }
 }
@@ -852,7 +809,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Double, 3, 3>::of(
+///     let m = Matrix::<Double>::of(
+///         3,
+///         3,
 ///         &[0.0, 5.0, 22.0 / 3.0, 4.0, 2.0, 1.0, 2.0, 7.0, 9.0].map(|e| Double::of(e)),
 ///     )
 ///     .unwrap();
@@ -860,9 +819,7 @@ where
 ///     assert_eq!(p * m, l * u);
 /// }
 /// ```
-pub fn plu_decomposition<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> (Matrix<N, R, R>, Matrix<N, R, R>, Matrix<N, R, C>)
+pub fn plu_decomposition<N>(m: &Matrix<N>) -> (Matrix<N>, Matrix<N>, Matrix<N>)
 where
     N: Fractional,
 {

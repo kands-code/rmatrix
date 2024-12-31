@@ -15,7 +15,7 @@ use crate::{
         },
         matrix::Matrix,
         utils::{apply, null_space, points_2d, transpose},
-        vector::{VectorC, layer_product},
+        vector::layer_product,
     },
     number::{
         instances::{complex::Complex, word8::Word8},
@@ -42,12 +42,16 @@ use crate::{
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 2, 2>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
 ///         &[(1.0, 2.0), (3.0, -1.0), (4.0, 0.0), (5.0, 6.0)]
 ///             .map(|(real, imag)| Complex::of(Float::of(real), Float::of(imag))),
 ///     )
 ///     .unwrap();
-///     let n = Matrix::<Complex<Float>, 2, 2>::of(
+///     let n = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
 ///         &[(1.0, -2.0), (4.0, 0.0), (3.0, 1.0), (5.0, -6.0)]
 ///             .map(|(real, imag)| Complex::of(Float::of(real), Float::of(imag))),
 ///     )
@@ -55,9 +59,7 @@ use crate::{
 ///     assert_eq!(conjugate_transpose(&m), n);
 /// }
 /// ```
-pub fn conjugate_transpose<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> Matrix<Complex<F>, C, R>
+pub fn conjugate_transpose<F>(m: &Matrix<Complex<F>>) -> Matrix<Complex<F>>
 where
     F: RealFloat,
 {
@@ -83,32 +85,38 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
-///         Complex::of(Float::of(-1.0f32 / 2.0f32.sqrt()), Float::zero()),
-///         Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
-///         Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
-///     ])
+///     let m1 = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
+///             Complex::of(Float::of(-1.0f32 / 2.0f32.sqrt()), Float::zero()),
+///             Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
+///             Complex::of(Float::of(1.0f32 / 2.0f32.sqrt()), Float::zero()),
+///         ],
+///     )
 ///     .unwrap();
-///     let m2 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(-1.0), Float::zero()),
-///         Complex::of(Float::zero(), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///     ])
+///     let m2 = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::of(Float::of(1.0f32), Float::zero()),
+///             Complex::of(Float::of(-1.0), Float::zero()),
+///             Complex::of(Float::zero(), Float::zero()),
+///             Complex::of(Float::of(1.0f32), Float::zero()),
+///         ],
+///     )
 ///     .unwrap();
 ///     assert!(is_unitary_matrix(&m1));
 ///     assert!(!is_unitary_matrix(&m2));
 /// }
 /// ```
-pub fn is_unitary_matrix<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> bool
+pub fn is_unitary_matrix<F>(m: &Matrix<Complex<F>>) -> bool
 where
     F: RealFloat,
 {
     let conjugate_transposed = conjugate_transpose(m);
-    if R < C {
+    if m.row < m.column {
         is_identity_matrix(&(m.clone() * conjugate_transposed))
     } else {
         is_identity_matrix(&(conjugate_transposed * m.clone()))
@@ -136,25 +144,33 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(2.0f32), Float::zero()),
-///         Complex::of(Float::of(2.0f32), Float::zero()),
-///         Complex::of(Float::of(3.0f32), Float::zero()),
-///     ])
+///     let m1 = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::of(Float::of(1.0f32), Float::zero()),
+///             Complex::of(Float::of(2.0f32), Float::zero()),
+///             Complex::of(Float::of(2.0f32), Float::zero()),
+///             Complex::of(Float::of(3.0f32), Float::zero()),
+///         ],
+///     )
 ///     .unwrap();
-///     let m2 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(0.0f32), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///     ])
+///     let m2 = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::of(Float::of(1.0f32), Float::zero()),
+///             Complex::of(Float::of(1.0f32), Float::zero()),
+///             Complex::of(Float::of(0.0f32), Float::zero()),
+///             Complex::of(Float::of(1.0f32), Float::zero()),
+///         ],
+///     )
 ///     .unwrap();
 ///     assert!(is_normal_matrix(&m1));
 ///     assert!(!is_normal_matrix(&m2));
 /// }
 /// ```
-pub fn is_normal_matrix<F, const R: usize, const C: usize>(m: &Matrix<Complex<F>, R, C>) -> bool
+pub fn is_normal_matrix<F>(m: &Matrix<Complex<F>>) -> bool
 where
     F: RealFloat,
 {
@@ -181,32 +197,38 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(2.0f32), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::of(1.0f32)),
-///         Complex::of(Float::of(1.0f32), Float::of(-1.0f32)),
-///         Complex::of(Float::of(3.0f32), Float::zero()),
-///     ])
+///     let m1 = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::of(Float::of(2.0f32), Float::zero()),
+///             Complex::of(Float::of(1.0f32), Float::of(1.0f32)),
+///             Complex::of(Float::of(1.0f32), Float::of(-1.0f32)),
+///             Complex::of(Float::of(3.0f32), Float::zero()),
+///         ],
+///     )
 ///     .unwrap();
-///     let m2 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(2.0f32), Float::of(1.0f32)),
-///         Complex::of(Float::of(3.0f32), Float::zero()),
-///         Complex::of(Float::of(4.0f32), Float::zero()),
-///     ])
+///     let m2 = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::of(Float::of(1.0f32), Float::zero()),
+///             Complex::of(Float::of(2.0f32), Float::of(1.0f32)),
+///             Complex::of(Float::of(3.0f32), Float::zero()),
+///             Complex::of(Float::of(4.0f32), Float::zero()),
+///         ],
+///     )
 ///     .unwrap();
 ///     assert!(is_hermitian_matrix(&m1));
 ///     assert!(!is_hermitian_matrix(&m2));
 /// }
 /// ```
-pub fn is_hermitian_matrix<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> bool
+pub fn is_hermitian_matrix<F>(m: &Matrix<Complex<F>>) -> bool
 where
     F: RealFloat,
 {
     is_square_matrix(m)
-        && points_2d((1, R), (1, C), |row, col| row <= col)
+        && points_2d((1, m.row), (1, m.column), |row, col| row <= col)
             .par_iter()
             .all(|&p @ (row, col)| m[p] == m[(col, row)].clone().conjugate())
 }
@@ -229,53 +251,65 @@ where
 /// };
 ///
 /// fn main() {
-///     let m1 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::zero(), Float::zero()),
-///         Complex::of(Float::of(1.0f32), Float::of(1.0f32)),
-///         Complex::of(Float::of(-1.0f32), Float::of(1.0f32)),
-///         Complex::of(Float::zero(), Float::zero()),
-///     ])
+///     let m1 = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::of(Float::zero(), Float::zero()),
+///             Complex::of(Float::of(1.0f32), Float::of(1.0f32)),
+///             Complex::of(Float::of(-1.0f32), Float::of(1.0f32)),
+///             Complex::of(Float::zero(), Float::zero()),
+///         ],
+///     )
 ///     .unwrap();
-///     let m2 = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::of(Float::of(1.0f32), Float::zero()),
-///         Complex::of(Float::of(2.0f32), Float::of(1.0f32)),
-///         Complex::of(Float::of(3.0f32), Float::zero()),
-///         Complex::of(Float::of(4.0f32), Float::zero()),
-///     ])
+///     let m2 = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::of(Float::of(1.0f32), Float::zero()),
+///             Complex::of(Float::of(2.0f32), Float::of(1.0f32)),
+///             Complex::of(Float::of(3.0f32), Float::zero()),
+///             Complex::of(Float::of(4.0f32), Float::zero()),
+///         ],
+///     )
 ///     .unwrap();
 ///     assert!(is_anti_hermitian_matrix(&m1));
 ///     assert!(!is_anti_hermitian_matrix(&m2));
 /// }
 /// ```
-pub fn is_anti_hermitian_matrix<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> bool
+pub fn is_anti_hermitian_matrix<F>(m: &Matrix<Complex<F>>) -> bool
 where
     F: RealFloat,
 {
     is_square_matrix(m)
-        && points_2d((1, R), (1, C), |row, col| row <= col)
+        && points_2d((1, m.row), (1, m.column), |row, col| row <= col)
             .par_iter()
             .all(|&p @ (row, col)| m[p] == -m[(col, row)].clone().conjugate())
 }
 
 /// Calculate the dot product of a complex vector.
 ///
+/// # Panics
+///
+/// The dimensions of the column vectors involved in the function must match.
+///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{complex::dot_product, vector::VectorC},
+///     matrix::{complex::dot_product, vector::column_vector},
 ///     number::instances::{complex::Complex, float::Float},
 /// };
 ///
 /// fn main() {
-///     let v1 = VectorC::<Complex<Float>, 4>::of(
+///     let v1 = column_vector::<Complex<Float>>(
+///         4,
 ///         &[(1.0, 1.0), (1.0, -1.0), (-1.0, 1.0), (-1.0, -1.0)]
 ///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
 ///     .unwrap();
-///     let v2 = VectorC::<Complex<Float>, 4>::of(
+///     let v2 = column_vector::<Complex<Float>>(
+///         4,
 ///         &[(3.0, -4.0), (6.0, -2.0), (1.0, 2.0), (4.0, 3.0)]
 ///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
@@ -286,41 +320,52 @@ where
 ///     )
 /// }
 /// ```
-pub fn dot_product<F, const R: usize>(
-    v1: &VectorC<Complex<F>, R>,
-    v2: &VectorC<Complex<F>, R>,
-) -> Complex<F>
+pub fn dot_product<F>(v1: &Matrix<Complex<F>>, v2: &Matrix<Complex<F>>) -> Complex<F>
 where
     F: RealFloat,
 {
-    v1.inner
-        .par_iter()
-        .zip(v2.inner.par_iter())
-        .map(|(e1, e2)| e1.clone().conjugate() * e2.clone())
-        .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
+    if v1.row == v2.row && v1.column == 1 && v2.column == 1 {
+        v1.inner
+            .par_iter()
+            .zip(v2.inner.par_iter())
+            .map(|(e1, e2)| e1.clone().conjugate() * e2.clone())
+            .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
+    } else {
+        panic!(concat!(
+            "Error[matrix::complex::dot_product]: ",
+            "Only column vectors with matching dimensions can be multiplied."
+        ));
+    }
 }
 
 /// Project one complex vector onto another complex vector.
+///
+/// # Panics
+///
+/// This function can only be used for column vectors with matching dimensions.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{complex::project_to, vector::VectorC},
+///     matrix::{complex::project_to, vector::column_vector},
 ///     number::instances::{complex::Complex, float::Float},
 /// };
 ///
 /// fn main() {
-///     let v1 = VectorC::<Complex<Float>, 2>::of(
+///     let v1 = column_vector::<Complex<Float>>(
+///         2,
 ///         &[(1.0, 2.0), (3.0, -1.0)].map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
 ///     .unwrap();
-///     let v2 = VectorC::<Complex<Float>, 2>::of(
+///     let v2 = column_vector::<Complex<Float>>(
+///         2,
 ///         &[(2.0, 1.0), (1.0, -3.0)].map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
 ///     .unwrap();
 ///     let p = project_to(&v1, &v2);
-///     let p_expect = VectorC::<Complex<Float>, 2>::of(
+///     let p_expect = column_vector::<Complex<Float>>(
+///         2,
 ///         &[(3.0 / 5.0, 32.0 / 15.0), (43.0 / 15.0, -19.0 / 15.0)]
 ///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
@@ -328,16 +373,20 @@ where
 ///     assert_eq!(p, p_expect);
 /// }
 /// ```
-pub fn project_to<F, const R: usize>(
-    from: &VectorC<Complex<F>, R>,
-    to: &VectorC<Complex<F>, R>,
-) -> VectorC<Complex<F>, R>
+pub fn project_to<F>(from: &Matrix<Complex<F>>, to: &Matrix<Complex<F>>) -> Matrix<Complex<F>>
 where
     F: RealFloat,
 {
-    let p1 = dot_product(to, from);
-    let p2 = dot_product(to, to);
-    to.clone() * (p1 / p2)
+    if from.row == to.row && from.column == 1 && to.column == 1 {
+        let p1 = dot_product(to, from);
+        let p2 = dot_product(to, to);
+        to.clone() * (p1 / p2)
+    } else {
+        panic!(concat!(
+            "Error[matrix::complex::project_to]: ",
+            "This function can only be used for column vectors with matching dimensions."
+        ));
+    }
 }
 
 /// Apply the Gram-Schmidt process to the given basis
@@ -359,7 +408,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let basis = Matrix::<Complex<Float>, 3, 3>::of(
+///     let basis = Matrix::<Complex<Float>>::of(
+///         3,
+///         3,
 ///         &[
 ///             (1.0, 0.0),
 ///             (-1.0, 0.0),
@@ -397,7 +448,9 @@ where
 ///         (Complex::zero(), Complex::zero(), Complex::zero())
 ///     );
 ///     // Corresponding orthogonal basis.
-///     let ob_expect = Matrix::<Complex<Float>, 3, 3>::of(
+///     let ob_expect = Matrix::<Complex<Float>>::of(
+///         3,
+///         3,
 ///         &[
 ///             (1.0 / 2.0f32.sqrt(), 0.0),
 ///             (-1.0 / 8.0f32.sqrt(), 1.0 / 8.0f32.sqrt()),
@@ -415,14 +468,12 @@ where
 ///     assert_eq!(ob, ob_expect);
 /// }
 /// ```
-pub fn gram_schmidt_process<F, const R: usize, const C: usize>(
-    basis: &Matrix<Complex<F>, R, C>,
-) -> Matrix<Complex<F>, R, C>
+pub fn gram_schmidt_process<F>(basis: &Matrix<Complex<F>>) -> Matrix<Complex<F>>
 where
     F: RealFloat,
 {
-    let mut orthonormal_basis = Matrix::default();
-    for k in 1..=C {
+    let mut orthonormal_basis = Matrix::defaults(basis.row, basis.column);
+    for k in 1..=basis.column {
         // uk1 = bk
         // where Basis = [b1 | b2 | ... | bc]
         let mut uk = apply(
@@ -446,7 +497,7 @@ where
         }
         // Normalize uk.
         uk = normalize(&uk);
-        for row in 1..=R {
+        for row in 1..=basis.row {
             // OB = [u1 | u2 | ... | uc]
             orthonormal_basis[(row, k)] = uk[(row, 1)].clone();
         }
@@ -466,13 +517,17 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 2, 2>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
 ///         &[(1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0)]
 ///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
 ///     .unwrap();
 ///     let g = givens_rotation_matrix(&m, 2, 1);
-///     let g_expect = Matrix::<Complex<Float>, 2, 2>::of(
+///     let g_expect = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
 ///         &[
 ///             (1.0 / 10.0f32.sqrt(), 0.0),
 ///             (3.0 / 10.0f32.sqrt(), 0.0),
@@ -485,15 +540,15 @@ where
 ///     assert_eq!(g, g_expect);
 /// }
 /// ```
-pub fn givens_rotation_matrix<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
+pub fn givens_rotation_matrix<F>(
+    m: &Matrix<Complex<F>>,
     row: usize,
     column: usize,
-) -> Matrix<Complex<F>, R, R>
+) -> Matrix<Complex<F>>
 where
     F: RealFloat,
 {
-    let mut givens = Matrix::<Complex<F>, R, R>::eyes();
+    let mut givens = Matrix::<Complex<F>>::eyes(m.row, m.row);
     // e1 is the element to be eliminated.
     let e1 = m[(row, column)].clone();
     // e2 is the element used for elimination.
@@ -517,11 +572,15 @@ where
 ///
 /// Aka L2-norm.
 ///
+/// # Panics
+///
+/// Only vectors have the Euclidean norm.
+///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{complex::euclidean_norm, vector::VectorC},
+///     matrix::{complex::euclidean_norm, vector::column_vector},
 ///     number::{
 ///         instances::{complex::Complex, float::Float},
 ///         traits::zero::Zero,
@@ -529,7 +588,8 @@ where
 /// };
 ///
 /// fn main() {
-///     let v = VectorC::<Complex<Float>, 2>::of(
+///     let v = column_vector::<Complex<Float>>(
+///         2,
 ///         &[(1.0, 7.0), (2.0, -6.0)].map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
 ///     .unwrap();
@@ -539,24 +599,35 @@ where
 ///     )
 /// }
 /// ```
-pub fn euclidean_norm<F, const R: usize>(v: &VectorC<Complex<F>, R>) -> Complex<F>
+pub fn euclidean_norm<F>(v: &Matrix<Complex<F>>) -> Complex<F>
 where
     F: RealFloat,
 {
-    v.inner
-        .par_iter()
-        .map(|e| e.clone().conjugate() * e.clone())
-        .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
-        .square_root()
+    if v.row == 1 || v.column == 1 {
+        v.inner
+            .par_iter()
+            .map(|e| e.clone().conjugate() * e.clone())
+            .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
+            .square_root()
+    } else {
+        panic!(concat!(
+            "Error[matrix::complex::euclidean_norm]: ",
+            "Only vectors have the Euclidean norm."
+        ));
+    }
 }
 
 /// Normalize the complex vector.
+///
+/// # Panics
+///
+/// This function can only be used for column vector normalization.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{complex::normalize, vector::VectorC},
+///     matrix::{complex::normalize, vector::column_vector},
 ///     number::{
 ///         instances::{complex::Complex, float::Float},
 ///         traits::{floating::Floating, zero::Zero},
@@ -564,7 +635,8 @@ where
 /// };
 ///
 /// fn main() {
-///     let v1 = VectorC::<Complex<Float>, 2>::of(
+///     let v1 = column_vector::<Complex<Float>>(
+///         2,
 ///         &[(1.0, 0.0), (0.0, -1.0)].map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
 ///     .unwrap();
@@ -573,15 +645,22 @@ where
 ///     assert_eq!(normalized, normalized_expect);
 /// }
 /// ```
-pub fn normalize<F, const R: usize>(v: &VectorC<Complex<F>, R>) -> VectorC<Complex<F>, R>
+pub fn normalize<F>(v: &Matrix<Complex<F>>) -> Matrix<Complex<F>>
 where
     F: RealFloat,
 {
-    if v.inner.par_iter().all(|e| e.is_zero()) {
-        VectorC::default()
+    if v.column == 1 {
+        if v.inner.par_iter().all(|e| e.is_zero()) {
+            Matrix::defaults(v.row, 1)
+        } else {
+            let v_norm = euclidean_norm(v);
+            v.clone() / v_norm
+        }
     } else {
-        let v_norm = euclidean_norm(v);
-        v.clone() / v_norm
+        panic!(concat!(
+            "Error[matrix::vector::normalize]: ",
+            "This function can only be used for column vector normalization."
+        ));
     }
 }
 
@@ -589,16 +668,21 @@ where
 ///
 /// Aka L_inf-norm.
 ///
+/// # Panics
+///
+/// This function can only be used for column vectors.
+///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{complex::maximum_norm, vector::VectorC},
+///     matrix::{complex::maximum_norm, vector::column_vector},
 ///     number::instances::{complex::Complex, float::Float},
 /// };
 ///
 /// fn main() {
-///     let m = VectorC::<Complex<Float>, 3>::of(
+///     let m = column_vector::<Complex<Float>>(
+///         3,
 ///         &[(1.0, 1.0), (-2.0, 0.0), (3.0, -4.0)]
 ///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
@@ -607,17 +691,24 @@ where
 ///     assert_eq!(l_inf_norm, Float::of(5.0));
 /// }
 /// ```
-pub fn maximum_norm<F, const R: usize>(v: &VectorC<Complex<F>, R>) -> F
+pub fn maximum_norm<F>(v: &Matrix<Complex<F>>) -> F
 where
     F: RealFloat,
 {
-    let mut norm = F::zero();
-    for e in v.linear_iter().map(|e| e.clone().norm()) {
-        if e > norm {
-            norm = e;
+    if v.column == 1 {
+        let mut norm = F::zero();
+        for e in v.linear_iter().map(|e| e.clone().norm()) {
+            if e > norm {
+                norm = e;
+            }
         }
+        norm
+    } else {
+        panic!(concat!(
+            "Error[matrix::vector::maximum_norm]: ",
+            "This function can only be used for column vectors."
+        ));
     }
-    norm
 }
 
 /// Calculate the induced L-1 norm of the complex matrix.
@@ -634,7 +725,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 2, 2>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
 ///         &[(1.0, 1.0), (2.0, 0.0), (3.0, 0.0), (4.0, -1.0)]
 ///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
@@ -643,14 +736,12 @@ where
 ///     assert_eq!(l1_norm, Float::of(17.0f32.sqrt() + 2.0));
 /// }
 /// ```
-pub fn induced_l1_matrix_norm<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> F
+pub fn induced_l1_matrix_norm<F>(m: &Matrix<Complex<F>>) -> F
 where
     F: RealFloat,
 {
     let mut norm = F::zero();
-    for e in (1..=C).map(|p| {
+    for e in (1..=m.column).map(|p| {
         m.get_column(p)
             .map(|c| {
                 c.linear_iter()
@@ -684,7 +775,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 2, 2>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
 ///         &[(1.0, 1.0), (2.0, 0.0), (3.0, 0.0), (4.0, -1.0)]
 ///             .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
 ///     )
@@ -693,14 +786,12 @@ where
 ///     assert_eq!(l_inf_norm, Float::of(17.0f32.sqrt() + 3.0));
 /// }
 /// ```
-pub fn induced_l_inf_matrix_norm<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> F
+pub fn induced_l_inf_matrix_norm<F>(m: &Matrix<Complex<F>>) -> F
 where
     F: RealFloat,
 {
     let mut norm = F::zero();
-    for e in (1..=R).map(|p| {
+    for e in (1..=m.row).map(|p| {
         m.get_row(p)
             .map(|r| {
                 r.linear_iter()
@@ -720,8 +811,6 @@ where
     norm
 }
 
-// **TODO** L-2 norm
-
 /// Compute the QR decomposition of a complex matrix using the Gram-Schmidt process.
 ///
 /// # Examples
@@ -737,7 +826,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         3,
+///         3,
 ///         &[
 ///             (1.0, 1.0),
 ///             (2.0, 0.0),
@@ -778,7 +869,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 2, 3>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         2,
+///         3,
 ///         &[
 ///             (1.0, 1.0),
 ///             (2.0, 0.0),
@@ -796,13 +889,13 @@ where
 /// ```
 ///
 /// </div>
-pub fn qr_decomposition_gs<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> Option<(Matrix<Complex<F>, R, C>, Matrix<Complex<F>, C, C>)>
+pub fn qr_decomposition_gs<F>(
+    m: &Matrix<Complex<F>>,
+) -> Option<(Matrix<Complex<F>>, Matrix<Complex<F>>)>
 where
     F: RealFloat,
 {
-    if R < C {
+    if m.row < m.column {
         eprintln!(concat!(
             "Error[matrix::extra::qr_decomposition_gs]: ",
             "The matrix should be a tall matrix or a square matrix"
@@ -832,7 +925,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         3,
+///         3,
 ///         &[
 ///             (1.0, 1.0),
 ///             (2.0, 0.0),
@@ -853,16 +948,14 @@ where
 ///     assert_eq!(q * r, m);
 /// }
 /// ```
-pub fn qr_decomposition_h<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> (Matrix<Complex<F>, R, R>, Matrix<Complex<F>, R, C>)
+pub fn qr_decomposition_h<F>(m: &Matrix<Complex<F>>) -> (Matrix<Complex<F>>, Matrix<Complex<F>>)
 where
     F: RealFloat,
 {
-    let mut q = Matrix::<Complex<F>, R, R>::eyes();
+    let mut q = Matrix::<Complex<F>>::eyes(m.row, m.row);
     let mut r = m.clone();
     let two = Complex::one() + Complex::one();
-    for column in 1..=C.min(R) {
+    for column in 1..=m.edge() {
         // x = col(m, c)
         let mut x = apply(
             &r.get_column(column).expect(&format!(
@@ -883,7 +976,7 @@ where
         let mut v = x.clone();
         v[(column, 1)] = x[(column, 1)].clone() + x_norm * x[(column, 1)].sign_number();
         // p = I - 2 / (v^H . v) (v * v^H)
-        let p = Matrix::<Complex<F>, R, R>::eyes()
+        let p = Matrix::<Complex<F>>::eyes(m.row, m.row)
             - layer_product(&v, &conjugate_transpose(&v)) * two.clone() / dot_product(&v, &v);
         // r = pn p_{n - 1} ... p1 m
         r = p.clone() * r;
@@ -908,7 +1001,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         3,
+///         3,
 ///         &[
 ///             (1.0, 1.0),
 ///             (2.0, 0.0),
@@ -929,16 +1024,16 @@ where
 ///     assert_eq!(q * r, m);
 /// }
 /// ```
-pub fn qr_decomposition_gr<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> (Matrix<Complex<F>, R, R>, Matrix<Complex<F>, R, C>)
+pub fn qr_decomposition_gr<F>(
+    m: &Matrix<Complex<F>>,
+) -> (Matrix<Complex<F>>, Matrix<Complex<F>>)
 where
     F: RealFloat,
 {
-    let mut q = Matrix::<Complex<F>, R, R>::eyes();
+    let mut q = Matrix::<Complex<F>>::eyes(m.row, m.row);
     let mut r = m.clone();
-    for column in 1..=C {
-        for row in (column..R).rev() {
+    for column in 1..=m.column {
+        for row in (column..m.row).rev() {
             if r[(row + 1, column)].is_zero() {
                 continue;
             } else {
@@ -953,16 +1048,9 @@ where
 
 /// Compute the economy-sized QR decomposition of a complex matrix using Givens rotation matrices.
 ///
-/// # Panics
-///
-/// This function requires the use of the `#![feature(generic_const_exprs)]`.
-///
 /// # Examples
 ///
 /// ```rust
-/// #![allow(incomplete_features)]
-/// #![feature(generic_const_exprs)]
-///
 /// use rmatrix_ks::{
 ///     matrix::{
 ///         complex::{is_unitary_matrix, qr_decomposition_es},
@@ -972,7 +1060,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 3, 2>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         3,
+///         2,
 ///         &[
 ///             (1.0, 1.0),
 ///             (2.0, 0.0),
@@ -985,7 +1075,9 @@ where
 ///     )
 ///     .unwrap();
 ///     let (q, r) = qr_decomposition_es(&m);
-///     let q_expect = Matrix::<Complex<Float>, 3, 2>::of(
+///     let q_expect = Matrix::<Complex<Float>>::of(
+///         3,
+///         2,
 ///         &[
 ///             (1.0 / 6.0, 1.0 / 6.0),
 ///             (4.0 / 117.0f32.sqrt(), -2.0 / 13.0f32.sqrt()),
@@ -999,7 +1091,9 @@ where
 ///     .unwrap();
 ///     assert!(is_unitary_matrix(&q));
 ///     assert_eq!(q, q_expect);
-///     let r_expect = Matrix::<Complex<Float>, 2, 2>::of(
+///     let r_expect = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
 ///         &[
 ///             (6.0, 0.0),
 ///             (22.0 / 3.0, 2.0 / 3.0),
@@ -1012,28 +1106,24 @@ where
 ///     assert_eq!(r, r_expect);
 /// }
 /// ```
-pub fn qr_decomposition_es<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> (
-    Matrix<Complex<F>, R, { Matrix::<Complex<F>, R, C>::get_diagonal_length() }>,
-    Matrix<Complex<F>, { Matrix::<Complex<F>, R, C>::get_diagonal_length() }, C>,
-)
+pub fn qr_decomposition_es<F>(
+    m: &Matrix<Complex<F>>,
+) -> (Matrix<Complex<F>>, Matrix<Complex<F>>)
 where
     F: RealFloat,
-    [(); Matrix::<Complex<F>, R, C>::get_diagonal_length()]:,
 {
     let (basic_q, basic_r) = qr_decomposition_gr(m);
-    let thin = Matrix::<Complex<F>, R, C>::get_diagonal_length();
-    let mut q = Matrix::default();
-    let mut r = Matrix::default();
-    if R > C {
+    let thin = m.edge();
+    let mut q = Matrix::defaults(m.row, thin);
+    let mut r = Matrix::defaults(thin, m.column);
+    if m.row > m.column {
         // If m > n, then qr computes only the first n columns of Q and the first n rows of R.
-        for row in 1..=R {
+        for row in 1..=m.row {
             for column in 1..=thin {
                 q[(row, column)] = basic_q[(row, column)].clone();
             }
         }
-        r.inner = basic_r.inner[..(thin * C)].to_vec();
+        r.inner = basic_r.inner[..(thin * m.column)].to_vec();
     } else {
         // Else the economy-size decomposition is the same as the regular decomposition.
         q.inner = basic_q.inner;
@@ -1044,6 +1134,10 @@ where
 
 /// Decompose the complex matrix into
 /// an orthogonal matrix and the corresponding Hessenberg matrix.
+///
+/// # Panics
+///
+/// Only square matrices can undergo the Heisenberg decomposition.
 ///
 /// # Examples
 ///
@@ -1062,7 +1156,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 4, 4>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         4,
+///         4,
 ///         &[
 ///             (1.0, 1.0),
 ///             (2.0, 0.0),
@@ -1095,36 +1191,48 @@ where
 ///     assert_eq!(p.clone() * h * conjugate_transpose(&p), m);
 /// }
 /// ```
-pub fn hessenberg_decomposition<F, const E: usize>(
-    m: &Matrix<Complex<F>, E, E>,
-) -> (Matrix<Complex<F>, E, E>, Matrix<Complex<F>, E, E>)
+pub fn hessenberg_decomposition<F>(
+    m: &Matrix<Complex<F>>,
+) -> (Matrix<Complex<F>>, Matrix<Complex<F>>)
 where
     F: RealFloat,
 {
-    if E < 3 {
-        (Matrix::eyes(), m.clone())
-    } else {
-        let mut hessen = m.clone();
-        let mut p = Matrix::eyes();
-        for column in 1..=E {
-            for row in (column + 1..E).rev() {
-                let pi = conjugate_transpose(&givens_rotation_matrix(&hessen, row + 1, column));
-                hessen = conjugate_transpose(&pi) * hessen * pi.clone();
-                p = p * pi;
+    if is_square_matrix(m) {
+        if m.edge() < 3 {
+            (Matrix::eyes(m.row, m.column), m.clone())
+        } else {
+            let mut hessen = m.clone();
+            let mut p = Matrix::eyes(m.row, m.column);
+            for column in 1..=m.edge() {
+                for row in (column + 1..m.edge()).rev() {
+                    let pi =
+                        conjugate_transpose(&givens_rotation_matrix(&hessen, row + 1, column));
+                    hessen = conjugate_transpose(&pi) * hessen * pi.clone();
+                    p = p * pi;
+                }
             }
+            (p, hessen)
         }
-        (p, hessen)
+    } else {
+        panic!(concat!(
+            "Error[matrix::complex::hessenberg_decomposition]: ",
+            "Only square matrices can undergo the Heisenberg decomposition."
+        ))
     }
 }
 
 /// Calculate the eigenvalues and eigenvectors of the complex matrix
 /// using the QR algorithm based on Givens rotation matrices.
 ///
+/// # Panics
+///
+/// Only square matrices can potentially have eigenvalues.
+///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{complex::eigen_system_qr, matrix::Matrix, vector::VectorC},
+///     matrix::{complex::eigen_system_qr, matrix::Matrix, vector::column_vector},
 ///     number::{
 ///         instances::{complex::Complex, float::Float},
 ///         traits::{one::One, zero::Zero},
@@ -1132,96 +1240,118 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         Complex::zero(),
-///         -Complex::unit_i(),
-///         Complex::unit_i(),
-///         Complex::zero(),
-///     ])
+///     let m = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             Complex::zero(),
+///             -Complex::unit_i(),
+///             Complex::unit_i(),
+///             Complex::zero(),
+///         ],
+///     )
 ///     .unwrap();
 ///     let (es, evs) = eigen_system_qr(&m, 1024);
 ///     assert_eq!(
 ///         es,
-///         VectorC::<Complex<Float>, 2>::of(&[Complex::one(), -Complex::one()]).unwrap()
+///         column_vector::<Complex<Float>>(2, &[Complex::one(), -Complex::one()]).unwrap()
 ///     );
-///     let evs_expect = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         -Complex::unit_i(),
-///         Complex::unit_i(),
-///         Complex::one(),
-///         Complex::one(),
-///     ])
+///     let evs_expect = Matrix::<Complex<Float>>::of(
+///         2,
+///         2,
+///         &[
+///             -Complex::unit_i(),
+///             Complex::unit_i(),
+///             Complex::one(),
+///             Complex::one(),
+///         ],
+///     )
 ///     .unwrap();
 ///     assert_eq!(evs, evs_expect);
 /// }
 /// ```
-pub fn eigen_system_qr<F, const E: usize>(
-    m: &Matrix<Complex<F>, E, E>,
+pub fn eigen_system_qr<F>(
+    m: &Matrix<Complex<F>>,
     max_iter: usize,
-) -> (VectorC<Complex<F>, E>, Matrix<Complex<F>, E, E>)
+) -> (Matrix<Complex<F>>, Matrix<Complex<F>>)
 where
     F: RealFloat,
 {
-    let mut eigenvalues = VectorC::default();
-    if is_diagonal_matrix(m) {
-        for idx in 1..=E {
-            eigenvalues[(idx, 1)] = m[(idx, idx)].clone();
-        }
-        (eigenvalues, Matrix::eyes())
-    } else {
-        if E < 3 {
-            let four = from_integral::<Complex<F>, Word8>(Word8::of(4));
-            let b = -m[(1, 1)].clone() - m[(2, 2)].clone();
-            let c =
-                m[(1, 1)].clone() * m[(2, 2)].clone() - m[(1, 2)].clone() * m[(2, 1)].clone();
-            let delta = b.clone() * b.clone() - four * c;
-            eigenvalues[(1, 1)] = (-b.clone() + delta.clone().square_root()) * Complex::half();
-            eigenvalues[(2, 1)] = (-b - delta.square_root()) * Complex::half();
+    if is_square_matrix(m) {
+        let mut eigenvalues = Matrix::defaults(m.edge(), 1);
+        if is_diagonal_matrix(m) {
+            for idx in 1..=m.edge() {
+                eigenvalues[(idx, 1)] = m[(idx, idx)].clone();
+            }
+            (eigenvalues, Matrix::eyes(m.row, m.column))
         } else {
-            let (_, mut hm) = hessenberg_decomposition(m);
-            for _ in 0..max_iter {
-                // delta = (a1 - a2) / 2
-                let delta = (hm[(E - 1, E - 1)].clone() - hm[(E, E)].clone()) * Complex::half();
-                // shift = a2 + delta - sign(delta) * sqrt(delta * delta + b1 * b2)
-                // [[a1, b1], [b2, a2]]
-                let wilkinson = hm[(E, E)].clone() + delta.clone()
-                    - delta.sign_number()
-                        * (delta.clone() * delta
-                            + hm[(E - 1, E)].clone() * hm[(E, E - 1)].clone())
-                        .square_root();
-                let (q, r) = qr_decomposition_gr(&(hm - Matrix::eyes() * wilkinson.clone()));
-                hm = r * q + Matrix::eyes() * wilkinson;
-                if is_upper_triangular_matrix(&hm) {
-                    break;
+            if m.edge() < 3 {
+                let four = from_integral::<Complex<F>, Word8>(Word8::of(4));
+                let b = -m[(1, 1)].clone() - m[(2, 2)].clone();
+                let c = m[(1, 1)].clone() * m[(2, 2)].clone()
+                    - m[(1, 2)].clone() * m[(2, 1)].clone();
+                let delta = b.clone() * b.clone() - four * c;
+                eigenvalues[(1, 1)] =
+                    (-b.clone() + delta.clone().square_root()) * Complex::half();
+                eigenvalues[(2, 1)] = (-b - delta.square_root()) * Complex::half();
+            } else {
+                let (_, mut hm) = hessenberg_decomposition(m);
+                for _ in 0..max_iter {
+                    // delta = (a1 - a2) / 2
+                    let delta = (hm[(m.edge() - 1, m.edge() - 1)].clone()
+                        - hm[(m.edge(), m.edge())].clone())
+                        * Complex::half();
+                    // shift = a2 + delta - sign(delta) * sqrt(delta * delta + b1 * b2)
+                    // [[a1, b1], [b2, a2]]
+                    let wilkinson = hm[(m.edge(), m.edge())].clone() + delta.clone()
+                        - delta.sign_number()
+                            * (delta.clone() * delta
+                                + hm[(m.edge() - 1, m.edge())].clone()
+                                    * hm[(m.edge(), m.edge() - 1)].clone())
+                            .square_root();
+                    let (q, r) = qr_decomposition_gr(
+                        &(hm - Matrix::eyes(m.row, m.column) * wilkinson.clone()),
+                    );
+                    hm = r * q + Matrix::eyes(m.row, m.column) * wilkinson;
+                    if is_upper_triangular_matrix(&hm) {
+                        break;
+                    }
+                }
+                for idx in 1..=m.edge() {
+                    eigenvalues[(idx, 1)] = hm[(idx, idx)].clone();
                 }
             }
-            for idx in 1..=E {
-                eigenvalues[(idx, 1)] = hm[(idx, idx)].clone();
+            let mut eigenvectors = Matrix::defaults(m.row, m.column);
+            for idx in 1..=m.edge() {
+                let eigen_equation =
+                    m.clone() - Matrix::eyes(m.row, m.column) * eigenvalues[(idx, 1)].clone();
+                let null_space_eq = null_space(&eigen_equation);
+                let eigenvector = if null_space_eq.is_empty() {
+                    let ev = gram_schmidt_process(&eigen_equation);
+                    apply(
+                        &ev.get_column(idx).expect(&format!(
+                            concat!(
+                                "Error[matrix::extra::eigen_system_qr]: ",
+                                "Failed to obtain the {}-th column vector of ev."
+                            ),
+                            idx
+                        )),
+                        |e: &Complex<F>| e.clone(),
+                    )
+                } else {
+                    null_space_eq[0].clone()
+                };
+                for row in 1..=m.edge() {
+                    eigenvectors[(row, idx)] = eigenvector[(row, 1)].clone();
+                }
             }
+            (eigenvalues, eigenvectors)
         }
-        let mut eigenvectors = Matrix::default();
-        for idx in 1..=E {
-            let eigen_equation = m.clone() - Matrix::eyes() * eigenvalues[(idx, 1)].clone();
-            let null_space_eq = null_space(&eigen_equation);
-            let eigenvector = if null_space_eq.is_empty() {
-                let ev = gram_schmidt_process(&eigen_equation);
-                apply(
-                    &ev.get_column(idx).expect(&format!(
-                        concat!(
-                            "Error[matrix::extra::eigen_system_qr]: ",
-                            "Failed to obtain the {}-th column vector of ev."
-                        ),
-                        idx
-                    )),
-                    |e: &Complex<F>| e.clone(),
-                )
-            } else {
-                null_space_eq[0].clone()
-            };
-            for row in 1..=E {
-                eigenvectors[(row, idx)] = eigenvector[(row, 1)].clone();
-            }
-        }
-        (eigenvalues, eigenvectors)
+    } else {
+        panic!(concat!(
+            "Error[matrix::complex::eigen_system_qr]: ",
+            "Only square matrices can potentially have eigenvalues."
+        ))
     }
 }
 
@@ -1238,7 +1368,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         3,
+///         3,
 ///         &[
 ///             (1.0, -2.0),
 ///             (3.0, -4.0),
@@ -1257,9 +1389,7 @@ where
 ///     assert_eq!(n, Float::of(40.2086));
 /// }
 /// ```
-pub fn induced_l2_matrix_norm<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> F
+pub fn induced_l2_matrix_norm<F>(m: &Matrix<Complex<F>>) -> F
 where
     F: RealFloat,
 {
@@ -1287,7 +1417,9 @@ where
 /// };
 ///
 /// fn main() {
-///     let m = Matrix::<Complex<Float>, 3, 3>::of(
+///     let m = Matrix::<Complex<Float>>::of(
+///         3,
+///         3,
 ///         &[
 ///             (1.0, -2.0),
 ///             (3.0, -4.0),
@@ -1303,7 +1435,9 @@ where
 ///     )
 ///     .unwrap();
 ///     let (u, s, v) = singular_value_decomposition(&m);
-///     let s_expect = Matrix::<Complex<Float>, 3, 3>::diagonal(
+///     let s_expect = Matrix::<Complex<Float>>::diagonal(
+///         3,
+///         3,
 ///         &[40.2086, 21.4557, 5.64978].map(|e| Complex::of(Float::of(e), Float::zero())),
 ///     )
 ///     .unwrap();
@@ -1311,24 +1445,20 @@ where
 ///     assert_eq!(u * s * conjugate_transpose(&v), m);
 /// }
 /// ```
-pub fn singular_value_decomposition<F, const R: usize, const C: usize>(
-    m: &Matrix<Complex<F>, R, C>,
-) -> (
-    Matrix<Complex<F>, R, R>,
-    Matrix<Complex<F>, R, C>,
-    Matrix<Complex<F>, C, C>,
-)
+pub fn singular_value_decomposition<F>(
+    m: &Matrix<Complex<F>>,
+) -> (Matrix<Complex<F>>, Matrix<Complex<F>>, Matrix<Complex<F>>)
 where
     F: RealFloat,
 {
     let left_sym = m.clone() * conjugate_transpose(m);
     let right_sym = conjugate_transpose(m) * m.clone();
-    let edge = R.min(C);
+    let edge = m.edge();
     // Compute the eigenvectors and eigenvalues of the left matrix.
     let (sig1, mut u) = eigen_system_qr(&left_sym, DEFAULT_MAX_ITER);
     // Compute the eigenvectors and eigenvalues of the right matrix.
     let (sig2, mut v) = eigen_system_qr(&right_sym, DEFAULT_MAX_ITER);
-    let mut sigma = Matrix::<Complex<F>, R, C>::default();
+    let mut sigma = Matrix::<Complex<F>>::defaults(m.row, m.column);
     // Sort singular values.
     let mut sd = (1..=edge)
         .map(|idx| {
@@ -1352,9 +1482,9 @@ where
             let temp = sd[idx].clone();
             sd[idx] = sd[max].clone();
             sd[max] = temp;
-            let p_left = Matrix::<Complex<F>, R, R>::p_change(idx, max);
+            let p_left = Matrix::<Complex<F>>::p_change(m.row, m.row, idx, max);
             u = u * p_left;
-            let p_right = Matrix::<Complex<F>, C, C>::p_change(idx, max);
+            let p_right = Matrix::<Complex<F>>::p_change(m.column, m.column, idx, max);
             v = v * p_right;
         }
     }
@@ -1364,12 +1494,12 @@ where
     // Obtain the corresponding orthogonal basis.
     let u = gram_schmidt_process(&u);
     let v = gram_schmidt_process(&v);
-    if R > C {
+    if m.row > m.column {
         // Use U as a reference to correct V.
         // A^T U = V (S^T) = V S'
         // => A^T ui = si vi
-        let mut modified_v = Matrix::default();
-        for idx in 1..=C {
+        let mut modified_v = Matrix::defaults(m.column, m.column);
+        for idx in 1..=m.column {
             let ui = apply(
                 &u.get_column(idx).expect(&format!(
                     concat!(
@@ -1385,7 +1515,7 @@ where
             } else {
                 conjugate_transpose(m) * ui / sigma[(idx, idx)].clone()
             };
-            for row in 1..=C {
+            for row in 1..=m.column {
                 modified_v[(row, idx)] = vi[(row, 1)].clone();
             }
         }
@@ -1394,8 +1524,8 @@ where
         // Use V as a reference to correct U.
         // A V = S U
         // => A vi = si ui
-        let mut modified_u = Matrix::default();
-        for idx in 1..=R {
+        let mut modified_u = Matrix::defaults(m.row, m.row);
+        for idx in 1..=m.row {
             let vi = apply(
                 &v.get_column(idx).expect(&format!(
                     concat!(
@@ -1411,7 +1541,7 @@ where
             } else {
                 m.clone() * vi / sigma[(idx, idx)].clone()
             };
-            for row in 1..=R {
+            for row in 1..=m.row {
                 modified_u[(row, idx)] = ui[(row, 1)].clone();
             }
         }
