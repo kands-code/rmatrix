@@ -4,7 +4,12 @@
 //! such as matrix validation, matrix simplification,
 //! and determinant calculation, etc.
 
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{
+    IndexedParallelIterator,
+    IntoParallelIterator,
+    IntoParallelRefIterator,
+    ParallelIterator,
+};
 
 use crate::{
     matrix::{
@@ -775,9 +780,9 @@ where
     N: Fractional,
 {
     if is_square_matrix(m) {
-        let mut adjugate = Matrix::<N>::defaults(m.row, m.column);
-        for row in 1..=m.row {
-            for column in 1..=m.column {
+        let mut adjugate = Matrix::<N>::defaults(m.column, m.row);
+        for row in 1..=m.column {
+            for column in 1..=m.row {
                 adjugate[(row, column)] = determinant(&m.submatrix(column, row))
                     * if (row + column) & 1 == 0 {
                         N::one()
@@ -793,6 +798,70 @@ where
             "Only square matrices have adjugate matrices."
         ));
         None
+    }
+}
+
+/// Calculating the determinant of a matrix using the Laplace expansion method.
+///
+/// # Panics
+///
+/// Only square matrices can have a determinant calculated.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{math::determinant_e, matrix::Matrix},
+///     number::instances::int8::Int8,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::of(
+///         4,
+///         4,
+///         &[1, 2, 3, 4, 1, 3, 4, 1, 1, 4, 1, 2, 1, 1, 2, 3].map(Int8::of),
+///     )
+///     .unwrap();
+///     assert_eq!(determinant_e(&m), Int8::of(16));
+/// }
+/// ```
+pub fn determinant_e<N>(m: &Matrix<N>) -> N
+where
+    N: Number,
+{
+    if m.row == m.column {
+        match m.row {
+            1 => m[(1, 1)].clone(),
+            2 => m[(1, 1)].clone() * m[(2, 2)].clone() - m[(1, 2)].clone() * m[(2, 1)].clone(),
+            3 => {
+                m[(1, 1)].clone()
+                    * (m[(2, 2)].clone() * m[(3, 3)].clone()
+                        - m[(2, 3)].clone() * m[(3, 2)].clone())
+                    - m[(1, 2)].clone()
+                        * (m[(2, 1)].clone() * m[(3, 3)].clone()
+                            - m[(2, 3)].clone() * m[(3, 1)].clone())
+                    + m[(1, 3)].clone()
+                        * (m[(2, 1)].clone() * m[(3, 2)].clone()
+                            - m[(2, 2)].clone() * m[(3, 1)].clone())
+            }
+            _ => (1..=m.column)
+                .into_par_iter()
+                .map(|column| {
+                    let submat = m.submatrix(1, column);
+                    determinant_e(&submat)
+                        * if ((1 + column) & 1) == 0 {
+                            m[(1, column)].clone()
+                        } else {
+                            -m[(1, column)].clone()
+                        }
+                })
+                .reduce(|| N::zero(), |a, b| a + b),
+        }
+    } else {
+        panic!(concat!(
+            "Error[matrix::math::determinant_e]: ",
+            "Only square matrices can have a determinant calculated."
+        ));
     }
 }
 

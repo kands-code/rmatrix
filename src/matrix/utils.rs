@@ -518,6 +518,80 @@ where
     }
 }
 
+/// Constructing a matrix from column vectors.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::from_columns, vector::column_vector},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let v1 = column_vector(3, &[1, 2, 3].map(Word8::of)).unwrap();
+///     let v2 = column_vector(3, &[4, 7, 9].map(Word8::of)).unwrap();
+///     let v3 = column_vector(3, &[5, 8, 6].map(Word8::of)).unwrap();
+///     let m = from_columns(3, 3, &[v1, v2, v3]);
+///     let m_expect = Matrix::of(3, 3, &[1, 4, 5, 2, 7, 8, 3, 9, 6].map(Word8::of));
+///     assert_eq!(m, m_expect);
+/// }
+/// ```
+pub fn from_columns<N>(row: usize, column: usize, columns: &[Matrix<N>]) -> Option<Matrix<N>>
+where
+    N: Clone + Sync,
+{
+    if columns.par_iter().all(|v| v.column == 1 && v.row == row) {
+        let mut inner = Vec::with_capacity(row * column);
+        for row_index in 1..=row {
+            for column_index in 0..column {
+                inner.push(columns[column_index][(row_index, 1)].clone());
+            }
+        }
+        Some(Matrix { inner, row, column })
+    } else {
+        eprintln!(concat!("Error[matrix::utils::from_columns]: ", ""));
+        None
+    }
+}
+
+/// Constructing a matrix from row vectors.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{matrix::Matrix, utils::from_rows, vector::row_vector},
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let v1 = row_vector(3, &[1, 2, 3].map(Word8::of)).unwrap();
+///     let v2 = row_vector(3, &[4, 7, 9].map(Word8::of)).unwrap();
+///     let v3 = row_vector(3, &[5, 8, 6].map(Word8::of)).unwrap();
+///     let m = from_rows(3, 3, &[v1, v2, v3]);
+///     let m_expect = Matrix::of(3, 3, &[1, 2, 3, 4, 7, 9, 5, 8, 6].map(Word8::of));
+///     assert_eq!(m, m_expect);
+/// }
+/// ```
+pub fn from_rows<N>(row: usize, column: usize, rows: &[Matrix<N>]) -> Option<Matrix<N>>
+where
+    N: Clone + Sync,
+{
+    if rows.par_iter().all(|v| v.row == 1 && v.column == column) {
+        let mut inner = Vec::with_capacity(row * column);
+        for row_index in 0..row {
+            for column_index in 1..=column {
+                inner.push(rows[row_index][(1, column_index)].clone());
+            }
+        }
+        Some(Matrix { inner, row, column })
+    } else {
+        eprintln!(concat!("Error[matrix::utils::from_rows]: ", ""));
+        None
+    }
+}
+
 /// Use the Gram-Schmidt process
 /// to find the orthogonal basis corresponding to the given set of vectors.
 ///
