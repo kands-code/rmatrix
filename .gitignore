@@ -25,6 +25,7 @@ _*
 
 # random data
 data/random.txt
+data/mnist/
 
 # vscode
 .vscode/
