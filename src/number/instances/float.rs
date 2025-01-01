@@ -262,12 +262,13 @@ impl Real for Float {
     /// }
     /// ```
     fn to_rational(self) -> Rational {
-        if self.is_not_a_number() || self.is_infinite_number() {
-            panic!(
-                "Error[Float::to_rational]: {} is not a valid floating number",
-                self
-            );
-        } else if self.is_zero() {
+        assert!(
+            !(self.is_not_a_number() || self.is_infinite_number()),
+            "Error[Float::to_rational]: {} is not a valid floating number",
+            self
+        );
+
+        if self.is_zero() {
             Rational {
                 numerator: Integer::zero(),
                 denominator: Integer::one(),

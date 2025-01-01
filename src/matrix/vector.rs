@@ -183,12 +183,12 @@ where
 ///         VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
 ///     let v2: VectorC<Int8, 2> = VectorC::of(&[Int8::of(4), Int8::of(5)]).unwrap();
 ///     let cv = VectorC::<Int8, 4>::of(&[4, 13, 22, 15].map(|e| Int8::of(e))).unwrap();
-///     assert_eq!(convolution(v1, v2), cv);
+///     assert_eq!(convolution(&v1, &v2), cv);
 /// }
 /// ```
 pub fn convolution<N, const R1: usize, const R2: usize>(
-    v1: VectorC<N, R1>,
-    v2: VectorC<N, R2>,
+    v1: &VectorC<N, R1>,
+    v2: &VectorC<N, R2>,
 ) -> VectorC<N, { R1 + R2 - 1 }>
 where
     N: Number,
