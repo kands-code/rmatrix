@@ -481,15 +481,16 @@ pub fn eigen_system_qr<N>(
 where
     N: RealFloat,
 {
-    if is_square_matrix(m) {
-        let complexed = apply(m, |e| Complex::of(e, N::zero()));
-        complex::eigen_system_qr(&complexed, max_iter)
-    } else {
-        panic!(concat!(
+    assert!(
+        is_square_matrix(m),
+        concat!(
             "Error[matrix::extra::eigen_system_qr]: ",
             "Only square matrices can potentially have eigenvalues."
-        ))
-    }
+        )
+    );
+
+    let complexed = apply(m, |e| Complex::of(e, N::zero()));
+    complex::eigen_system_qr(&complexed, max_iter)
 }
 
 /// Calculate the induced L-2 norm of the real matrix.

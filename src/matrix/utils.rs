@@ -4,11 +4,12 @@
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
+use super::vector::is_row_vector;
 use crate::{
     matrix::{
         math::{is_square_matrix, row_eliminate, row_reduce},
         matrix::Matrix,
-        vector::{layer_product, normalize, project_to},
+        vector::{is_column_vector, layer_product, normalize, project_to},
     },
     number::traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
 };
@@ -178,15 +179,16 @@ pub fn project_matrix<N>(to: &Matrix<N>) -> Matrix<N>
 where
     N: RealFloat,
 {
-    if to.column == 1 {
-        let normalized = normalize(to);
-        layer_product(&normalized, &transpose(&normalized))
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(to),
+        concat!(
             "Error[matrix::utils::project_matrix]: ",
             "A column vector is required."
-        ))
-    }
+        )
+    );
+
+    let normalized = normalize(to);
+    layer_product(&normalized, &transpose(&normalized))
 }
 
 /// Calculate the rank of the matrix.
@@ -444,27 +446,28 @@ pub fn horizontal_concat<N>(m1: &Matrix<N>, m2: &Matrix<N>) -> Matrix<N>
 where
     N: Clone,
 {
-    if m1.row == m2.row {
-        let mut inner = Vec::with_capacity(m1.row * (m1.column + m2.column));
-        for row_index in 1..=m1.row {
-            for column_index in 1..=(m1.column + m2.column) {
-                inner.push(if column_index <= m1.column {
-                    m1[(row_index, column_index)].clone()
-                } else {
-                    m2[(row_index, column_index - m1.column)].clone()
-                });
-            }
-        }
-        Matrix {
-            inner,
-            row: m2.row,
-            column: m1.column + m2.column,
-        }
-    } else {
-        panic!(concat!(
+    assert_eq!(
+        m1.row, m2.row,
+        concat!(
             "Error[matrix::utils::horizontal_concat]: ",
             "The number of rows in m1 and m2 must be the same."
-        ));
+        )
+    );
+
+    let mut inner = Vec::with_capacity(m1.row * (m1.column + m2.column));
+    for row_index in 1..=m1.row {
+        for column_index in 1..=(m1.column + m2.column) {
+            inner.push(if column_index <= m1.column {
+                m1[(row_index, column_index)].clone()
+            } else {
+                m2[(row_index, column_index - m1.column)].clone()
+            });
+        }
+    }
+    Matrix {
+        inner,
+        row: m2.row,
+        column: m1.column + m2.column,
     }
 }
 
@@ -494,27 +497,28 @@ pub fn vertical_concat<N>(m1: &Matrix<N>, m2: &Matrix<N>) -> Matrix<N>
 where
     N: Clone,
 {
-    if m1.column == m2.column {
-        let mut inner = Vec::with_capacity((m1.row + m2.row) * m1.column);
-        for row_index in 1..=(m1.row + m2.row) {
-            for column_index in 1..=m1.column {
-                inner.push(if row_index <= m1.row {
-                    m1[(row_index, column_index)].clone()
-                } else {
-                    m2[(row_index - m1.row, column_index)].clone()
-                });
-            }
-        }
-        Matrix {
-            inner,
-            row: m1.row + m2.row,
-            column: m2.column,
-        }
-    } else {
-        panic!(concat!(
+    assert_eq!(
+        m1.column, m2.column,
+        concat!(
             "Error[matrix::utils::horizontal_concat]: ",
             "The number of columns in m1 and m2 must be the same."
-        ));
+        )
+    );
+
+    let mut inner = Vec::with_capacity((m1.row + m2.row) * m1.column);
+    for row_index in 1..=(m1.row + m2.row) {
+        for column_index in 1..=m1.column {
+            inner.push(if row_index <= m1.row {
+                m1[(row_index, column_index)].clone()
+            } else {
+                m2[(row_index - m1.row, column_index)].clone()
+            });
+        }
+    }
+    Matrix {
+        inner,
+        row: m1.row + m2.row,
+        column: m2.column,
     }
 }
 
@@ -541,7 +545,10 @@ pub fn from_columns<N>(row: usize, column: usize, columns: &[Matrix<N>]) -> Opti
 where
     N: Clone + Sync,
 {
-    if columns.par_iter().all(|v| v.column == 1 && v.row == row) {
+    if columns
+        .par_iter()
+        .all(|v| is_column_vector(v) && v.row == row)
+    {
         let mut inner = Vec::with_capacity(row * column);
         for row_index in 1..=row {
             for column_index in 0..column {
@@ -578,7 +585,10 @@ pub fn from_rows<N>(row: usize, column: usize, rows: &[Matrix<N>]) -> Option<Mat
 where
     N: Clone + Sync,
 {
-    if rows.par_iter().all(|v| v.row == 1 && v.column == column) {
+    if rows
+        .par_iter()
+        .all(|v| is_row_vector(v) && v.column == column)
+    {
         let mut inner = Vec::with_capacity(row * column);
         for row_index in 0..row {
             for column_index in 1..=column {
@@ -785,25 +795,26 @@ pub fn hessenberg_decomposition<N>(m: &Matrix<N>) -> (Matrix<N>, Matrix<N>)
 where
     N: RealFloat,
 {
-    if is_square_matrix(m) {
-        if m.row < 3 {
-            (Matrix::eyes(m.row, m.column), m.clone())
-        } else {
-            let mut hessen = m.clone();
-            let mut p = Matrix::eyes(m.row, m.column);
-            for column in 1..=m.column {
-                for row in (column + 1..m.row).rev() {
-                    let pi = transpose(&givens_rotation_matrix(&hessen, row + 1, column));
-                    hessen = transpose(&pi) * hessen * pi.clone();
-                    p = p * pi;
-                }
-            }
-            (p, hessen)
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_square_matrix(m),
+        concat!(
             "Error[matrix::utils::hessenberg_decomposition]: ",
             "Only square matrices can undergo the Heisenberg decomposition."
-        ));
+        )
+    );
+
+    if m.row < 3 {
+        (Matrix::eyes(m.row, m.column), m.clone())
+    } else {
+        let mut hessen = m.clone();
+        let mut p = Matrix::eyes(m.row, m.column);
+        for column in 1..=m.column {
+            for row in (column + 1..m.row).rev() {
+                let pi = transpose(&givens_rotation_matrix(&hessen, row + 1, column));
+                hessen = transpose(&pi) * hessen * pi.clone();
+                p = p * pi;
+            }
+        }
+        (p, hessen)
     }
 }

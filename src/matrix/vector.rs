@@ -40,6 +40,27 @@ where
 {
     Matrix::of(1, dim, data)
 }
+/// Determine whether the given matrix is a row vector.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         matrix::Matrix,
+///         vector::{is_row_vector, row_vector},
+///     },
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let v = row_vector(3, &[1, 0, 0].map(Word8::of)).unwrap();
+///     assert!(is_row_vector(&v));
+///     let m = Matrix::of(2, 2, &[1, 0, 2, 5].map(Word8::of)).unwrap();
+///     assert!(!is_row_vector(&m));
+/// }
+/// ```
+pub fn is_row_vector<N>(v: &Matrix<N>) -> bool { v.row == 1 }
 
 /// Constructing a column vector.
 ///
@@ -63,6 +84,28 @@ where
 {
     Matrix::of(dim, 1, data)
 }
+
+/// Determine whether the given matrix is a column vector.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         matrix::Matrix,
+///         vector::{column_vector, is_column_vector},
+///     },
+///     number::instances::word8::Word8,
+/// };
+///
+/// fn main() {
+///     let v = column_vector(3, &[1, 0, 0].map(Word8::of)).unwrap();
+///     assert!(is_column_vector(&v));
+///     let m = Matrix::of(2, 2, &[1, 0, 2, 5].map(Word8::of)).unwrap();
+///     assert!(!is_column_vector(&m));
+/// }
+/// ```
+pub fn is_column_vector<N>(v: &Matrix<N>) -> bool { v.column == 1 }
 
 /// Used to obtain the basis vector.
 ///
@@ -116,25 +159,26 @@ pub fn dot_product<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> N
 where
     N: Real,
 {
-    if v1.row == v2.row && v1.column == 1 && v2.column == 1 {
-        v1.inner
-            .par_iter()
-            .zip(v2.inner.par_iter())
-            .map(|(e1, e2)| e1.clone() * e2.clone())
-            .reduce(|| N::zero(), |acc, e| acc + e)
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v1) && is_column_vector(v2) && v1.row == v2.row,
+        concat!(
             "Error[matrix::vector::dot_product]: ",
             "Only column vectors with matching dimensions can be multiplied."
-        ));
-    }
+        )
+    );
+
+    v1.inner
+        .par_iter()
+        .zip(v2.inner.par_iter())
+        .map(|(e1, e2)| e1.clone() * e2.clone())
+        .reduce(|| N::zero(), |acc, e| acc + e)
 }
 
-/// Calculate the cross product of two three-dimensional column vectors.
+/// Calculate the cross product of two 3-dim column vectors.
 ///
 /// # Panics
 ///
-/// Only three-dimensional column vectors can be crossed.
+/// Only 3-dim column vectors can be crossed.
 ///
 /// # Examples
 ///
@@ -157,24 +201,25 @@ pub fn cross_product<N>(v1: Matrix<N>, v2: Matrix<N>) -> Matrix<N>
 where
     N: Number,
 {
-    if v1.shape() == (3, 1) && v2.shape() == (3, 1) {
-        let mut inner = vec![N::zero(); 3];
-        inner[0] =
-            v1[(2, 1)].clone() * v2[(3, 1)].clone() - v1[(3, 1)].clone() * v2[(2, 1)].clone();
-        inner[1] =
-            v1[(3, 1)].clone() * v2[(1, 1)].clone() - v1[(1, 1)].clone() * v2[(3, 1)].clone();
-        inner[2] =
-            v1[(1, 1)].clone() * v2[(2, 1)].clone() - v1[(2, 1)].clone() * v2[(1, 1)].clone();
-        Matrix {
-            inner,
-            row: 3,
-            column: 1,
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        v1.shape() == (3, 1) && v2.shape() == (3, 1),
+        concat!(
             "Error[matrix::vector::cross_product]: ",
             "Only three-dimensional column vectors can be crossed."
-        ));
+        )
+    );
+
+    let mut inner = vec![N::zero(); 3];
+    inner[0] =
+        v1[(2, 1)].clone() * v2[(3, 1)].clone() - v1[(3, 1)].clone() * v2[(2, 1)].clone();
+    inner[1] =
+        v1[(3, 1)].clone() * v2[(1, 1)].clone() - v1[(1, 1)].clone() * v2[(3, 1)].clone();
+    inner[2] =
+        v1[(1, 1)].clone() * v2[(2, 1)].clone() - v1[(2, 1)].clone() * v2[(1, 1)].clone();
+    Matrix {
+        inner,
+        row: 3,
+        column: 1,
     }
 }
 
@@ -212,24 +257,25 @@ pub fn layer_product<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> Matrix<N>
 where
     N: Number,
 {
-    if v1.column == 1 && v2.row == 1 {
-        let mut inner = Vec::with_capacity(v1.row * v2.column);
-        for row_index in 1..=v1.row {
-            for column_index in 1..=v2.column {
-                inner.push(v1[(row_index, 1)].clone() * v2[(1, column_index)].clone());
-            }
-        }
-        Matrix {
-            inner,
-            row: v1.row,
-            column: v2.column,
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v1) && is_row_vector(v2),
+        concat!(
             "Error[matrix::vector::layer_product]: ",
             "Only one column vector and one row vector ",
             "can be used for the layer product."
-        ));
+        )
+    );
+
+    let mut inner = Vec::with_capacity(v1.row * v2.column);
+    for row_index in 1..=v1.row {
+        for column_index in 1..=v2.column {
+            inner.push(v1[(row_index, 1)].clone() * v2[(1, column_index)].clone());
+        }
+    }
+    Matrix {
+        inner,
+        row: v1.row,
+        column: v2.column,
     }
 }
 
@@ -251,35 +297,36 @@ where
 ///     let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
 ///     let v2 = column_vector::<Int8>(2, &[Int8::of(4), Int8::of(5)]).unwrap();
 ///     let cv = column_vector::<Int8>(4, &[4, 13, 22, 15].map(|e| Int8::of(e))).unwrap();
-///     assert_eq!(convolution(v1, v2), cv);
+///     assert_eq!(convolution(&v1, &v2), cv);
 /// }
 /// ```
-pub fn convolution<N>(v1: Matrix<N>, v2: Matrix<N>) -> Matrix<N>
+pub fn convolution<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> Matrix<N>
 where
     N: Number,
 {
-    if v1.column == 1 && v2.column == 1 {
-        let mut inner = Vec::with_capacity(v1.row + v2.row - 1);
-        for index in 1..=(v1.row + v2.row - 1) {
-            let mut sum = N::zero();
-            for p in 1..=v1.row.min(index) {
-                let q = index + 1 - p;
-                if (1..=v2.row).contains(&q) {
-                    sum = sum + v1[(p, 1)].clone() * v2[(q, 1)].clone();
-                }
-            }
-            inner.push(sum);
-        }
-        Matrix {
-            inner,
-            row: v1.row + v2.row - 1,
-            column: 1,
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v1) && is_column_vector(v2),
+        concat!(
             "Error[matrix::vector::convolution]: ",
             "Only column vectors can be convolved."
-        ));
+        )
+    );
+
+    let mut inner = Vec::with_capacity(v1.row + v2.row - 1);
+    for index in 1..=(v1.row + v2.row - 1) {
+        let mut sum = N::zero();
+        for p in 1..=v1.row.min(index) {
+            let q = index + 1 - p;
+            if (1..=v2.row).contains(&q) {
+                sum = sum + v1[(p, 1)].clone() * v2[(q, 1)].clone();
+            }
+        }
+        inner.push(sum);
+    }
+    Matrix {
+        inner,
+        row: v1.row + v2.row - 1,
+        column: 1,
     }
 }
 
@@ -312,18 +359,19 @@ pub fn euclidean_norm<N>(v: &Matrix<N>) -> N
 where
     N: RealFloat,
 {
-    if v.row == 1 || v.column == 1 {
-        v.inner
-            .par_iter()
-            .map(|e| e.clone() * e.clone())
-            .reduce(|| N::zero(), |acc, e| acc + e)
-            .square_root()
-    } else {
-        panic!(concat!(
+    assert!(
+        is_row_vector(v) || is_column_vector(v),
+        concat!(
             "Error[matrix::vector::euclidean_norm]: ",
             "Only vectors have the Euclidean norm."
-        ));
-    }
+        )
+    );
+
+    v.inner
+        .par_iter()
+        .map(|e| e.clone() * e.clone())
+        .reduce(|| N::zero(), |acc, e| acc + e)
+        .square_root()
 }
 
 /// Normalize the real vector.
@@ -351,18 +399,19 @@ pub fn normalize<N>(v: &Matrix<N>) -> Matrix<N>
 where
     N: RealFloat,
 {
-    if v.column == 1 {
-        if v.inner.par_iter().all(|e| e.is_zero()) {
-            Matrix::defaults(v.row, 1)
-        } else {
-            let v_norm = euclidean_norm(v);
-            v.clone() / v_norm
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v),
+        concat!(
             "Error[matrix::vector::normalize]: ",
             "This function can only be used for column vector normalization."
-        ));
+        )
+    );
+
+    if v.inner.par_iter().all(|e| e.is_zero()) {
+        Matrix::defaults(v.row, 1)
+    } else {
+        let v_norm = euclidean_norm(v);
+        v.clone() / v_norm
     }
 }
 
@@ -391,20 +440,21 @@ pub fn maximum_norm<N>(v: &Matrix<N>) -> N
 where
     N: Real,
 {
-    if v.column == 1 {
-        let mut norm = N::zero();
-        for e in v.linear_iter().map(|e| e.absolute_value()) {
-            if e > norm {
-                norm = e;
-            }
-        }
-        norm
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v),
+        concat!(
             "Error[matrix::vector::maximum_norm]: ",
             "This function can only be used for column vectors."
-        ));
+        )
+    );
+
+    let mut norm = N::zero();
+    for e in v.linear_iter().map(|e| e.absolute_value()) {
+        if e > norm {
+            norm = e;
+        }
     }
+    norm
 }
 
 /// Calculate the root mean square of the column vector.
@@ -434,20 +484,21 @@ pub fn root_mean_square<N>(v: &Matrix<N>) -> N
 where
     N: RealFloat,
 {
-    if v.column == 1 {
-        let l2_norm = euclidean_norm(v);
-        let r_sqrt = N::from_integer(Integer::of_str(&format!("{}", v.row)).expect(&format!(
+    assert!(
+        is_column_vector(v),
+        concat!(
+            "Error[matrix::vector::root_mean_square]: ",
+            "This function can only be used for column vectors."
+        )
+    );
+
+    let l2_norm = euclidean_norm(v);
+    let r_sqrt = N::from_integer(Integer::of_str(&format!("{}", v.row)).expect(&format!(
         "Error[matrix::vector::root_mean_square]: Failed to convert {} from usize to Integer.",
         v.row
     )))
     .square_root();
-        l2_norm / r_sqrt
-    } else {
-        panic!(concat!(
-            "Error[matrix::vector::root_mean_square]: ",
-            "This function can only be used for column vectors."
-        ));
-    }
+    l2_norm / r_sqrt
 }
 
 /// Calculate the angle between two vectors.
@@ -492,24 +543,25 @@ pub fn angle_between<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> Option<N>
 where
     N: RealFloat,
 {
-    if v1.row == v2.row && v1.column == 1 && v2.column == 1 {
-        let zero_vector = Matrix::defaults(v1.row, 1);
-        if v1 == &zero_vector || v2 == &zero_vector {
-            eprintln!(concat!(
-                "Error[matrix::vector::angle_between]: ",
-                "The zero-vector has no angle with other vectors."
-            ));
-            None
-        } else if v1 == v2 {
-            Some(N::zero())
-        } else {
-            Some((dot_product(&normalize(v1), &normalize(v2))).arc_cosine())
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v1) && is_column_vector(v2) && v1.row == v2.row,
+        concat!(
             "Error[matrix::vector::angle_between]: ",
             "This function can only be used for column vectors with matching dimensions."
+        )
+    );
+
+    let zero_vector = Matrix::defaults(v1.row, 1);
+    if v1 == &zero_vector || v2 == &zero_vector {
+        eprintln!(concat!(
+            "Error[matrix::vector::angle_between]: ",
+            "The zero-vector has no angle with other vectors."
         ));
+        None
+    } else if v1 == v2 {
+        Some(N::zero())
+    } else {
+        Some((dot_product(&normalize(v1), &normalize(v2))).arc_cosine())
     }
 }
 
@@ -541,14 +593,15 @@ pub fn project_to<N>(from: &Matrix<N>, to: &Matrix<N>) -> Matrix<N>
 where
     N: RealFrac,
 {
-    if from.row == to.row && from.column == 1 && to.column == 1 {
-        let p1 = dot_product(to, from);
-        let p2 = dot_product(to, to);
-        to.clone() * (p1 / p2)
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(from) && is_column_vector(to) && from.row == to.row,
+        concat!(
             "Error[matrix::vector::project_to]: ",
             "This function can only be used for column vectors with matching dimensions."
-        ));
-    }
+        )
+    );
+
+    let p1 = dot_product(to, from);
+    let p2 = dot_product(to, to);
+    to.clone() * (p1 / p2)
 }

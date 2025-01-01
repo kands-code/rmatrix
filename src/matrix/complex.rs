@@ -15,7 +15,7 @@ use crate::{
         },
         matrix::Matrix,
         utils::{apply, null_space, points_2d, transpose},
-        vector::layer_product,
+        vector::{is_column_vector, is_row_vector, layer_product},
     },
     number::{
         instances::{complex::Complex, word8::Word8},
@@ -324,18 +324,19 @@ pub fn dot_product<F>(v1: &Matrix<Complex<F>>, v2: &Matrix<Complex<F>>) -> Compl
 where
     F: RealFloat,
 {
-    if v1.row == v2.row && v1.column == 1 && v2.column == 1 {
-        v1.inner
-            .par_iter()
-            .zip(v2.inner.par_iter())
-            .map(|(e1, e2)| e1.clone().conjugate() * e2.clone())
-            .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v1) && is_column_vector(v2) && v1.row == v2.row,
+        concat!(
             "Error[matrix::complex::dot_product]: ",
             "Only column vectors with matching dimensions can be multiplied."
-        ));
-    }
+        )
+    );
+
+    v1.inner
+        .par_iter()
+        .zip(v2.inner.par_iter())
+        .map(|(e1, e2)| e1.clone().conjugate() * e2.clone())
+        .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
 }
 
 /// Project one complex vector onto another complex vector.
@@ -377,16 +378,17 @@ pub fn project_to<F>(from: &Matrix<Complex<F>>, to: &Matrix<Complex<F>>) -> Matr
 where
     F: RealFloat,
 {
-    if from.row == to.row && from.column == 1 && to.column == 1 {
-        let p1 = dot_product(to, from);
-        let p2 = dot_product(to, to);
-        to.clone() * (p1 / p2)
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(from) && is_column_vector(to) && from.row == to.row,
+        concat!(
             "Error[matrix::complex::project_to]: ",
             "This function can only be used for column vectors with matching dimensions."
-        ));
-    }
+        )
+    );
+
+    let p1 = dot_product(to, from);
+    let p2 = dot_product(to, to);
+    to.clone() * (p1 / p2)
 }
 
 /// Apply the Gram-Schmidt process to the given basis
@@ -603,18 +605,19 @@ pub fn euclidean_norm<F>(v: &Matrix<Complex<F>>) -> Complex<F>
 where
     F: RealFloat,
 {
-    if v.row == 1 || v.column == 1 {
-        v.inner
-            .par_iter()
-            .map(|e| e.clone().conjugate() * e.clone())
-            .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
-            .square_root()
-    } else {
-        panic!(concat!(
+    assert!(
+        is_row_vector(v) || is_column_vector(v),
+        concat!(
             "Error[matrix::complex::euclidean_norm]: ",
             "Only vectors have the Euclidean norm."
-        ));
-    }
+        )
+    );
+
+    v.inner
+        .par_iter()
+        .map(|e| e.clone().conjugate() * e.clone())
+        .reduce(|| Complex::<F>::zero(), |acc, e| acc + e)
+        .square_root()
 }
 
 /// Normalize the complex vector.
@@ -649,18 +652,19 @@ pub fn normalize<F>(v: &Matrix<Complex<F>>) -> Matrix<Complex<F>>
 where
     F: RealFloat,
 {
-    if v.column == 1 {
-        if v.inner.par_iter().all(|e| e.is_zero()) {
-            Matrix::defaults(v.row, 1)
-        } else {
-            let v_norm = euclidean_norm(v);
-            v.clone() / v_norm
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v),
+        concat!(
             "Error[matrix::vector::normalize]: ",
             "This function can only be used for column vector normalization."
-        ));
+        )
+    );
+
+    if v.inner.par_iter().all(|e| e.is_zero()) {
+        Matrix::defaults(v.row, 1)
+    } else {
+        let v_norm = euclidean_norm(v);
+        v.clone() / v_norm
     }
 }
 
@@ -695,20 +699,21 @@ pub fn maximum_norm<F>(v: &Matrix<Complex<F>>) -> F
 where
     F: RealFloat,
 {
-    if v.column == 1 {
-        let mut norm = F::zero();
-        for e in v.linear_iter().map(|e| e.clone().norm()) {
-            if e > norm {
-                norm = e;
-            }
-        }
-        norm
-    } else {
-        panic!(concat!(
+    assert!(
+        is_column_vector(v),
+        concat!(
             "Error[matrix::vector::maximum_norm]: ",
             "This function can only be used for column vectors."
-        ));
+        )
+    );
+
+    let mut norm = F::zero();
+    for e in v.linear_iter().map(|e| e.clone().norm()) {
+        if e > norm {
+            norm = e;
+        }
     }
+    norm
 }
 
 /// Calculate the induced L-1 norm of the complex matrix.
@@ -1197,27 +1202,27 @@ pub fn hessenberg_decomposition<F>(
 where
     F: RealFloat,
 {
-    if is_square_matrix(m) {
-        if m.edge() < 3 {
-            (Matrix::eyes(m.row, m.column), m.clone())
-        } else {
-            let mut hessen = m.clone();
-            let mut p = Matrix::eyes(m.row, m.column);
-            for column in 1..=m.edge() {
-                for row in (column + 1..m.edge()).rev() {
-                    let pi =
-                        conjugate_transpose(&givens_rotation_matrix(&hessen, row + 1, column));
-                    hessen = conjugate_transpose(&pi) * hessen * pi.clone();
-                    p = p * pi;
-                }
-            }
-            (p, hessen)
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_square_matrix(m),
+        concat!(
             "Error[matrix::complex::hessenberg_decomposition]: ",
             "Only square matrices can undergo the Heisenberg decomposition."
-        ))
+        )
+    );
+
+    if m.edge() < 3 {
+        (Matrix::eyes(m.row, m.column), m.clone())
+    } else {
+        let mut hessen = m.clone();
+        let mut p = Matrix::eyes(m.row, m.column);
+        for column in 1..=m.edge() {
+            for row in (column + 1..m.edge()).rev() {
+                let pi = conjugate_transpose(&givens_rotation_matrix(&hessen, row + 1, column));
+                hessen = conjugate_transpose(&pi) * hessen * pi.clone();
+                p = p * pi;
+            }
+        }
+        (p, hessen)
     }
 }
 
@@ -1277,81 +1282,81 @@ pub fn eigen_system_qr<F>(
 where
     F: RealFloat,
 {
-    if is_square_matrix(m) {
-        let mut eigenvalues = Matrix::defaults(m.edge(), 1);
-        if is_diagonal_matrix(m) {
-            for idx in 1..=m.edge() {
-                eigenvalues[(idx, 1)] = m[(idx, idx)].clone();
-            }
-            (eigenvalues, Matrix::eyes(m.row, m.column))
-        } else {
-            if m.edge() < 3 {
-                let four = from_integral::<Complex<F>, Word8>(Word8::of(4));
-                let b = -m[(1, 1)].clone() - m[(2, 2)].clone();
-                let c = m[(1, 1)].clone() * m[(2, 2)].clone()
-                    - m[(1, 2)].clone() * m[(2, 1)].clone();
-                let delta = b.clone() * b.clone() - four * c;
-                eigenvalues[(1, 1)] =
-                    (-b.clone() + delta.clone().square_root()) * Complex::half();
-                eigenvalues[(2, 1)] = (-b - delta.square_root()) * Complex::half();
-            } else {
-                let (_, mut hm) = hessenberg_decomposition(m);
-                for _ in 0..max_iter {
-                    // delta = (a1 - a2) / 2
-                    let delta = (hm[(m.edge() - 1, m.edge() - 1)].clone()
-                        - hm[(m.edge(), m.edge())].clone())
-                        * Complex::half();
-                    // shift = a2 + delta - sign(delta) * sqrt(delta * delta + b1 * b2)
-                    // [[a1, b1], [b2, a2]]
-                    let wilkinson = hm[(m.edge(), m.edge())].clone() + delta.clone()
-                        - delta.sign_number()
-                            * (delta.clone() * delta
-                                + hm[(m.edge() - 1, m.edge())].clone()
-                                    * hm[(m.edge(), m.edge() - 1)].clone())
-                            .square_root();
-                    let (q, r) = qr_decomposition_gr(
-                        &(hm - Matrix::eyes(m.row, m.column) * wilkinson.clone()),
-                    );
-                    hm = r * q + Matrix::eyes(m.row, m.column) * wilkinson;
-                    if is_upper_triangular_matrix(&hm) {
-                        break;
-                    }
-                }
-                for idx in 1..=m.edge() {
-                    eigenvalues[(idx, 1)] = hm[(idx, idx)].clone();
-                }
-            }
-            let mut eigenvectors = Matrix::defaults(m.row, m.column);
-            for idx in 1..=m.edge() {
-                let eigen_equation =
-                    m.clone() - Matrix::eyes(m.row, m.column) * eigenvalues[(idx, 1)].clone();
-                let null_space_eq = null_space(&eigen_equation);
-                let eigenvector = if null_space_eq.is_empty() {
-                    let ev = gram_schmidt_process(&eigen_equation);
-                    apply(
-                        &ev.get_column(idx).expect(&format!(
-                            concat!(
-                                "Error[matrix::extra::eigen_system_qr]: ",
-                                "Failed to obtain the {}-th column vector of ev."
-                            ),
-                            idx
-                        )),
-                        |e: &Complex<F>| e.clone(),
-                    )
-                } else {
-                    null_space_eq[0].clone()
-                };
-                for row in 1..=m.edge() {
-                    eigenvectors[(row, idx)] = eigenvector[(row, 1)].clone();
-                }
-            }
-            (eigenvalues, eigenvectors)
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_square_matrix(m),
+        concat!(
             "Error[matrix::complex::eigen_system_qr]: ",
             "Only square matrices can potentially have eigenvalues."
-        ))
+        )
+    );
+
+    let mut eigenvalues = Matrix::defaults(m.edge(), 1);
+    if is_diagonal_matrix(m) {
+        for idx in 1..=m.edge() {
+            eigenvalues[(idx, 1)] = m[(idx, idx)].clone();
+        }
+        (eigenvalues, Matrix::eyes(m.row, m.column))
+    } else {
+        if m.edge() < 3 {
+            let four = from_integral::<Complex<F>, Word8>(Word8::of(4));
+            let b = -m[(1, 1)].clone() - m[(2, 2)].clone();
+            let c =
+                m[(1, 1)].clone() * m[(2, 2)].clone() - m[(1, 2)].clone() * m[(2, 1)].clone();
+            let delta = b.clone() * b.clone() - four * c;
+            eigenvalues[(1, 1)] = (-b.clone() + delta.clone().square_root()) * Complex::half();
+            eigenvalues[(2, 1)] = (-b - delta.square_root()) * Complex::half();
+        } else {
+            let (_, mut hm) = hessenberg_decomposition(m);
+            for _ in 0..max_iter {
+                // delta = (a1 - a2) / 2
+                let delta = (hm[(m.edge() - 1, m.edge() - 1)].clone()
+                    - hm[(m.edge(), m.edge())].clone())
+                    * Complex::half();
+                // shift = a2 + delta - sign(delta) * sqrt(delta * delta + b1 * b2)
+                // [[a1, b1], [b2, a2]]
+                let wilkinson = hm[(m.edge(), m.edge())].clone() + delta.clone()
+                    - delta.sign_number()
+                        * (delta.clone() * delta
+                            + hm[(m.edge() - 1, m.edge())].clone()
+                                * hm[(m.edge(), m.edge() - 1)].clone())
+                        .square_root();
+                let (q, r) = qr_decomposition_gr(
+                    &(hm - Matrix::eyes(m.row, m.column) * wilkinson.clone()),
+                );
+                hm = r * q + Matrix::eyes(m.row, m.column) * wilkinson;
+                if is_upper_triangular_matrix(&hm) {
+                    break;
+                }
+            }
+            for idx in 1..=m.edge() {
+                eigenvalues[(idx, 1)] = hm[(idx, idx)].clone();
+            }
+        }
+        let mut eigenvectors = Matrix::defaults(m.row, m.column);
+        for idx in 1..=m.edge() {
+            let eigen_equation =
+                m.clone() - Matrix::eyes(m.row, m.column) * eigenvalues[(idx, 1)].clone();
+            let null_space_eq = null_space(&eigen_equation);
+            let eigenvector = if null_space_eq.is_empty() {
+                let ev = gram_schmidt_process(&eigen_equation);
+                apply(
+                    &ev.get_column(idx).expect(&format!(
+                        concat!(
+                            "Error[matrix::extra::eigen_system_qr]: ",
+                            "Failed to obtain the {}-th column vector of ev."
+                        ),
+                        idx
+                    )),
+                    |e: &Complex<F>| e.clone(),
+                )
+            } else {
+                null_space_eq[0].clone()
+            };
+            for row in 1..=m.edge() {
+                eigenvectors[(row, idx)] = eigenvector[(row, 1)].clone();
+            }
+        }
+        (eigenvalues, eigenvectors)
     }
 }
 

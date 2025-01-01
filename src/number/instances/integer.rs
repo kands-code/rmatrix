@@ -405,12 +405,14 @@ impl Real for Integer {
 /// Implement the concept of Integral for Integer.
 impl Integral for Integer {
     fn quot_rem(self, rhs: Self) -> (Self, Self) {
+        assert!(
+            !rhs.is_zero(),
+            "Error[Integer::quot_rem]: Zero cannot be used as a divisor."
+        );
+
         if self == rhs {
             // x / x => 1, include x = 0
             (Self::one(), Self::zero())
-        } else if rhs.is_zero() {
-            // x / 0 => error
-            panic!("Error[Integer::quot_rem]: divide by zero");
         } else if self.is_zero() {
             // 0 / x => 0 ... 0
             (Self::zero(), Self::zero())

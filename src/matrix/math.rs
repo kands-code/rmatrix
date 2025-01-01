@@ -664,18 +664,19 @@ pub fn determinant<N>(m: &Matrix<N>) -> N
 where
     N: Fractional,
 {
-    if is_square_matrix(m) {
-        let (t, _, _, reduced) = row_reduce(m);
-        (1..=m.row)
-            .map(|index| reduced[(index, index)].clone())
-            .fold(N::one(), |acc, e| acc * e.clone())
-            * if t & 1 == 0 { N::one() } else { -N::one() }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_square_matrix(m),
+        concat!(
             "Error[matrix::math::determinant]: ",
             "Only square matrices can have a determinant calculated."
-        ));
-    }
+        )
+    );
+
+    let (t, _, _, reduced) = row_reduce(m);
+    (1..=m.row)
+        .map(|index| reduced[(index, index)].clone())
+        .fold(N::one(), |acc, e| acc * e.clone())
+        * if t & 1 == 0 { N::one() } else { -N::one() }
 }
 
 /// Calculate the determinant of a matrix using the Leibniz formula.
@@ -706,27 +707,28 @@ pub fn determinant_l<N>(m: &Matrix<N>) -> N
 where
     N: Number,
 {
-    if is_square_matrix(m) {
-        let mut det = N::zero();
-        let permutations_of_columns = permutation(&(1..=m.column).collect::<Vec<usize>>());
-        for p in permutations_of_columns {
-            let mut item = N::one();
-            for (row, &column) in (1..=m.row).zip(p.iter()) {
-                item = item * m[(row, column)].clone();
-            }
-            let ic = inversion_count(&p);
-            if (ic & 1) == 1 {
-                item = -item;
-            }
-            det = det + item;
-        }
-        det
-    } else {
-        panic!(concat!(
+    assert!(
+        is_square_matrix(m),
+        concat!(
             "Error[matrix::math::determinant_l]: ",
             "Only square matrices can have a determinant calculated."
-        ));
+        )
+    );
+
+    let mut det = N::zero();
+    let permutations_of_columns = permutation(&(1..=m.column).collect::<Vec<usize>>());
+    for p in permutations_of_columns {
+        let mut item = N::one();
+        for (row, &column) in (1..=m.row).zip(p.iter()) {
+            item = item * m[(row, column)].clone();
+        }
+        let ic = inversion_count(&p);
+        if (ic & 1) == 1 {
+            item = -item;
+        }
+        det = det + item;
     }
+    det
 }
 
 /// Calculate the adjugate matrix of the matrix.
@@ -829,39 +831,40 @@ pub fn determinant_e<N>(m: &Matrix<N>) -> N
 where
     N: Number,
 {
-    if m.row == m.column {
-        match m.row {
-            1 => m[(1, 1)].clone(),
-            2 => m[(1, 1)].clone() * m[(2, 2)].clone() - m[(1, 2)].clone() * m[(2, 1)].clone(),
-            3 => {
-                m[(1, 1)].clone()
-                    * (m[(2, 2)].clone() * m[(3, 3)].clone()
-                        - m[(2, 3)].clone() * m[(3, 2)].clone())
-                    - m[(1, 2)].clone()
-                        * (m[(2, 1)].clone() * m[(3, 3)].clone()
-                            - m[(2, 3)].clone() * m[(3, 1)].clone())
-                    + m[(1, 3)].clone()
-                        * (m[(2, 1)].clone() * m[(3, 2)].clone()
-                            - m[(2, 2)].clone() * m[(3, 1)].clone())
-            }
-            _ => (1..=m.column)
-                .into_par_iter()
-                .map(|column| {
-                    let submat = m.submatrix(1, column);
-                    determinant_e(&submat)
-                        * if ((1 + column) & 1) == 0 {
-                            m[(1, column)].clone()
-                        } else {
-                            -m[(1, column)].clone()
-                        }
-                })
-                .reduce(|| N::zero(), |a, b| a + b),
-        }
-    } else {
-        panic!(concat!(
+    assert!(
+        is_square_matrix(m),
+        concat!(
             "Error[matrix::math::determinant_e]: ",
             "Only square matrices can have a determinant calculated."
-        ));
+        )
+    );
+
+    match m.row {
+        1 => m[(1, 1)].clone(),
+        2 => m[(1, 1)].clone() * m[(2, 2)].clone() - m[(1, 2)].clone() * m[(2, 1)].clone(),
+        3 => {
+            m[(1, 1)].clone()
+                * (m[(2, 2)].clone() * m[(3, 3)].clone()
+                    - m[(2, 3)].clone() * m[(3, 2)].clone())
+                - m[(1, 2)].clone()
+                    * (m[(2, 1)].clone() * m[(3, 3)].clone()
+                        - m[(2, 3)].clone() * m[(3, 1)].clone())
+                + m[(1, 3)].clone()
+                    * (m[(2, 1)].clone() * m[(3, 2)].clone()
+                        - m[(2, 2)].clone() * m[(3, 1)].clone())
+        }
+        _ => (1..=m.column)
+            .into_par_iter()
+            .map(|column| {
+                let submat = m.submatrix(1, column);
+                determinant_e(&submat)
+                    * if ((1 + column) & 1) == 0 {
+                        m[(1, column)].clone()
+                    } else {
+                        -m[(1, column)].clone()
+                    }
+            })
+            .reduce(|| N::zero(), |a, b| a + b),
     }
 }
 

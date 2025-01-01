@@ -627,27 +627,28 @@ impl<N> Matrix<N> {
     where
         N: Clone,
     {
-        if self.row < 2 || self.column < 2 {
-            panic!(concat!(
+        assert!(
+            self.row >= 2 && self.column >= 2,
+            concat!(
                 "Error[Matrix::submatrix]: ",
                 "The matrix is too small to have any submatrices."
-            ));
-        } else {
-            let mut inner = Vec::with_capacity((self.row) * (self.column));
-            for row_index in 1..=self.row {
-                for column_index in 1..=self.column {
-                    if row_index == row || column_index == column {
-                        continue;
-                    } else {
-                        inner.push(self[(row_index, column_index)].clone());
-                    }
+            )
+        );
+
+        let mut inner = Vec::with_capacity((self.row) * (self.column));
+        for row_index in 1..=self.row {
+            for column_index in 1..=self.column {
+                if row_index == row || column_index == column {
+                    continue;
+                } else {
+                    inner.push(self[(row_index, column_index)].clone());
                 }
             }
-            Matrix {
-                inner,
-                row: self.row - 1,
-                column: self.column - 1,
-            }
+        }
+        Matrix {
+            inner,
+            row: self.row - 1,
+            column: self.column - 1,
         }
     }
 }
@@ -826,44 +827,43 @@ where
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        if self.column == rhs.row {
-            (1..=self.column)
-                .into_par_iter()
-                .map(|k_index| {
-                    layer_product(
-                        &apply(
-                            &self.get_column(k_index).expect(&format!(
-                                concat!(
-                                    "Error[Matrix::mul]: ",
-                                    "k_index ({}) should be a valid index for self."
-                                ),
-                                k_index
-                            )),
-                            |e| e.clone(),
-                        ), // lhs[:, k]
-                        &apply(
-                            &rhs.get_row(k_index).expect(&format!(
-                                concat!(
-                                    "Error[Matrix::mul]: ",
-                                    "k_index ({}) should be a valid index for rhs."
-                                ),
-                                k_index
-                            )),
-                            |e| e.clone(),
-                        ), // rhs[k, :]
-                    )
-                })
-                .reduce(|| Matrix::defaults(self.row, rhs.column), |a, b| a + b)
-        } else {
-            panic!(
-                concat!(
-                    "Error[Matrix::mul]: ",
-                    "In matrix multiplication, the number of columns ({}) in the first matrix ",
-                    "must be equal to the number of rows ({}) in the second matrix."
-                ),
-                self.column, rhs.row
-            );
-        }
+        assert_eq!(
+            self.column, rhs.row,
+            concat!(
+                "Error[Matrix::mul]: ",
+                "In matrix multiplication, the number of columns ({}) in the first matrix ",
+                "must be equal to the number of rows ({}) in the second matrix."
+            ),
+            self.column, rhs.row
+        );
+
+        (1..=self.column)
+            .into_par_iter()
+            .map(|k_index| {
+                layer_product(
+                    &apply(
+                        &self.get_column(k_index).expect(&format!(
+                            concat!(
+                                "Error[Matrix::mul]: ",
+                                "k_index ({}) should be a valid index for self."
+                            ),
+                            k_index
+                        )),
+                        |e| e.clone(),
+                    ), // lhs[:, k]
+                    &apply(
+                        &rhs.get_row(k_index).expect(&format!(
+                            concat!(
+                                "Error[Matrix::mul]: ",
+                                "k_index ({}) should be a valid index for rhs."
+                            ),
+                            k_index
+                        )),
+                        |e| e.clone(),
+                    ), // rhs[k, :]
+                )
+            })
+            .reduce(|| Matrix::defaults(self.row, rhs.column), |a, b| a + b)
     }
 }
 
