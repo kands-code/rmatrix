@@ -119,6 +119,30 @@ impl<N> Matrix<N> {
         id_mat
     }
 
+    /// Constructing a matrix where all elements are filled with the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::{matrix::matrix::Matrix, number::instances::word8::Word8};
+    ///
+    /// fn main() {
+    ///     let m = Matrix::fills(2, 2, Word8::of(2));
+    ///     let m_expect = Matrix::of(2, 2, &[2, 2, 2, 2].map(Word8::of)).unwrap();
+    ///     assert_eq!(m, m_expect);
+    /// }
+    /// ```
+    pub fn fills(row: usize, column: usize, data: N) -> Self
+    where
+        N: Clone,
+    {
+        Self {
+            inner: vec![data; row * column],
+            row,
+            column,
+        }
+    }
+
     /// Uses the passed data as the main diagonal, with other elements being ZEROs,
     /// resulting in a type of diagonal matrix.
     ///

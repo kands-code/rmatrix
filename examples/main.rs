@@ -4,17 +4,10 @@
 
 #![warn(missing_docs)]
 
-use rmatrix_ks::{
-    matrix::{math::determinant_e, matrix::Matrix},
-    number::instances::int8::Int8,
-};
+use rmatrix_ks::{matrix::matrix::Matrix, number::instances::word8::Word8};
 
 fn main() {
-    let m = Matrix::of(
-        4,
-        4,
-        &[1, 2, 3, 4, 1, 3, 4, 1, 1, 4, 1, 2, 1, 1, 2, 3].map(Int8::of),
-    )
-    .unwrap();
-    assert_eq!(determinant_e(&m), Int8::of(16));
+    let m = Matrix::fills(2, 2, Word8::of(2));
+    let m_expect = Matrix::of(2, 2, &[2, 2, 2, 2].map(Word8::of)).unwrap();
+    assert_eq!(m, m_expect);
 }
