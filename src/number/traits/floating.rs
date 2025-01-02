@@ -46,9 +46,7 @@ pub trait Floating: Fractional {
     fn hyperbolic_cosine(self) -> Self;
 
     /// Hyperbolic tangent function, tanh(x).
-    fn hyperbolic_tangent(self) -> Self {
-        self.clone().hyperbolic_sine() / self.hyperbolic_cosine()
-    }
+    fn hyperbolic_tangent(self) -> Self;
 
     /// Inverse hyperbolic sine function, asinh(x).
     fn arc_hyperbolic_sine(self) -> Self;

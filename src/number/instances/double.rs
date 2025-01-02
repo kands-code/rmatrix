@@ -352,6 +352,12 @@ impl Floating for Double {
         }
     }
 
+    fn hyperbolic_tangent(self) -> Self {
+        Self {
+            inner: self.inner.tanh(),
+        }
+    }
+
     fn arc_hyperbolic_sine(self) -> Self {
         Self {
             inner: self.inner.asinh(),

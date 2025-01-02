@@ -1,11 +1,11 @@
 use std::{
     fs::File,
     io::{BufReader, Read},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use rand::distributions::uniform::SampleUniform;
-use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use rmatrix_ks::{
     matrix::{
         matrix::Matrix,
@@ -14,7 +14,7 @@ use rmatrix_ks::{
         vector::{basis_vector, column_vector, is_column_vector, layer_product},
     },
     number::{
-        instances::{float::Float, word8::Word8},
+        instances::{float::Float, word::Word, word8::Word8},
         traits::{floating::Floating, realfloat::RealFloat},
         utils::from_integral,
     },
@@ -108,24 +108,26 @@ where
 
 /// b0, w1, b1
 pub fn grad_parameters<N>(
-    shape: (u32, u32),
     img: &[u8],
     label: u8,
-    parameters: (Matrix<N>, Matrix<N>, Matrix<N>),
+    parameters: (&Matrix<N>, &Matrix<N>, &Matrix<N>),
 ) -> (Matrix<N>, Matrix<N>, Matrix<N>)
 where
     N: RealFloat,
 {
     let data = column_vector(
-        (shape.0 * shape.1) as usize,
+        img.len(),
         &img.iter()
-            .map(|&e| from_integral::<N, Word8>(Word8::of(e)))
+            .map(|&e| {
+                from_integral::<N, Word8>(Word8::of(e))
+                    / from_integral::<N, Word>(Word::of(256))
+            })
             .collect::<Vec<N>>(),
     )
     .unwrap();
-    let b0: Matrix<N> = parameters.0;
-    let w1: Matrix<N> = parameters.1;
-    let b1: Matrix<N> = parameters.2;
+    let b0: Matrix<N> = parameters.0.clone();
+    let w1: Matrix<N> = parameters.1.clone();
+    let b1: Matrix<N> = parameters.2.clone();
     let l0_in = data - b0;
     let l0_out = tanh_l(&l0_in);
     let l1_in = w1.clone() * l0_out.clone() - b1;
@@ -133,7 +135,7 @@ where
 
     let two = N::one() + N::one();
 
-    let diff = basis_vector(OUTPUT_DIM, label as usize) - l1_out;
+    let diff = basis_vector(OUTPUT_DIM, label as usize + 1) - l1_out;
     let common = diff_softmax_l(&l1_in) * diff;
 
     let grad_b0 = transpose(&w1) * common.clone() * (-two.clone());
@@ -188,7 +190,7 @@ where
     (image_count, row_shape, column_shape, mnist_data)
 }
 
-pub fn read_mnist_image(idx: usize, data: &[Vec<u8>]) -> Vec<u8> { data[idx - 1].clone() }
+pub fn read_mnist_image(data: &[Vec<u8>], idx: usize) -> Vec<u8> { data[idx].clone() }
 
 pub fn load_mnist_labels<P>(path: P) -> (usize, Vec<u8>)
 where
@@ -209,7 +211,7 @@ where
     (label_count, mnist_label_data)
 }
 
-pub fn read_mnist_label(data: &[u8], idx: usize) -> u8 { data[idx - 1].clone() }
+pub fn read_mnist_label(data: &[u8], idx: usize) -> u8 { data[idx].clone() }
 
 pub fn mnist_image_buffer_save(filename: &str, buf: &[u8], shape: (u32, u32)) {
     image::save_buffer(
@@ -225,7 +227,7 @@ pub fn mnist_image_buffer_save(filename: &str, buf: &[u8], shape: (u32, u32)) {
 fn validate_loss<N>(
     validate_dataset: &[Vec<u8>],
     validate_labels: &[u8],
-    parameters: (Matrix<N>, Matrix<N>, Matrix<N>),
+    parameters: (&Matrix<N>, &Matrix<N>, &Matrix<N>),
 ) -> N
 where
     N: RealFloat,
@@ -235,23 +237,42 @@ where
         .enumerate()
         .par_bridge()
         .map(|(idx, img)| {
-            let predict_v = predict(img, parameters.clone());
+            let predict_v = predict(img, parameters);
             square_loss(
                 &predict_v,
-                &basis_vector(OUTPUT_DIM, validate_labels[idx] as usize),
+                &basis_vector(OUTPUT_DIM, validate_labels[idx] as usize + 1),
             )
         })
         .reduce(|| N::zero(), |a, b| a + b)
 }
 
-fn validate_accuracy<N>(parameters: (Matrix<N>, Matrix<N>, Matrix<N>)) -> f32
+fn validate_accuracy<N>(
+    validate_dataset: &[Vec<u8>],
+    validate_labels: &[u8],
+    parameters: (&Matrix<N>, &Matrix<N>, &Matrix<N>),
+) -> f32
 where
     N: RealFloat,
 {
-    0.0
+    validate_dataset
+        .iter()
+        .enumerate()
+        .par_bridge()
+        .filter(|(idx, img)| {
+            let predict_v = predict(img, parameters);
+            let mut max = 0;
+            for p in 0..OUTPUT_DIM {
+                if predict_v[(max + 1, 1)] < predict_v[(p + 1, 1)] {
+                    max = p;
+                }
+            }
+            validate_labels[*idx] as usize == max
+        })
+        .count() as f32
+        / validate_dataset.len() as f32
 }
 
-fn train<N>(batch_count: usize, validate: f32, init_boundary: (N, N))
+fn train<N>(batch_count: usize, validate: f32, init_learn_rate: N, init_boundary: N)
 where
     N: RealFloat + SampleUniform,
 {
@@ -259,7 +280,8 @@ where
     let (count, row_shape, column_shape, mnist_data) =
         load_mnist_images("data/mnist/train-images.idx3-ubyte");
     let (_, mnist_label_data) = load_mnist_labels("data/mnist/train-labels.idx1-ubyte");
-    // only two layer
+
+    // init parameters, only two layer
     // first layer
     // l0 = A0 (data + b0)
     let mut b0 = Matrix::<N>::defaults((row_shape * column_shape) as usize, 1);
@@ -269,15 +291,78 @@ where
     let mut w1 = Matrix::<N>::rand(
         OUTPUT_DIM,
         (row_shape * column_shape) as usize,
-        init_boundary.0,
-        init_boundary.1,
+        -init_boundary.clone(),
+        init_boundary,
     );
+    let mut learn_rate = init_learn_rate;
+    let nine_over_ten =
+        from_integral::<N, Word8>(Word8::of(9)) / from_integral::<N, Word8>(Word8::of(10));
 
     // split validate dataset
     let validate_count = (count as f32 * validate).round_ties_even() as usize;
-    let train_count = count - validate_count;
-    let per_bat_validate = validate_count / batch_count;
-    let per_bat_train = train_count / batch_count;
+    let validate_set = &mnist_data[..validate_count];
+    let validate_label_set = &mnist_label_data[..validate_count];
+    let train_set = &mnist_data[validate_count..];
+    let train_label_set = &mnist_label_data[validate_count..];
+    let validate_batch = (validate * batch_count as f32).floor() as usize;
+
+    // batch train
+    for p in 0..((count - validate_count) / batch_count) {
+        let (mut grad_b0, mut grad_w1, mut grad_b1) = (0..batch_count)
+            .par_bridge()
+            .map(|idx| {
+                grad_parameters(
+                    &read_mnist_image(
+                        &train_set[(p * batch_count)..((p + 1) * batch_count)],
+                        idx,
+                    ),
+                    train_label_set[(p * batch_count)..((p + 1) * batch_count)][idx],
+                    (&b0, &w1, &b1),
+                )
+            })
+            .reduce(
+                || {
+                    (
+                        Matrix::<N>::defaults((row_shape * column_shape) as usize, 1),
+                        Matrix::<N>::defaults(OUTPUT_DIM, (row_shape * column_shape) as usize),
+                        Matrix::<N>::defaults(OUTPUT_DIM, 1),
+                    )
+                },
+                |(b0, w1, b1), (b0_i, w1_i, b1_i)| (b0 + b0_i, w1 + w1_i, b1 + b1_i),
+            );
+        let batch_count_n = from_integral::<N, Word>(Word::of(batch_count as u32));
+        grad_b0 = grad_b0 / batch_count_n.clone();
+        grad_w1 = grad_w1 / batch_count_n.clone();
+        grad_b1 = grad_b1 / batch_count_n;
+
+        b0 = b0 - grad_b0 * learn_rate.clone();
+        w1 = w1 - grad_w1 * learn_rate.clone();
+        b1 = b1 - grad_b1 * learn_rate.clone();
+
+        if (p + 1) % 10 == 0 {
+            learn_rate = learn_rate * nine_over_ten.clone();
+        }
+
+        let current_accuracy = validate_accuracy(
+            &validate_set[(p * validate_batch)..((p + 1) * validate_batch)],
+            &validate_label_set[(p * validate_batch)..((p + 1) * validate_batch)],
+            (&b0, &w1, &b1),
+        );
+        let curren_loss = validate_loss(
+            &validate_set[(p * validate_batch)..((p + 1) * validate_batch)],
+            &validate_label_set[(p * validate_batch)..((p + 1) * validate_batch)],
+            (&b0, &w1, &b1),
+        );
+
+        println!(
+            "batch {} / {} := acc ({}) || loss ({}) [lr: {}]",
+            p,
+            (count - validate_count) / batch_count,
+            current_accuracy,
+            curren_loss,
+            learn_rate
+        );
+    }
 
     // save parameters
     to_file(&b0, "data/mnist/result/layer_b0.txt");
@@ -285,35 +370,64 @@ where
     to_file(&w1, "data/mnist/result/layer_w1.txt");
 }
 
-fn predict<N>(img: &[u8], parameters: (Matrix<N>, Matrix<N>, Matrix<N>)) -> Matrix<N>
+fn predict<N>(img: &[u8], parameters: (&Matrix<N>, &Matrix<N>, &Matrix<N>)) -> Matrix<N>
 where
     N: RealFloat,
 {
     let data = column_vector(
         img.len(),
         &img.iter()
-            .map(|&e| from_integral::<N, Word8>(Word8::of(e)))
+            .map(|&e| {
+                from_integral::<N, Word8>(Word8::of(e))
+                    / from_integral::<N, Word>(Word::of(256))
+            })
             .collect::<Vec<N>>(),
     )
     .unwrap();
-    let b0: Matrix<N> = parameters.0;
-    let w1: Matrix<N> = parameters.1;
-    let b1: Matrix<N> = parameters.2;
+    let b0: Matrix<N> = parameters.0.clone();
+    let w1: Matrix<N> = parameters.1.clone();
+    let b1: Matrix<N> = parameters.2.clone();
     let l0_out = tanh_l(&(data - b0));
     softmax_l(&(w1 * l0_out - b1))
 }
 
 fn main() {
-    let (_, row_shape, column_shape, mnist_data) =
+    // start train
+    let boundary = Float::of(6.0 / (28.0 * 28.0 + 10.0)).square_root();
+    train(160, 0.05, Float::of(1.92), boundary); // comment to skip train
+
+    // load test data
+    let (count, row_shape, column_shape, test_mnist_data) =
         load_mnist_images("data/mnist/t10k-images.idx3-ubyte");
-    let (_, mnist_label_data) = load_mnist_labels("data/mnist/t10k-labels.idx1-ubyte");
-    let idx = 67;
+    let (_, test_mnist_label_data) = load_mnist_labels("data/mnist/t10k-labels.idx1-ubyte");
 
-    let p = read_mnist_image(idx, &mnist_data);
+    // load trained parameters
+    let b0: Matrix<Float> = from_file(
+        (row_shape * column_shape) as usize,
+        1,
+        "data/mnist/result/layer_b0.txt",
+    )
+    .unwrap();
+    let w1: Matrix<Float> = from_file(
+        OUTPUT_DIM,
+        (row_shape * column_shape) as usize,
+        "data/mnist/result/layer_w1.txt",
+    )
+    .unwrap();
+    let b1: Matrix<Float> = from_file(OUTPUT_DIM, 1, "data/mnist/result/layer_b1.txt").unwrap();
+
+    // try result
+    let idx = rand::random::<usize>() % count;
+    let p = read_mnist_image(&test_mnist_data, idx);
     mnist_image_buffer_save("data/mnist/result/test.png", &p, (row_shape, column_shape));
+    let label = read_mnist_label(&test_mnist_label_data, idx);
 
-    // set init value range
-    let boundary = Float::of(6.0 / ((row_shape * column_shape) as f32 + 10.0)).square_root();
-
-    println!("p[{}] is {}", idx, read_mnist_label(&mnist_label_data, idx));
+    let pred = predict(&p, (&b0, &w1, &b1));
+    let mut max = 0;
+    for p in 0..OUTPUT_DIM {
+        if pred[(max + 1, 1)] < pred[(p + 1, 1)] {
+            max = p;
+        }
+    }
+    println!("load label: {}, pred: {}", label, max);
 }
