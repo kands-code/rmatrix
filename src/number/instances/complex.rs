@@ -570,6 +570,11 @@ impl<F: RealFloat> Floating for Complex<F> {
         (self.clone().exponential() + (-self).exponential()) / (Self::one() + Self::one())
     }
 
+    fn hyperbolic_tangent(self) -> Self {
+        (Self::one() - (-self.clone() - self.clone()).exponential())
+            / (Self::one() + (-self.clone() - self).exponential())
+    }
+
     fn arc_hyperbolic_sine(self) -> Self {
         (self.clone() + (Self::one() + self.clone() * self).square_root()).logarithmic()
     }

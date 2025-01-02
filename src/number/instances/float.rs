@@ -230,6 +230,12 @@ impl RealFloat for Float {
     fn is_denormalized(&self) -> bool { self.inner.is_subnormal() }
 
     fn is_negative_zero(&self) -> bool { self.is_zero() && self.inner.is_sign_negative() }
+
+    fn hypot(self, rhs: Self) -> Self {
+        Self {
+            inner: self.inner.hypot(rhs.inner),
+        }
+    }
 }
 
 /// Implement the concept of RealFrac for Float.
@@ -342,6 +348,12 @@ impl Floating for Float {
     fn hyperbolic_cosine(self) -> Self {
         Self {
             inner: self.inner.cosh(),
+        }
+    }
+
+    fn hyperbolic_tangent(self) -> Self {
+        Self {
+            inner: self.inner.tanh(),
         }
     }
 

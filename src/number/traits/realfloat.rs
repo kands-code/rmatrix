@@ -161,4 +161,7 @@ pub trait RealFloat: RealFrac + Floating {
             x + y
         }
     }
+
+    /// sqrt(x^2 + y^2)
+    fn hypot(self, rhs: Self) -> Self;
 }
