@@ -2,16 +2,12 @@
 //!
 //! Types that implement this trait can be considered as real floating-point numbers.
 
+use rayon::iter::{ParallelBridge, ParallelIterator};
+
 use crate::number::{
     instances::{int::Int, integer::Integer},
-    traits::{floating::Floating, realfrac::RealFrac, zero::Zero},
-    utils::{
-        clamp,
-        decimal_to_binary,
-        from_integral,
-        integral_power,
-        non_negative_integral_power,
-    },
+    traits::{floating::Floating, one::One, realfrac::RealFrac, zero::Zero},
+    utils::{clamp, from_integral, integral_power, non_negative_integral_power},
 };
 
 /// Concepts of RealFloat.
@@ -59,28 +55,68 @@ pub trait RealFloat: RealFrac + Floating {
     /// ```
     fn decode_float(self) -> (Integer, Int) {
         let sign = self >= Self::zero();
-        let rfp = self.absolute_value();
-        let (exponent_digits, float_digits) = decimal_to_binary(rfp).expect(&format!(
-            "Error[RealFloat::decode_float]: Failed to convert ({}) to binary format.",
-            self
-        ));
-        let exponent = Int::of(exponent_digits.len() as i32) - Self::FLOAT_DIGITS;
-        let significand_digits = vec![exponent_digits, float_digits].concat();
-        let two = Integer::of(true, &[2])
-            .expect("Error[RealFloat::decode_float]: Failed to obtain integer two.");
-        let mut significand = Integer::zero();
-        for (index, &base) in significand_digits.iter().enumerate().rev() {
-            if base == 1u8 {
-                let exp = significand_digits.len() - index - 1;
-                significand = significand
-                    + non_negative_integral_power(two.clone(), Int::of(exp as i32)).expect(
-                        &format!(
-                            "Error[RealFloat::decode_float]: Failed to compute pow(2, {})",
-                            exp
-                        ),
-                    );
+        let mut rfp = self.absolute_value();
+        let mut exponent = Int::of(0);
+        let rfp_two = Self::one() + Self::one();
+        // Convert the floating-point number to
+        // a base-2 exponential product representation,
+        // i.e., m * 2^p.
+        while rfp > Self::one() {
+            let next_rfp = rfp.clone() * Self::half();
+            if next_rfp < Self::one() {
+                break;
+            } else {
+                rfp = next_rfp;
+                exponent = exponent + Int::one();
             }
         }
+        while rfp < Self::one() {
+            rfp = rfp.clone() * rfp_two.clone();
+            exponent = exponent - Int::one();
+        }
+        exponent = exponent - Self::FLOAT_DIGITS + Int::one();
+        let mut float_digits = Vec::new();
+        rfp = rfp - Self::one();
+        let mut count_digits = Int::zero();
+        while count_digits < Self::FLOAT_DIGITS - Int::one() {
+            rfp = rfp * rfp_two.clone();
+            if rfp >= Self::one() {
+                float_digits.push(1u8);
+                rfp = rfp - Self::one();
+            } else {
+                float_digits.push(0u8);
+            }
+            count_digits = count_digits + Int::one();
+        }
+        let integer_two = Integer::one() + Integer::one();
+        let mut significand = float_digits
+            .iter()
+            .rev()
+            .enumerate()
+            .par_bridge()
+            .map(|(idx, &e)| {
+                if e == 1u8 {
+                    non_negative_integral_power(integer_two.clone(), Int::of(idx as i32))
+                        .expect(&format!(
+                            concat!(
+                                "Error[RealFloat::decode_float]: ",
+                                "Failed to compute pow(2, {})"
+                            ),
+                            idx
+                        ))
+                } else {
+                    Integer::zero()
+                }
+            })
+            .reduce(|| Integer::zero(), |a, b| a + b)
+            + non_negative_integral_power(integer_two, Self::FLOAT_DIGITS.clone() - Int::one())
+                .expect(&format!(
+                    concat!(
+                        "Error[RealFloat::decode_float]: ",
+                        "Failed to compute pow(2, {})"
+                    ),
+                    Self::FLOAT_DIGITS + Int::one()
+                ));
         significand.sign = sign;
         (significand, exponent)
     }

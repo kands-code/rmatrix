@@ -3,15 +3,8 @@
 //! Some util functions.
 
 use crate::number::{
-    instances::{int::Int, integer::Integer},
-    traits::{
-        fractional::Fractional,
-        integral::Integral,
-        number::Number,
-        one::One,
-        real::Real,
-        realfloat::RealFloat,
-    },
+    instances::int::Int,
+    traits::{fractional::Fractional, integral::Integral, number::Number, real::Real},
 };
 
 /// Division and modulus for i8
@@ -314,18 +307,31 @@ pub fn real_to_frac<R: Real, F: Fractional>(real_number: R) -> F {
 
 /// Convert an integer to binary format.
 ///
+/// Represented in two's complement form.
+///
+/// The first element of the returned list is the sign bit,
+/// and the remaining elements represent the binary expression of its absolute value.
+///
 /// # Examples
 ///
 /// ```rust
 /// use rmatrix_ks::number::{instances::int::Int, utils::integral_to_binary};
 ///
 /// fn main() {
-///     let i = Int::of(123);
-///     let i_digits = integral_to_binary(i);
-///     assert_eq!(i_digits, Some(vec![1, 1, 1, 1, 0, 1, 1]));
+///     let i1 = Int::of(123);
+///     let i1_digits = integral_to_binary(i1);
+///     //  123 = 0b0111011
+///     assert_eq!(i1_digits, vec![0, 1, 1, 1, 1, 0, 1, 1]);
+///     let i2 = Int::of(-123456);
+///     // -123456 = 0b100001110111000000
+///     let i2_digits = integral_to_binary(i2);
+///     assert_eq!(
+///         i2_digits,
+///         vec![1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0]
+///     );
 /// }
 /// ```
-pub fn integral_to_binary<I: Integral>(int_val: I) -> Option<Vec<u8>> {
+pub fn integral_to_binary<I: Integral>(int_val: I) -> Vec<u8> {
     fn integral_to_binary_inner<I: Integral>(int: I, acc: &mut Vec<u8>) {
         if int == I::zero() {
             acc.insert(0, 0u8);
@@ -350,106 +356,32 @@ pub fn integral_to_binary<I: Integral>(int_val: I) -> Option<Vec<u8>> {
         }
     }
 
+    let mut bin = Vec::new();
+    let val = int_val.absolute_value();
+    integral_to_binary_inner(val, &mut bin);
+    bin.insert(0, 0u8);
     if int_val < I::zero() {
-        eprintln!(concat!(
-            "Error[number::utils::decimal_to_binary]: ",
-            "Cannot convert a negative number to binary format"
-        ));
-        None
-    } else {
-        let mut bin = Vec::new();
-        integral_to_binary_inner(int_val, &mut bin);
-        Some(bin)
-    }
-}
-
-/// Convert a floating-point number to binary format.
-///
-/// # Examples
-///
-/// ```rust
-/// use rmatrix_ks::number::{instances::double::Double, utils::decimal_to_binary};
-///
-/// fn main() {
-///     let d = Double::of(3.14);
-///     assert_eq!(
-///         decimal_to_binary(d),
-///         Some((
-///             vec![1, 1],
-///             vec![
-///                 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0,
-///                 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1,
-///                 1
-///             ]
-///         ))
-///     );
-/// }
-/// ```
-pub fn decimal_to_binary<F: RealFloat>(rfp_val: F) -> Option<(Vec<u8>, Vec<u8>)> {
-    /// Internal implementation of converting floating-point number to binary format.
-    ///
-    /// # Input
-    ///
-    /// - Real floating-point number to convert.
-    /// - Remaining available bits.
-    /// - Number of bits already inserted.
-    /// - Accumulative result cache
-    fn decimal_to_binary_inner<F: RealFloat>(
-        rfp: F,
-        rem: usize,
-        ins: usize,
-        acc: &mut Vec<u8>,
-    ) {
-        if rfp.is_zero() {
-            acc.resize_with(rem, || 0u8);
-        } else {
-            let two = F::one() + F::one();
-            let (integral_part, fractional_part) = (rfp * two).proper_fraction::<Integer>();
-            if ins > rem && integral_part.is_one() {
-                let mut stop = false;
-                for index in (0..acc.len()).rev() {
-                    if stop {
-                        break;
-                    } else if acc[index] == 1u8 {
-                        acc[index] = 0u8;
-                    } else {
-                        acc[index] = 1u8;
-                        stop = true;
-                    }
-                }
+        let mut complement = vec![0u8; bin.len()];
+        let mut sup = 1u8;
+        for (idx, e) in bin
+            .iter()
+            .map(|&e| if e == 1u8 { 0u8 } else { 1u8 })
+            .enumerate()
+            .rev()
+        {
+            if sup == 1u8 && e == 1u8 {
+                complement[idx] = 0u8;
+            } else if sup == 1u8 && e == 0u8 {
+                complement[idx] = 1u8;
+                sup = 0u8;
+            } else if sup == 1u8 && idx == 0usize {
+                // Prevent overflow from overwriting the sign bit.
+                complement.insert(1usize, 1u8);
             } else {
-                acc.push(if integral_part.is_one() { 1u8 } else { 0u8 });
-                decimal_to_binary_inner(fractional_part, rem, ins + 1, acc);
+                complement[idx] = e;
             }
         }
+        bin = complement;
     }
-
-    let (integral_part, fractional_part) = rfp_val.proper_fraction::<Integer>();
-    let integral_digits = integral_to_binary(integral_part).expect(
-        "Error[number::utils::decimal_to_binary]: Failed to convert integer to binary format.",
-    );
-    let total_digits = format!("{:?}", F::FLOAT_DIGITS).parse::<usize>().expect(
-        "Error[number::utils::decimal_to_binary]: Failed to convert FLOAT_DIGITS to usize",
-    );
-    if integral_digits.len() > total_digits {
-        eprintln!(
-            concat!(
-                "Error[number::utils::decimal_to_binary]: ",
-                "The number of digits in the integer part ({}) ",
-                "exceeds FLOAT_DIGITS limits ({}), conversion not possible"
-            ),
-            integral_digits.len(),
-            total_digits,
-        );
-        None
-    } else {
-        let mut float_part = Vec::new();
-        decimal_to_binary_inner(
-            fractional_part,
-            total_digits - integral_digits.len(),
-            0,
-            &mut float_part,
-        );
-        Some((integral_digits, float_part))
-    }
+    bin
 }

@@ -1145,10 +1145,10 @@ where
 ///         VectorC::<Complex<Float>, 2>::of(&[Complex::one(), -Complex::one()]).unwrap()
 ///     );
 ///     let evs_expect = Matrix::<Complex<Float>, 2, 2>::of(&[
-///         -Complex::unit_i(),
-///         Complex::unit_i(),
-///         Complex::one(),
-///         Complex::one(),
+///         -Complex::of(Float::zero(), Float::of(1.0 / 2.0f32.sqrt())),
+///         Complex::of(Float::zero(), Float::of(1.0 / 2.0f32.sqrt())),
+///         Complex::of(Float::of(1.0 / 2.0f32.sqrt()), Float::zero()),
+///         Complex::of(Float::of(1.0 / 2.0f32.sqrt()), Float::zero()),
 ///     ])
 ///     .unwrap();
 ///     assert_eq!(evs, evs_expect);
@@ -1217,6 +1217,7 @@ where
             } else {
                 null_space_eq[0].clone()
             };
+            let eigenvector = normalize(&eigenvector);
             for row in 1..=E {
                 eigenvectors[(row, idx)] = eigenvector[(row, 1)].clone();
             }
@@ -1325,49 +1326,25 @@ where
     let right_sym = conjugate_transpose(m) * m.clone();
     let edge = R.min(C);
     // Compute the eigenvectors and eigenvalues of the left matrix.
-    let (sig1, mut u) = eigen_system_qr(&left_sym, DEFAULT_MAX_ITER);
+    let (sig1, u) = eigen_system_qr(&left_sym, DEFAULT_MAX_ITER);
     // Compute the eigenvectors and eigenvalues of the right matrix.
-    let (sig2, mut v) = eigen_system_qr(&right_sym, DEFAULT_MAX_ITER);
+    let (sig2, v) = eigen_system_qr(&right_sym, DEFAULT_MAX_ITER);
     let mut sigma = Matrix::<Complex<F>, R, C>::default();
-    // Sort singular values.
-    let mut sd = (1..=edge)
-        .map(|idx| {
-            // Take the average to reduce the error.
-            if sig1[(idx, 1)].is_zero() || sig2[(idx, 1)].is_zero() {
-                Complex::zero()
-            } else {
-                ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * Complex::half())
-                    .square_root()
-            }
-        })
-        .collect::<Vec<Complex<F>>>();
-    for idx in 0..(edge - 1) {
-        let mut max = idx;
-        for p in (idx + 1)..edge {
-            if sd[max] < sd[p] {
-                max = p;
-            }
-        }
-        if max != idx {
-            let temp = sd[idx].clone();
-            sd[idx] = sd[max].clone();
-            sd[max] = temp;
-            let p_left = Matrix::<Complex<F>, R, R>::p_change(idx, max);
-            u = u * p_left;
-            let p_right = Matrix::<Complex<F>, C, C>::p_change(idx, max);
-            v = v * p_right;
-        }
-    }
     for idx in 1..=edge {
-        sigma[(idx, idx)] = sd[idx - 1].clone();
+        // Take the average to reduce the error.
+        sigma[(idx, idx)] = if sig1[(idx, 1)].is_zero() || sig2[(idx, 1)].is_zero() {
+            Complex::zero()
+        } else {
+            ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * Complex::half()).square_root()
+        };
     }
     // Obtain the corresponding orthogonal basis.
-    let u = gram_schmidt_process(&u);
-    let v = gram_schmidt_process(&v);
+    let mut u = gram_schmidt_process(&u);
+    let mut v = gram_schmidt_process(&v);
     if R > C {
         // Use U as a reference to correct V.
-        // A^T U = V (S^T) = V S'
-        // => A^T ui = si vi
+        // A^H U = V (S^H) = V S'
+        // => A^H ui = si vi
         let mut modified_v = Matrix::default();
         for idx in 1..=C {
             let ui = apply(
@@ -1389,7 +1366,7 @@ where
                 modified_v[(row, idx)] = vi[(row, 1)].clone();
             }
         }
-        (u, sigma, modified_v)
+        v = modified_v
     } else {
         // Use V as a reference to correct U.
         // A V = S U
@@ -1415,6 +1392,81 @@ where
                 modified_u[(row, idx)] = ui[(row, 1)].clone();
             }
         }
-        (modified_u, sigma, v)
+        u = modified_u;
     }
+    // Sort singular values.
+    for idx in 1..=(edge - 1) {
+        let mut max = idx;
+        for p in (idx + 1)..=edge {
+            if sigma[(max, max)] < sigma[(p, p)] {
+                max = p;
+            }
+        }
+        if max != idx {
+            let temp = sigma[(idx, idx)].clone();
+            sigma[(idx, idx)] = sigma[(max, max)].clone();
+            sigma[(max, max)] = temp;
+            let p_left = Matrix::<Complex<F>, R, R>::p_change(idx, max);
+            u = u * p_left;
+            let p_right = Matrix::<Complex<F>, C, C>::p_change(idx, max);
+            v = v * p_right;
+        }
+    }
+    (u, sigma, v)
+}
+
+/// Compute the Moore-Penrose inverse of a complex matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         complex::{is_hermitian_matrix, moore_penrose_inverse},
+///         matrix::Matrix,
+///     },
+///     number::instances::{complex::Complex, float::Float},
+/// };
+///
+/// fn main() {
+///     // Properties that the Moore-Penrose inverse must satisfy.
+///     let rect = Matrix::<Complex<Float>, 2, 3>::of(
+///         &[
+///             (1.0, 2.0),
+///             (2.0, -1.0),
+///             (3.0, 0.0),
+///             (4.0, 0.0),
+///             (5.0, 1.0),
+///             (6.0, -2.0),
+///         ]
+///         .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+///     )
+///     .unwrap();
+///     let rectp = moore_penrose_inverse(&rect);
+///     // A . Ap . A = A
+///     assert_eq!(rect.clone() * rectp.clone() * rect.clone(), rect);
+///     // Ap . A . Ap = Ap
+///     assert_eq!(rectp.clone() * rect.clone() * rectp.clone(), rectp);
+///     // A . Ap is a hermitian matrix.
+///     assert!(is_hermitian_matrix(&(rect.clone() * rectp.clone())));
+///     // Ap . A is also a hermitian matrix.
+///     assert!(is_hermitian_matrix(&(rectp * rect)));
+/// }
+/// ```
+pub fn moore_penrose_inverse<F, const R: usize, const C: usize>(
+    m: &Matrix<Complex<F>, R, C>,
+) -> Matrix<Complex<F>, C, R>
+where
+    F: RealFloat,
+{
+    let (u, s, v) = singular_value_decomposition(m);
+    let mut sp = Matrix::<Complex<F>, C, R>::default();
+    for p in 1..=R.min(C) {
+        if s[(p, p)].is_zero() {
+            sp[(p, p)] = Complex::<F>::zero()
+        } else {
+            sp[(p, p)] = s[(p, p)].clone().reciprocal();
+        }
+    }
+    v * sp * conjugate_transpose(&u)
 }

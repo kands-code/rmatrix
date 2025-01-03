@@ -476,7 +476,7 @@ where
 ///     );
 ///     let evs_expect = Matrix::<Float, 3, 3>::of(
 ///         &[
-///             0.39185, -4.17221, -0.40899, 0.44383, 1.43042, -1.89201, 1.0, 1.0, 1.0,
+///             0.3372, -0.9225, -0.1877, 0.3819, 0.3163, -0.8684, 0.8605, 0.2211, 0.45898,
 ///         ]
 ///         .map(Float::of),
 ///     )
@@ -559,12 +559,12 @@ where
     let (sig1, u) = eigen_system_qr(&left_sym, DEFAULT_MAX_ITER);
     // Convert them to real numbers.
     let sig1 = apply(&sig1, |e| e.real.clone());
-    let mut u = apply(&u, |e| e.real.clone());
+    let u = apply(&u, |e| e.real.clone());
     // Compute the eigenvectors and eigenvalues of the right matrix.
     let (sig2, v) = eigen_system_qr(&right_sym, DEFAULT_MAX_ITER);
     // Convert them to real numbers.
     let sig2 = apply(&sig2, |e| e.real.clone());
-    let mut v = apply(&v, |e| e.real.clone());
+    let v = apply(&v, |e| e.real.clone());
     let mut sigma = Matrix::<N, R, C>::default();
     for idx in 1..=(R.min(C)) {
         // Take the average to reduce the error.
@@ -574,40 +574,9 @@ where
             ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * N::half()).square_root()
         };
     }
-    // Sort singular values.
-    let mut sd = (1..=edge)
-        .map(|idx| {
-            // Take the average to reduce the error.
-            if sig1[(idx, 1)].is_zero() || sig2[(idx, 1)].is_zero() {
-                N::zero()
-            } else {
-                ((sig1[(idx, 1)].clone() + sig2[(idx, 1)].clone()) * N::half()).square_root()
-            }
-        })
-        .collect::<Vec<N>>();
-    for idx in 0..(edge - 1) {
-        let mut max = idx;
-        for p in (idx + 1)..edge {
-            if sd[max] < sd[p] {
-                max = p;
-            }
-        }
-        if max != idx {
-            let temp = sd[idx].clone();
-            sd[idx] = sd[max].clone();
-            sd[max] = temp;
-            let p_left = Matrix::<N, R, R>::p_change(idx, max);
-            u = u * p_left;
-            let p_right = Matrix::<N, C, C>::p_change(idx, max);
-            v = v * p_right;
-        }
-    }
-    for idx in 1..=edge {
-        sigma[(idx, idx)] = sd[idx - 1].clone();
-    }
     // Obtain the corresponding orthogonal basis.
-    let u = gram_schmidt_process(&u);
-    let v = gram_schmidt_process(&v);
+    let mut u = gram_schmidt_process(&u);
+    let mut v = gram_schmidt_process(&v);
     if R > C {
         // Use U as a reference to correct V.
         // A^T U = V (S^T) = V S'
@@ -633,7 +602,7 @@ where
                 modified_v[(row, idx)] = vi[(row, 1)].clone();
             }
         }
-        (u, sigma, modified_v)
+        v = modified_v;
     } else {
         // Use V as a reference to correct U.
         // A V = S U
@@ -659,6 +628,82 @@ where
                 modified_u[(row, idx)] = ui[(row, 1)].clone();
             }
         }
-        (modified_u, sigma, v)
+        u = modified_u;
     }
+    // Sort singular values.
+    for idx in 1..=(edge - 1) {
+        let mut max = idx;
+        for p in (idx + 1)..=edge {
+            if sigma[(max, max)] < sigma[(p, p)] {
+                max = p;
+            }
+        }
+        if max != idx {
+            let temp = sigma[(idx, idx)].clone();
+            sigma[(idx, idx)] = sigma[(max, max)].clone();
+            sigma[(max, max)] = temp;
+            let p_left = Matrix::<N, R, R>::p_change(idx, max);
+            u = u * p_left;
+            let p_right = Matrix::<N, C, C>::p_change(idx, max);
+            v = v * p_right;
+        }
+    }
+    (u, sigma, v)
+}
+
+/// Compute the Moore-Penrose inverse of a real matrix.
+///
+/// # Examples
+///
+/// ```rust
+/// use rmatrix_ks::{
+///     matrix::{
+///         extra::moore_penrose_inverse,
+///         math::{inverse, is_symmetric_matrix},
+///         matrix::Matrix,
+///     },
+///     number::instances::float::Float,
+/// };
+///
+/// fn main() {
+///     let m = Matrix::<Float, 3, 3>::of(
+///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(Float::of),
+///     )
+///     .unwrap();
+///     let mp = moore_penrose_inverse(&m);
+///     let m_inv = inverse(&m).unwrap();
+///     // For invertible matrices,
+///     // the Moore-Penrose inverse is
+///     // the corresponding matrix inverse.
+///     assert_eq!(mp, m_inv);
+///     // Properties that the Moore-Penrose inverse must satisfy.
+///     let rect =
+///         Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
+///     let rectp = moore_penrose_inverse(&rect);
+///     // A . Ap . A = A
+///     assert_eq!(rect.clone() * rectp.clone() * rect.clone(), rect);
+///     // Ap . A . Ap = Ap
+///     assert_eq!(rectp.clone() * rect.clone() * rectp.clone(), rectp);
+///     // A . Ap is a symmetric matrix.
+///     assert!(is_symmetric_matrix(&(rect.clone() * rectp.clone())));
+///     // Ap . A is also a symmetric matrix.
+///     assert!(is_symmetric_matrix(&(rectp * rect)));
+/// }
+/// ```
+pub fn moore_penrose_inverse<N, const R: usize, const C: usize>(
+    m: &Matrix<N, R, C>,
+) -> Matrix<N, C, R>
+where
+    N: RealFloat,
+{
+    let (u, s, v) = singular_value_decomposition(m);
+    let mut sp = Matrix::<N, C, R>::default();
+    for p in 1..=R.min(C) {
+        if s[(p, p)].is_zero() {
+            sp[(p, p)] = N::zero()
+        } else {
+            sp[(p, p)] = s[(p, p)].clone().reciprocal();
+        }
+    }
+    v * sp * transpose(&u)
 }
