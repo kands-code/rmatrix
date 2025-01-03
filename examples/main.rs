@@ -6,15 +6,35 @@
 
 use rmatrix_ks::{
     matrix::{
+        complex::{is_hermitian_matrix, moore_penrose_inverse},
         matrix::Matrix,
-        vector::{column_vector, is_column_vector},
     },
-    number::instances::word8::Word8,
+    number::instances::{complex::Complex, float::Float},
 };
 
 fn main() {
-    let v = column_vector(3, &[1, 0, 0].map(Word8::of)).unwrap();
-    assert!(is_column_vector(&v));
-    let m = Matrix::of(2, 2, &[1, 0, 2, 5].map(Word8::of)).unwrap();
-    assert!(!is_column_vector(&m));
+    // Properties that the Moore-Penrose inverse must satisfy.
+    let rect = Matrix::<Complex<Float>>::of(
+        2,
+        3,
+        &[
+            (1.0, 2.0),
+            (2.0, -1.0),
+            (3.0, 0.0),
+            (4.0, 0.0),
+            (5.0, 1.0),
+            (6.0, -2.0),
+        ]
+        .map(|(r, i)| Complex::of(Float::of(r), Float::of(i))),
+    )
+    .unwrap();
+    let rectp = moore_penrose_inverse(&rect);
+    // A . Ap . A = A
+    assert_eq!(rect.clone() * rectp.clone() * rect.clone(), rect);
+    // Ap . A . Ap = Ap
+    assert_eq!(rectp.clone() * rect.clone() * rectp.clone(), rectp);
+    // A . Ap is a hermitian matrix.
+    assert!(is_hermitian_matrix(&(rect.clone() * rectp.clone())));
+    // Ap . A is also a hermitian matrix.
+    assert!(is_hermitian_matrix(&(rectp * rect)));
 }

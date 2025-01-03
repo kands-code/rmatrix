@@ -598,11 +598,11 @@ impl<F: RealFloat> Fractional for Complex<F> {
     }
 
     fn reciprocal(self) -> Self {
-        let n = self.clone().norm();
-        let conj = self.conjugate();
+        let n = self.real.clone() * self.real.clone()
+            + self.imaginary.clone() * self.clone().imaginary;
         Self {
-            real: conj.real / n.clone(),
-            imaginary: conj.imaginary / n,
+            real: self.real / n.clone(),
+            imaginary: -self.imaginary / n,
         }
     }
 
