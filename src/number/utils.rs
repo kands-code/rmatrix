@@ -51,27 +51,37 @@ pub fn i8_div_mod(lhs: i8, rhs: i8) -> (i8, i8) {
 ///     assert_eq!(p, p_expect);
 /// }
 /// ```
-pub fn permutation<T>(elements: &[T]) -> Vec<Vec<T>>
+pub fn permutation<N>(elements: &[N]) -> Vec<Vec<N>>
 where
-    T: Clone,
+    N: Clone + PartialEq,
 {
-    let mut exts = Vec::new();
-    if !elements.is_empty() {
-        for idx in 0..elements.len() {
-            let remain = [elements[..idx].to_vec(), elements[(idx + 1)..].to_vec()].concat();
-            let ps = permutation(&remain);
-            if ps.is_empty() {
-                exts.push(vec![elements[idx].clone()]);
-            } else {
-                for p in permutation(&remain) {
-                    let mut ext = p.clone();
-                    ext.push(elements[idx].clone());
-                    exts.push(ext);
-                }
+    let mut all_permutations = Vec::new();
+
+    fn permutation_inner<N>(elements: &[N], permu: &[N], acc: &mut Vec<Vec<N>>)
+    where
+        N: Clone + PartialEq,
+    {
+        if elements.is_empty() {
+            acc.push(permu.to_vec());
+        } else {
+            for elem in elements {
+                let mut next = permu.to_vec();
+                next.push(elem.clone());
+                permutation_inner(
+                    &elements
+                        .iter()
+                        .filter(|e| e != &elem)
+                        .map(|e| e.clone())
+                        .collect::<Vec<N>>(),
+                    &next,
+                    acc,
+                );
             }
         }
     }
-    exts
+
+    permutation_inner(elements, &[], &mut all_permutations);
+    all_permutations
 }
 
 /// Calculate the number of inversions in the given list.
@@ -89,9 +99,9 @@ where
 ///     assert_eq!(inversion_count::<usize>(&[]), 0);
 /// }
 /// ```
-pub fn inversion_count<T>(elements: &[T]) -> usize
+pub fn inversion_count<N>(elements: &[N]) -> usize
 where
-    T: Clone + PartialOrd,
+    N: Clone + PartialOrd,
 {
     let mut exchange = 0;
     if !elements.is_empty() {
