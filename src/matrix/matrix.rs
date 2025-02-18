@@ -2,7 +2,7 @@
 //!
 //! Definition of the matrix along with related functions and implementations.
 
-use rand::distributions::{Distribution, Uniform, uniform::SampleUniform};
+use rand::distr::{Distribution, Uniform, uniform::SampleUniform};
 use rayon::iter::{
     IndexedParallelIterator,
     IntoParallelIterator,
@@ -339,8 +339,14 @@ impl<N, const R: usize, const C: usize> Matrix<N, R, C> {
     where
         N: Number + SampleUniform,
     {
-        let range = Uniform::new(lb, ub);
-        let mut rng = rand::thread_rng();
+        let range = Uniform::new(&lb, &ub).expect(&format!(
+            concat!(
+                "Error[Matrix::rand]: ",
+                "Failed to generate valid range for ({}, {})."
+            ),
+            lb, ub
+        ));
+        let mut rng = rand::rng();
         let inner = range.sample_iter(&mut rng).take(R * C).collect();
         Self { inner }
     }

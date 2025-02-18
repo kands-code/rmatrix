@@ -4,7 +4,7 @@
 
 use rand::{
     Rng,
-    distributions::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
+    distr::uniform::{SampleBorrow, SampleUniform, UniformInt, UniformSampler},
 };
 
 use crate::number::{
@@ -275,26 +275,29 @@ pub struct UniformI8(UniformInt<i8>);
 impl UniformSampler for UniformI8 {
     type X = Int8;
 
-    fn new<B1, B2>(low: B1, high: B2) -> Self
+    fn new<B1, B2>(low: B1, high: B2) -> Result<UniformI8, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
-        Self(UniformInt::<i8>::new(
+        Ok(Self(UniformInt::<i8>::new(
             low.borrow().inner,
             high.borrow().inner,
-        ))
+        )?))
     }
 
-    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Self
+    fn new_inclusive<B1, B2>(
+        low: B1,
+        high: B2,
+    ) -> Result<UniformI8, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
-        Self(UniformInt::<i8>::new_inclusive(
+        Ok(Self(UniformInt::<i8>::new_inclusive(
             low.borrow().inner,
             high.borrow().inner,
-        ))
+        )?))
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
