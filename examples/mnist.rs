@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use rand::distributions::uniform::SampleUniform;
+use rand::{Rng, distr::uniform::SampleUniform};
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use rmatrix_ks::{
     matrix::{
@@ -417,7 +417,8 @@ fn main() {
     let b1: Matrix<Float> = from_file(OUTPUT_DIM, 1, "data/mnist/result/layer_b1.txt").unwrap();
 
     // try result
-    let idx = rand::random::<usize>() % count;
+    let mut rng = rand::rng();
+    let idx = (rng.random::<u32>() as usize) % count;
     let p = read_mnist_image(&test_mnist_data, idx);
     mnist_image_buffer_save("data/mnist/result/test.png", &p, (row_shape, column_shape));
     let label = read_mnist_label(&test_mnist_label_data, idx);

@@ -5,7 +5,7 @@
 
 use rand::{
     Rng,
-    distributions::{
+    distr::{
         Distribution,
         uniform::{SampleBorrow, SampleUniform, Uniform, UniformSampler},
     },
@@ -689,32 +689,35 @@ pub struct UniformComplex<F: RealFloat + SampleUniform>(Uniform<F>, Uniform<F>);
 impl<F: RealFloat + SampleUniform> UniformSampler for UniformComplex<F> {
     type X = Complex<F>;
 
-    fn new<B1, B2>(low: B1, high: B2) -> Self
+    fn new<B1, B2>(low: B1, high: B2) -> Result<UniformComplex<F>, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
-        Self(
-            Uniform::<F>::new(low.borrow().real.clone(), high.borrow().real.clone()),
+        Ok(Self(
+            Uniform::<F>::new(low.borrow().real.clone(), high.borrow().real.clone())?,
             Uniform::<F>::new(
                 low.borrow().imaginary.clone(),
                 high.borrow().imaginary.clone(),
-            ),
-        )
+            )?,
+        ))
     }
 
-    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Self
+    fn new_inclusive<B1, B2>(
+        low: B1,
+        high: B2,
+    ) -> Result<UniformComplex<F>, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
     {
-        Self(
-            Uniform::<F>::new_inclusive(low.borrow().real.clone(), high.borrow().real.clone()),
+        Ok(Self(
+            Uniform::<F>::new_inclusive(low.borrow().real.clone(), high.borrow().real.clone())?,
             Uniform::<F>::new_inclusive(
                 low.borrow().imaginary.clone(),
                 high.borrow().imaginary.clone(),
-            ),
-        )
+            )?,
+        ))
     }
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
