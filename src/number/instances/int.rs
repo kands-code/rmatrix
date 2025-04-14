@@ -68,6 +68,20 @@ impl Int {
             .map(|digit: char| digit as u8 - '0' as u8)
             .collect::<Vec<_>>()
     }
+
+    /// Get the raw value of a int number.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::int::Int;
+    ///
+    /// fn main() {
+    ///     let i = Int::of(69);
+    ///     assert_eq!(i.raw(), 69);
+    /// }
+    /// ```
+    pub fn raw(&self) -> i32 { self.inner }
 }
 
 /// Implement the concept of ZERO for the int number.

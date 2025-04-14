@@ -68,6 +68,20 @@ impl Word {
             .map(|digit: char| digit as u8 - '0' as u8)
             .collect::<Vec<_>>()
     }
+
+    /// Get the raw value of a word number.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::word::Word;
+    ///
+    /// fn main() {
+    ///     let w = Word::of(69);
+    ///     assert_eq!(w.raw(), 69);
+    /// }
+    /// ```
+    pub fn raw(&self) -> u32 { self.inner }
 }
 
 /// Implement the concept of ZERO for the word number.
