@@ -58,6 +58,20 @@ impl Double {
     pub fn of_str(float_number: &str) -> Option<Self> {
         std::str::FromStr::from_str(float_number).ok()
     }
+
+    /// Get the raw value of a double number.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::double::Double;
+    ///
+    /// fn main() {
+    ///     let d = Double::of(3.2);
+    ///     assert!((d.raw() - 3.2).abs() < f64::EPSILON.sqrt());
+    /// }
+    /// ```
+    pub fn raw(&self) -> f64 { self.inner }
 }
 
 /// Implement the concept of ZERO for the double number.

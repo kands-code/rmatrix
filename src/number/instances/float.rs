@@ -57,6 +57,20 @@ impl Float {
     pub fn of_str(float_number: &str) -> Option<Self> {
         std::str::FromStr::from_str(float_number).ok()
     }
+
+    /// Get the raw value of a float number.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::float::Float;
+    ///
+    /// fn main() {
+    ///     let d = Float::of(3.2);
+    ///     assert!((d.raw() - 3.2).abs() < f32::EPSILON.sqrt());
+    /// }
+    /// ```
+    pub fn raw(&self) -> f32 { self.inner }
 }
 
 /// Implement the concept of ZERO for the float number.

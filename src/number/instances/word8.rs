@@ -67,6 +67,20 @@ impl Word8 {
             .map(|digit: char| digit as u8 - '0' as u8)
             .collect::<Vec<_>>()
     }
+
+    /// Get the raw value of a word8 number.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rmatrix_ks::number::instances::word8::Word8;
+    ///
+    /// fn main() {
+    ///     let w = Word8::of(69);
+    ///     assert_eq!(w.raw(), 69);
+    /// }
+    /// ```
+    pub fn raw(&self) -> u8 { self.inner }
 }
 
 /// Implement the concept of ZERO for the word8 number.
