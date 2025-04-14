@@ -78,7 +78,7 @@ impl Int {
     ///
     /// fn main() {
     ///     let i = Int::of(69);
-    ///     assert_eq!(i, 69);
+    ///     assert_eq!(i.raw(), 69);
     /// }
     /// ```
     pub fn raw(&self) -> i32 { self.inner }
