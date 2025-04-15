@@ -67,7 +67,7 @@ impl Float {
     ///
     /// fn main() {
     ///     let d = Float::of(3.2);
-    ///     assert!((d.raw() - 3.2).abs() < f32::EPSILON.sqrt());
+    ///     assert!(Float::of(d.raw() - 3.2).is_zero());
     /// }
     /// ```
     pub fn raw(&self) -> f32 { self.inner }
@@ -79,17 +79,17 @@ impl Zero for Float {
 
     /// Validate whether a float number is ZERO.
     ///
-    /// Use `eps = 3.90625e-3` to avoid certain floating-point precision errors.
+    /// Use `eps = 1.726335e-04` to avoid certain floating-point precision errors.
     ///
     /// ```rust
     /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
     ///
     /// fn main() {
-    ///     let f = Float::of(core::f32::EPSILON);
+    ///     let f = Float::of(f32::EPSILON);
     ///     assert!(f.is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool { self.inner.abs() <= 3.90625e-3 }
+    fn is_zero(&self) -> bool { self.inner.abs() <= 1.726335e-04 }
 }
 
 /// Implement the concept of ONE for the float number.
