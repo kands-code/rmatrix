@@ -64,11 +64,11 @@ impl Double {
     /// # Examples
     ///
     /// ```rust
-    /// use rmatrix_ks::number::instances::double::Double;
+    /// use rmatrix_ks::number::{instances::double::Double, traits::zero::Zero};
     ///
     /// fn main() {
     ///     let d = Double::of(3.2);
-    ///     assert!((d.raw() - 3.2).abs() < f64::EPSILON.sqrt());
+    ///     assert!(Double::of(d.raw() - 3.2).is_zero());
     /// }
     /// ```
     pub fn raw(&self) -> f64 { self.inner }
@@ -80,17 +80,17 @@ impl Zero for Double {
 
     /// Validate whether a double number is ZERO.
     ///
-    /// Use `eps = 1.52587890625e-5` to avoid certain floating-point precision errors.
+    /// Use `eps = 1.9073486328125e-6` to avoid certain floating-point precision errors.
     ///
     /// ```rust
     /// use rmatrix_ks::number::{instances::double::Double, traits::zero::Zero};
     ///
     /// fn main() {
-    ///     let d = Double::of(core::f64::EPSILON);
+    ///     let d = Double::of(f64::EPSILON);
     ///     assert!(d.is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool { self.inner.abs() <= 1.52587890625e-5 }
+    fn is_zero(&self) -> bool { self.inner.abs() <= 1.9073486328125e-6 }
 }
 
 /// Implement the concept of ONE for the double number.
