@@ -35,7 +35,7 @@ impl Float {
     /// # Examples
     ///
     /// ```rust
-    /// use rmatrix_ks::number::instances::float::Float;
+    /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
     ///
     /// fn main() { let _f = Float::of(12.0); }
     /// ```
@@ -63,7 +63,7 @@ impl Float {
     /// # Examples
     ///
     /// ```rust
-    /// use rmatrix_ks::number::instances::float::Float;
+    /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
     ///
     /// fn main() {
     ///     let d = Float::of(3.2);
@@ -79,7 +79,7 @@ impl Zero for Float {
 
     /// Validate whether a float number is ZERO.
     ///
-    /// Use `eps = 1.726335e-04` to avoid certain floating-point precision errors.
+    /// Use `eps = 1.953125e-3` to avoid certain floating-point precision errors.
     ///
     /// ```rust
     /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
@@ -89,7 +89,7 @@ impl Zero for Float {
     ///     assert!(f.is_zero());
     /// }
     /// ```
-    fn is_zero(&self) -> bool { self.inner.abs() <= 1.726335e-04 }
+    fn is_zero(&self) -> bool { self.inner.abs() <= 1.953125e-3 }
 }
 
 /// Implement the concept of ONE for the float number.
