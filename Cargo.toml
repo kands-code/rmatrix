@@ -21,13 +21,13 @@ rustdoc-args = ["--cfg", "doc_cfg", "--generate-link-to-definition"]
 [lib]
 name = "rmatrix_ks"
 path = "src/lib.rs"
-crate-type = ["rlib", "staticlib"]
+crate-type = ["lib", "dylib"]
 
 [dependencies]
 # for pattern validate
 regex = "^1.11.1"
 # for random matrix and random number
-rand = "^0.9.0"
+rand = "^0.9.1"
 # for optimize
 rayon = "^1.10.0"
 
