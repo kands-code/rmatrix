@@ -11,7 +11,7 @@
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::{
-    matrix::matrix::Matrix,
+    matrix::Matrix,
     number::{
         instances::integer::Integer,
         traits::{number::Number, real::Real, realfloat::RealFloat, realfrac::RealFrac},
@@ -24,15 +24,13 @@ use crate::{
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, vector::row_vector},
+///     matrix::{Matrix, vector::row_vector},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let rv = row_vector(3, &[1, 2, 3].map(Word8::of));
-///     let rv_expect = Matrix::of(1, 3, &[1, 2, 3].map(Word8::of));
-///     assert_eq!(rv, rv_expect);
-/// }
+/// let rv = row_vector(3, &[1, 2, 3].map(Word8::of));
+/// let rv_expect = Matrix::of(1, 3, &[1, 2, 3].map(Word8::of));
+/// assert_eq!(rv, rv_expect);
 /// ```
 pub fn row_vector<N>(dim: usize, data: &[N]) -> Option<Matrix<N>>
 where
@@ -47,18 +45,16 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
-///         matrix::Matrix,
+///         Matrix,
 ///         vector::{is_row_vector, row_vector},
 ///     },
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let v = row_vector(3, &[1, 0, 0].map(Word8::of)).unwrap();
-///     assert!(is_row_vector(&v));
-///     let m = Matrix::of(2, 2, &[1, 0, 2, 5].map(Word8::of)).unwrap();
-///     assert!(!is_row_vector(&m));
-/// }
+/// let v = row_vector(3, &[1, 0, 0].map(Word8::of)).unwrap();
+/// assert!(is_row_vector(&v));
+/// let m = Matrix::of(2, 2, &[1, 0, 2, 5].map(Word8::of)).unwrap();
+/// assert!(!is_row_vector(&m));
 /// ```
 pub fn is_row_vector<N>(v: &Matrix<N>) -> bool { v.row == 1 }
 
@@ -68,15 +64,13 @@ pub fn is_row_vector<N>(v: &Matrix<N>) -> bool { v.row == 1 }
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, vector::column_vector},
+///     matrix::{Matrix, vector::column_vector},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let cv = column_vector(3, &[1, 2, 3].map(Word8::of));
-///     let cv_expect = Matrix::of(3, 1, &[1, 2, 3].map(Word8::of));
-///     assert_eq!(cv, cv_expect);
-/// }
+/// let cv = column_vector(3, &[1, 2, 3].map(Word8::of));
+/// let cv_expect = Matrix::of(3, 1, &[1, 2, 3].map(Word8::of));
+/// assert_eq!(cv, cv_expect);
 /// ```
 pub fn column_vector<N>(dim: usize, data: &[N]) -> Option<Matrix<N>>
 where
@@ -92,18 +86,16 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
-///         matrix::Matrix,
+///         Matrix,
 ///         vector::{column_vector, is_column_vector},
 ///     },
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let v = column_vector(3, &[1, 0, 0].map(Word8::of)).unwrap();
-///     assert!(is_column_vector(&v));
-///     let m = Matrix::of(2, 2, &[1, 0, 2, 5].map(Word8::of)).unwrap();
-///     assert!(!is_column_vector(&m));
-/// }
+/// let v = column_vector(3, &[1, 0, 0].map(Word8::of)).unwrap();
+/// assert!(is_column_vector(&v));
+/// let m = Matrix::of(2, 2, &[1, 0, 2, 5].map(Word8::of)).unwrap();
+/// assert!(!is_column_vector(&m));
 /// ```
 pub fn is_column_vector<N>(v: &Matrix<N>) -> bool { v.column == 1 }
 
@@ -115,16 +107,14 @@ pub fn is_column_vector<N>(v: &Matrix<N>) -> bool { v.column == 1 }
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, vector::basis_vector},
+///     matrix::{Matrix, vector::basis_vector},
 ///     number::instances::int8::Int8,
 /// };
 ///
-/// pub fn main() {
-///     let e1_a: Matrix<Int8> =
-///         Matrix::of(3, 1, &[Int8::of(0), Int8::of(1), Int8::of(0)]).unwrap();
-///     let e1_b = basis_vector::<Int8>(3, 2);
-///     assert_eq!(e1_a, e1_b);
-/// }
+/// let e1_a: Matrix<Int8> =
+///     Matrix::of(3, 1, &[Int8::of(0), Int8::of(1), Int8::of(0)]).unwrap();
+/// let e1_b = basis_vector::<Int8>(3, 2);
+/// assert_eq!(e1_a, e1_b);
 /// ```
 pub fn basis_vector<N>(dim: usize, index: usize) -> Matrix<N>
 where
@@ -149,11 +139,9 @@ where
 ///     number::instances::int8::Int8,
 /// };
 ///
-/// fn main() {
-///     let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
-///     let v2 = column_vector::<Int8>(3, &[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
-///     assert_eq!(dot_product(&v1, &v2), Int8::of(32));
-/// }
+/// let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+/// let v2 = column_vector::<Int8>(3, &[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+/// assert_eq!(dot_product(&v1, &v2), Int8::of(32));
 /// ```
 pub fn dot_product<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> N
 where
@@ -188,14 +176,12 @@ where
 ///     number::instances::int8::Int8,
 /// };
 ///
-/// fn main() {
-///     let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
-///     let v2 = column_vector::<Int8>(3, &[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
-///     assert_eq!(
-///         cross_product(v1, v2),
-///         column_vector::<Int8>(3, &[Int8::of(-3), Int8::of(6), Int8::of(-3)]).unwrap()
-///     );
-/// }
+/// let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+/// let v2 = column_vector::<Int8>(3, &[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+/// assert_eq!(
+///     cross_product(v1, v2),
+///     column_vector::<Int8>(3, &[Int8::of(-3), Int8::of(6), Int8::of(-3)]).unwrap()
+/// );
 /// ```
 pub fn cross_product<N>(v1: Matrix<N>, v2: Matrix<N>) -> Matrix<N>
 where
@@ -210,12 +196,9 @@ where
     );
 
     let mut inner = vec![N::zero(); 3];
-    inner[0] =
-        v1[(2, 1)].clone() * v2[(3, 1)].clone() - v1[(3, 1)].clone() * v2[(2, 1)].clone();
-    inner[1] =
-        v1[(3, 1)].clone() * v2[(1, 1)].clone() - v1[(1, 1)].clone() * v2[(3, 1)].clone();
-    inner[2] =
-        v1[(1, 1)].clone() * v2[(2, 1)].clone() - v1[(2, 1)].clone() * v2[(1, 1)].clone();
+    inner[0] = v1[(2, 1)].clone() * v2[(3, 1)].clone() - v1[(3, 1)].clone() * v2[(2, 1)].clone();
+    inner[1] = v1[(3, 1)].clone() * v2[(1, 1)].clone() - v1[(1, 1)].clone() * v2[(3, 1)].clone();
+    inner[2] = v1[(1, 1)].clone() * v2[(2, 1)].clone() - v1[(2, 1)].clone() * v2[(1, 1)].clone();
     Matrix {
         inner,
         row: 3,
@@ -234,24 +217,22 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
-///         matrix::Matrix,
+///         Matrix,
 ///         vector::{column_vector, layer_product, row_vector},
 ///     },
 ///     number::instances::int8::Int8,
 /// };
 ///
-/// fn main() {
-///     let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
-///     let v2 = row_vector::<Int8>(3, &[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
-///     let data = [
-///         4i8, 5i8, 6i8, // row1
-///         8i8, 10i8, 12i8, // row2
-///         12i8, 15i8, 18i8, // row3
-///     ]
-///     .map(|e| Int8::of(e));
-///     let m = Matrix::<Int8>::of(3, 3, &data).unwrap();
-///     assert_eq!(layer_product(&v1, &v2), m);
-/// }
+/// let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+/// let v2 = row_vector::<Int8>(3, &[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
+/// let data = [
+///     4i8, 5i8, 6i8, // row1
+///     8i8, 10i8, 12i8, // row2
+///     12i8, 15i8, 18i8, // row3
+/// ]
+/// .map(|e| Int8::of(e));
+/// let m = Matrix::<Int8>::of(3, 3, &data).unwrap();
+/// assert_eq!(layer_product(&v1, &v2), m);
 /// ```
 pub fn layer_product<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> Matrix<N>
 where
@@ -293,12 +274,10 @@ where
 ///     number::instances::int8::Int8,
 /// };
 ///
-/// fn main() {
-///     let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
-///     let v2 = column_vector::<Int8>(2, &[Int8::of(4), Int8::of(5)]).unwrap();
-///     let cv = column_vector::<Int8>(4, &[4, 13, 22, 15].map(|e| Int8::of(e))).unwrap();
-///     assert_eq!(convolution(&v1, &v2), cv);
-/// }
+/// let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
+/// let v2 = column_vector::<Int8>(2, &[Int8::of(4), Int8::of(5)]).unwrap();
+/// let cv = column_vector::<Int8>(4, &[4, 13, 22, 15].map(|e| Int8::of(e))).unwrap();
+/// assert_eq!(convolution(&v1, &v2), cv);
 /// ```
 pub fn convolution<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> Matrix<N>
 where
@@ -349,11 +328,9 @@ where
 ///     },
 /// };
 ///
-/// fn main() {
-///     let v = column_vector::<Float>(3, &[Float::of(1.0), Float::of(2.0), Float::of(3.0)])
-///         .unwrap();
-///     assert!((euclidean_norm(&v) - Float::of(14.0).square_root()).is_zero());
-/// }
+/// let v =
+///     column_vector::<Float>(3, &[Float::of(1.0), Float::of(2.0), Float::of(3.0)]).unwrap();
+/// assert!((euclidean_norm(&v) - Float::of(14.0).square_root()).is_zero());
 /// ```
 pub fn euclidean_norm<N>(v: &Matrix<N>) -> N
 where
@@ -388,12 +365,10 @@ where
 ///     number::{instances::float::Float, traits::floating::Floating},
 /// };
 ///
-/// fn main() {
-///     let v1 = column_vector::<Float>(3, &[1.0, 1.0, 1.0].map(Float::of)).unwrap();
-///     let normalized = normalize(&v1);
-///     let normalized_expect = v1 / Float::of(3.0).square_root();
-///     assert_eq!(normalized, normalized_expect);
-/// }
+/// let v1 = column_vector::<Float>(3, &[1.0, 1.0, 1.0].map(Float::of)).unwrap();
+/// let normalized = normalize(&v1);
+/// let normalized_expect = v1 / Float::of(3.0).square_root();
+/// assert_eq!(normalized, normalized_expect);
 /// ```
 pub fn normalize<N>(v: &Matrix<N>) -> Matrix<N>
 where
@@ -431,10 +406,8 @@ where
 ///     number::instances::int8::Int8,
 /// };
 ///
-/// fn main() {
-///     let v = column_vector::<Int8>(3, &[Int8::of(2), Int8::of(-5), Int8::of(3)]).unwrap();
-///     assert_eq!(maximum_norm(&v), Int8::of(5))
-/// }
+/// let v = column_vector::<Int8>(3, &[Int8::of(2), Int8::of(-5), Int8::of(3)]).unwrap();
+/// assert_eq!(maximum_norm(&v), Int8::of(5))
 /// ```
 pub fn maximum_norm<N>(v: &Matrix<N>) -> N
 where
@@ -474,11 +447,9 @@ where
 ///     },
 /// };
 ///
-/// fn main() {
-///     let v = column_vector::<Float>(3, &[Float::of(1.0), Float::of(2.0), Float::of(3.0)])
-///         .unwrap();
-///     assert!((root_mean_square(&v) - Float::of(14.0 / 3.0).square_root()).is_zero());
-/// }
+/// let v =
+///     column_vector::<Float>(3, &[Float::of(1.0), Float::of(2.0), Float::of(3.0)]).unwrap();
+/// assert!((root_mean_square(&v) - Float::of(14.0 / 3.0).square_root()).is_zero());
 /// ```
 pub fn root_mean_square<N>(v: &Matrix<N>) -> N
 where
@@ -493,10 +464,12 @@ where
     );
 
     let l2_norm = euclidean_norm(v);
-    let r_sqrt = N::from_integer(Integer::of_str(&format!("{}", v.row)).expect(&format!(
-        "Error[matrix::vector::root_mean_square]: Failed to convert {} from usize to Integer.",
-        v.row
-    )))
+    let r_sqrt = N::from_integer(Integer::of_str(&format!("{}", v.row)).unwrap_or_else(|| {
+        panic!(
+            "Error[matrix::vector::root_mean_square]: Failed to convert {} from usize to Integer.",
+            v.row
+        )
+    }))
     .square_root();
     l2_norm / r_sqrt
 }
@@ -517,27 +490,23 @@ where
 ///     number::{instances::double::Double, traits::zero::Zero},
 /// };
 ///
-/// fn main() {
-///     let v1 =
-///         column_vector::<Double>(3, &[Double::of(1.0), Double::of(5.0), Double::of(4.0)])
-///             .unwrap();
-///     let v2 =
-///         column_vector::<Double>(3, &[Double::of(8.0), Double::of(-4.0), Double::of(3.0)])
-///             .unwrap();
-///     let angle = angle_between(&v1, &v2);
-///     assert!(angle.is_some());
-///     assert_eq!(angle.unwrap(), Double::of(core::f64::consts::PI / 2.0));
+/// let v1 = column_vector::<Double>(3, &[Double::of(1.0), Double::of(5.0), Double::of(4.0)])
+///     .unwrap();
+/// let v2 = column_vector::<Double>(3, &[Double::of(8.0), Double::of(-4.0), Double::of(3.0)])
+///     .unwrap();
+/// let angle = angle_between(&v1, &v2);
+/// assert!(angle.is_some());
+/// assert_eq!(angle.unwrap(), Double::of(core::f64::consts::PI / 2.0));
 ///
-///     // angle between a vector and itself is zero
-///     let self_angle = angle_between(&v1, &v1);
-///     assert!(self_angle.is_some());
-///     assert!(self_angle.unwrap().is_zero());
+/// // angle between a vector and itself is zero
+/// let self_angle = angle_between(&v1, &v1);
+/// assert!(self_angle.is_some());
+/// assert!(self_angle.unwrap().is_zero());
 ///
-///     // zero-vector has no angle with any other vector
-///     let v3 = column_vector::<Double>(3, &[Double::zero(), Double::zero(), Double::zero()])
-///         .unwrap();
-///     assert!(angle_between(&v1, &v3).is_none());
-/// }
+/// // zero-vector has no angle with any other vector
+/// let v3 =
+///     column_vector::<Double>(3, &[Double::zero(), Double::zero(), Double::zero()]).unwrap();
+/// assert!(angle_between(&v1, &v3).is_none());
 /// ```
 pub fn angle_between<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> Option<N>
 where
@@ -579,15 +548,13 @@ where
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let v1 = column_vector::<Float>(2, &[3.0, 4.0].map(Float::of)).unwrap();
-///     let v2 = column_vector::<Float>(2, &[1.0, 2.0].map(Float::of)).unwrap();
-///     let p = project_to(&v1, &v2);
-///     assert_eq!(
-///         p,
-///         column_vector::<Float>(2, &[2.2, 4.4].map(Float::of)).unwrap()
-///     );
-/// }
+/// let v1 = column_vector::<Float>(2, &[3.0, 4.0].map(Float::of)).unwrap();
+/// let v2 = column_vector::<Float>(2, &[1.0, 2.0].map(Float::of)).unwrap();
+/// let p = project_to(&v1, &v2);
+/// assert_eq!(
+///     p,
+///     column_vector::<Float>(2, &[2.2, 4.4].map(Float::of)).unwrap()
+/// );
 /// ```
 pub fn project_to<N>(from: &Matrix<N>, to: &Matrix<N>) -> Matrix<N>
 where

@@ -1,6 +1,7 @@
 #![warn(missing_docs)]
 #![feature(doc_cfg)]
 #![feature(doc_auto_cfg)]
+#![allow(clippy::type_complexity)] // no more type for return value
 
 //! # rmatrix_ks
 //!

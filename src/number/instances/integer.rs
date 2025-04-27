@@ -24,13 +24,11 @@ impl Integer {
     /// ```rust
     /// use rmatrix_ks::number::instances::integer::Integer;
     ///
-    /// fn main() {
-    ///     let digits = vec![1, 2, 3];
-    ///     // Integer(123)
-    ///     let Some(_) = Integer::of(true, &digits) else {
-    ///         unreachable!();
-    ///     };
-    /// }
+    /// let digits = vec![1, 2, 3];
+    /// // Integer(123)
+    /// let Some(_) = Integer::of(true, &digits) else {
+    ///     unreachable!();
+    /// };
     /// ```
     ///
     /// ## Warning
@@ -43,10 +41,8 @@ impl Integer {
     /// ```rust
     /// use rmatrix_ks::number::instances::integer::Integer;
     ///
-    /// fn main() {
-    ///     let digits = vec![1, 2, 10];
-    ///     assert_eq!(Integer::of(true, &digits), None);
-    /// }
+    /// let digits = vec![1, 2, 10];
+    /// assert_eq!(Integer::of(true, &digits), None);
     /// ```
     ///
     /// </div>
@@ -55,7 +51,7 @@ impl Integer {
         let mut inner = digits
             .iter()
             .skip_while(|&&digit| digit == 0u8)
-            .map(|&digit| digit)
+            .copied()
             .collect::<Vec<u8>>();
         if inner.is_empty() {
             Some(Self::zero())
@@ -86,15 +82,11 @@ impl Integer {
     /// ```rust
     /// use rmatrix_ks::number::instances::integer::Integer;
     ///
-    /// fn main() {
-    ///     let i1 = Integer::of_str("-123456");
-    ///     let i2 = Integer::of(false, &[1, 2, 3, 4, 5, 6]);
-    ///     assert_eq!(i1, i2);
-    /// }
+    /// let i1 = Integer::of_str("-123456");
+    /// let i2 = Integer::of(false, &[1, 2, 3, 4, 5, 6]);
+    /// assert_eq!(i1, i2);
     /// ```
-    pub fn of_str(integer_number: &str) -> Option<Self> {
-        std::str::FromStr::from_str(integer_number).ok()
-    }
+    pub fn of_str(integer_number: &str) -> Option<Self> { std::str::FromStr::from_str(integer_number).ok() }
 
     /// Return the digit at each position.
     ///
@@ -103,10 +95,8 @@ impl Integer {
     /// ```rust
     /// use rmatrix_ks::number::instances::integer::Integer;
     ///
-    /// fn main() {
-    ///     let digits = Integer::of_str("-123456").map(|e| e.digits());
-    ///     assert_eq!(digits, Some(vec![1, 2, 3, 4, 5, 6]));
-    /// }
+    /// let digits = Integer::of_str("-123456").map(|e| e.digits());
+    /// assert_eq!(digits, Some(vec![1, 2, 3, 4, 5, 6]));
     /// ```
     pub fn digits(&self) -> Vec<u8> { self.inner.iter().rev().cloned().collect::<Vec<u8>>() }
 
@@ -120,17 +110,18 @@ impl Integer {
             let expect_capacity = self.inner.len().max(rhs.inner.len()) + 1usize;
             let mut sum: Vec<u8> = vec![0u8; expect_capacity];
             let mut carry = 0u8;
-            for idx in 0..expect_capacity {
-                let factor = self.inner.get(idx).map_or(0u8, |&digit| digit)
-                    + rhs.inner.get(idx).map_or(0u8, |&digit| digit)
-                    + carry;
-                sum[idx] = factor % 10;
-                carry = factor / 10;
-            }
+            sum.iter_mut()
+                .enumerate()
+                .take(expect_capacity)
+                .for_each(|(idx, p)| {
+                    let factor = self.inner.get(idx).map_or(0u8, |&digit| digit)
+                        + rhs.inner.get(idx).map_or(0u8, |&digit| digit)
+                        + carry;
+                    *p = factor % 10;
+                    carry = factor / 10;
+                });
             sum.reverse();
-            Self::of(true, &sum).expect(
-                "Error[Integer::integer_add]: Each digit should be within the range [1, 9].",
-            )
+            Self::of(true, &sum).expect("Error[Integer::integer_add]: Each digit should be within the range [1, 9].")
         }
     }
 
@@ -149,21 +140,22 @@ impl Integer {
                 (false, rhs, self)
             };
             let mut carry = 0i8;
-            for idx in 0..expect_capacity {
-                let factor = subtracted.inner.get(idx).map_or(0i8, |&digit| digit as i8)
-                    - subtracting.inner.get(idx).map_or(0i8, |&digit| digit as i8)
-                    + carry;
-                (carry, diff[idx]) = i8_div_mod(factor, 10i8);
-            }
+            diff.iter_mut()
+                .enumerate()
+                .take(expect_capacity)
+                .for_each(|(idx, p)| {
+                    let factor = subtracted.inner.get(idx).map_or(0i8, |&digit| digit as i8)
+                        - subtracting.inner.get(idx).map_or(0i8, |&digit| digit as i8)
+                        + carry;
+                    (carry, *p) = i8_div_mod(factor, 10i8);
+                });
             sign = (carry == 0i8) == sign;
             let digits = diff
                 .iter()
                 .rev() // Revert to normal order.
                 .map(|&digit| digit as u8)
                 .collect::<Vec<u8>>();
-            Self::of(sign, &digits).expect(
-                "Error[Integer::integer_sub]: Each digit should be within the range [1, 9].",
-            )
+            Self::of(sign, &digits).expect("Error[Integer::integer_sub]: Each digit should be within the range [1, 9].")
         }
     }
 
@@ -195,13 +187,11 @@ impl Zero for Integer {
     /// ```rust
     /// use rmatrix_ks::number::{instances::integer::Integer, traits::zero::Zero};
     ///
-    /// fn main() {
-    ///     let a = Integer::zero();
-    ///     let Some(zero) = Integer::of_str("0") else {
-    ///         unreachable!();
-    ///     };
-    ///     assert_eq!(a, zero);
-    /// }
+    /// let a = Integer::zero();
+    /// let Some(zero) = Integer::of_str("0") else {
+    ///     unreachable!();
+    /// };
+    /// assert_eq!(a, zero);
     /// ```
     fn zero() -> Self {
         Self {
@@ -217,14 +207,12 @@ impl Zero for Integer {
     /// ```rust
     /// use rmatrix_ks::number::{instances::integer::Integer, traits::zero::Zero};
     ///
-    /// fn main() {
-    ///     let a = Integer::zero();
-    ///     assert!(a.is_zero());
-    ///     let Some(b) = Integer::of(true, &[1, 6]) else {
-    ///         unreachable!();
-    ///     };
-    ///     assert!(!b.is_zero());
-    /// }
+    /// let a = Integer::zero();
+    /// assert!(a.is_zero());
+    /// let Some(b) = Integer::of(true, &[1, 6]) else {
+    ///     unreachable!();
+    /// };
+    /// assert!(!b.is_zero());
     /// ```
     fn is_zero(&self) -> bool { self.inner.is_empty() || self.inner.iter().all(|&e| e == 0u8) }
 }
@@ -244,12 +232,10 @@ impl One for Integer {
     /// ```rust
     /// use rmatrix_ks::number::{instances::integer::Integer, traits::one::One};
     ///
-    /// fn main() {
-    ///     let a = Integer::one();
-    ///     assert!(a.is_one());
-    ///     let b = Integer::of(true, &[1, 6]);
-    ///     assert!(b.is_some_and(|e| !e.is_one()));
-    /// }
+    /// let a = Integer::one();
+    /// assert!(a.is_one());
+    /// let b = Integer::of(true, &[1, 6]);
+    /// assert!(b.is_some_and(|e| !e.is_one()));
     /// ```
     fn is_one(&self) -> bool {
         (!self.inner.is_empty()) // An empty integer cannot be one.
@@ -277,39 +263,34 @@ impl std::cmp::PartialOrd for Integer {
     /// ```rust
     /// use rmatrix_ks::number::instances::integer::Integer;
     ///
-    /// fn main() {
-    ///     // 512
-    ///     let a = Integer::of(true, &[5, 1, 2]).unwrap();
-    ///     // 512
-    ///     let another_a = Integer::of(true, &[5, 1, 2]).unwrap();
-    ///     // -128
-    ///     let b = Integer::of(false, &[1, 2, 8]).unwrap();
-    ///     // 1024
-    ///     let c = Integer::of(true, &[1, 0, 2, 4]).unwrap();
-    ///     assert_eq!(a.partial_cmp(&another_a), Some(std::cmp::Ordering::Equal));
-    ///     assert_eq!(a.partial_cmp(&b), Some(std::cmp::Ordering::Greater));
-    ///     assert_eq!(a.partial_cmp(&c), Some(std::cmp::Ordering::Less));
-    /// }
+    /// // 512
+    /// let a = Integer::of(true, &[5, 1, 2]).unwrap();
+    /// // 512
+    /// let another_a = Integer::of(true, &[5, 1, 2]).unwrap();
+    /// // -128
+    /// let b = Integer::of(false, &[1, 2, 8]).unwrap();
+    /// // 1024
+    /// let c = Integer::of(true, &[1, 0, 2, 4]).unwrap();
+    /// assert_eq!(a.partial_cmp(&another_a), Some(std::cmp::Ordering::Equal));
+    /// assert_eq!(a.partial_cmp(&b), Some(std::cmp::Ordering::Greater));
+    /// assert_eq!(a.partial_cmp(&c), Some(std::cmp::Ordering::Less));
     /// ```
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.is_zero() && other.is_zero() {
-            Some(std::cmp::Ordering::Equal)
-        } else {
-            match (self.sign, other.sign) {
-                (true, false) => Some(std::cmp::Ordering::Greater),
-                (false, true) => Some(std::cmp::Ordering::Less),
-                (true, true) => Some(self.integer_cmp(other)),
-                (false, false) => Some(other.integer_cmp(self)),
-            }
-        }
-    }
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
 }
 
 /// Implement Ord for the integer number.
 impl std::cmp::Ord for Integer {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other)
-            .expect("Error[Integer::cmp]: Integer should be ordered.")
+        if self.is_zero() && other.is_zero() {
+            std::cmp::Ordering::Equal
+        } else {
+            match (self.sign, other.sign) {
+                (true, false) => std::cmp::Ordering::Greater,
+                (false, true) => std::cmp::Ordering::Less,
+                (true, true) => self.integer_cmp(other),
+                (false, false) => other.integer_cmp(self),
+            }
+        }
     }
 }
 
@@ -430,18 +411,20 @@ impl Integral for Integer {
             while head + expand <= self_digits.len() {
                 let mut rem_buffer = rem_digits.clone();
                 rem_buffer.extend(self_digits[head..(head + expand)].iter());
-                let buffer = Self::of(true, &rem_buffer).expect(&format!(
-                    "Error[Integer::quot_rem]: ({}, {}) is out of bounds.",
-                    head,
-                    head + expand,
-                ));
+                let buffer = Self::of(true, &rem_buffer).unwrap_or_else(|| {
+                    panic!(
+                        "Error[Integer::quot_rem]: ({}, {}) is out of bounds.",
+                        head,
+                        head + expand
+                    )
+                });
                 if buffer < rhs_abs {
                     quot_digits.push(0u8);
                     if head + expand == self_digits.len() {
                         rem_digits = buffer.digits();
                         break;
                     } else {
-                        expand = expand + 1;
+                        expand += 1;
                     }
                 } else {
                     let mut factor = Self::one();
@@ -450,7 +433,7 @@ impl Integral for Integer {
                     }
                     rem_digits = (buffer - factor.clone() * rhs_abs.clone()).digits();
                     quot_digits.push(factor.inner[0]);
-                    head = head + expand;
+                    head += expand;
                     expand = 1usize;
                 }
             }
@@ -486,7 +469,7 @@ impl std::fmt::Display for Integer {
             self.inner
                 .iter()
                 .rev()
-                .map(|d| (d + ('0' as u8)) as char)
+                .map(|d| (d + b'0') as char)
                 .collect::<String>()
         )
     }
@@ -502,7 +485,7 @@ impl std::fmt::Debug for Integer {
             self.inner
                 .iter()
                 .rev()
-                .map(|d| (d + ('0' as u8)) as char)
+                .map(|d| (d + b'0') as char)
                 .collect::<String>()
         )
     }
@@ -527,18 +510,13 @@ impl std::str::FromStr for Integer {
                     let digits = digits_str
                         .chars()
                         .filter(|digit| digit.is_ascii_digit())
-                        .map(|digit| (digit as u8) - ('0' as u8))
+                        .map(|digit| (digit as u8) - b'0')
                         .collect::<Vec<u8>>();
                     Self::of(sign, &digits)
                 } else {
                     None
                 }
             })
-            .ok_or_else(|| {
-                eprintln!(
-                    "Error[Ineteger::from_str]: Failed to parse {} from the string.",
-                    trimmed_s
-                )
-            })
+            .ok_or_else(|| eprintln!("Error[Ineteger::from_str]: Failed to parse {trimmed_s} from the string."))
     }
 }

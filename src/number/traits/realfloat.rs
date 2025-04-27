@@ -39,19 +39,17 @@ pub trait RealFloat: RealFrac + Floating {
     ///     traits::realfloat::RealFloat,
     /// };
     ///
-    /// fn main() {
-    ///     let d1 = Double::of(3.14);
-    ///     assert_eq!(
-    ///         d1.decode_float(),
-    ///         (Integer::of_str("7070651414971679").unwrap(), Int::of(-51))
-    ///     );
+    /// let d1 = Double::of(3.14);
+    /// assert_eq!(
+    ///     d1.decode_float(),
+    ///     (Integer::of_str("7070651414971679").unwrap(), Int::of(-51))
+    /// );
     ///
-    ///     let d2 = Double::of(-13.14);
-    ///     assert_eq!(
-    ///         d2.decode_float(),
-    ///         (Integer::of_str("-7397162387956040").unwrap(), Int::of(-49))
-    ///     );
-    /// }
+    /// let d2 = Double::of(-13.14);
+    /// assert_eq!(
+    ///     d2.decode_float(),
+    ///     (Integer::of_str("-7397162387956040").unwrap(), Int::of(-49))
+    /// );
     /// ```
     fn decode_float(self) -> (Integer, Int) {
         let sign = self >= Self::zero();
@@ -96,27 +94,25 @@ pub trait RealFloat: RealFrac + Floating {
             .par_bridge()
             .map(|(idx, &e)| {
                 if e == 1u8 {
-                    non_negative_integral_power(integer_two.clone(), Int::of(idx as i32))
-                        .expect(&format!(
-                            concat!(
-                                "Error[RealFloat::decode_float]: ",
-                                "Failed to compute pow(2, {})"
-                            ),
-                            idx
-                        ))
+                    non_negative_integral_power(integer_two.clone(), Int::of(idx as i32)).expect(&format!(
+                        concat!(
+                            "Error[RealFloat::decode_float]: ",
+                            "Failed to compute pow(2, {})"
+                        ),
+                        idx
+                    ))
                 } else {
                     Integer::zero()
                 }
             })
-            .reduce(|| Integer::zero(), |a, b| a + b)
-            + non_negative_integral_power(integer_two, Self::FLOAT_DIGITS.clone() - Int::one())
-                .expect(&format!(
-                    concat!(
-                        "Error[RealFloat::decode_float]: ",
-                        "Failed to compute pow(2, {})"
-                    ),
-                    Self::FLOAT_DIGITS + Int::one()
-                ));
+            .reduce(Integer::zero, |a, b| a + b)
+            + non_negative_integral_power(integer_two, Self::FLOAT_DIGITS.clone() - Int::one()).expect(&format!(
+                concat!(
+                    "Error[RealFloat::decode_float]: ",
+                    "Failed to compute pow(2, {})"
+                ),
+                Self::FLOAT_DIGITS + Int::one()
+            ));
         significand.sign = sign;
         (significand, exponent)
     }
@@ -148,9 +144,7 @@ pub trait RealFloat: RealFrac + Floating {
     }
 
     /// Return the actual significand in the floating-point representation.
-    fn significand(self) -> Self {
-        Self::encode_float(self.decode_float().0, -Self::FLOAT_DIGITS)
-    }
+    fn significand(self) -> Self { Self::encode_float(self.decode_float().0, -Self::FLOAT_DIGITS) }
 
     /// Multiplies a real floating-point number by an integer power of the radix.
     fn scale_float(self, factor: Int) -> Self {

@@ -7,8 +7,8 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use super::vector::is_row_vector;
 use crate::{
     matrix::{
+        Matrix,
         math::{is_square_matrix, row_eliminate, row_reduce},
-        matrix::Matrix,
         vector::{is_column_vector, layer_product, normalize, project_to},
     },
     number::traits::{fractional::Fractional, number::Number, realfloat::RealFloat},
@@ -21,17 +21,11 @@ use crate::{
 /// ```rust
 /// use rmatrix_ks::matrix::utils::points_2d;
 ///
-/// fn main() {
-///     // Generates coordinates for the lower triangular part of a 3x3 matrix.
-///     let p = points_2d((1, 3), (1, 3), |row, column| row > column);
-///     assert_eq!(p, vec![(2, 1), (3, 1), (3, 2)]);
-/// }
+/// // Generates coordinates for the lower triangular part of a 3x3 matrix.
+/// let p = points_2d((1, 3), (1, 3), |row, column| row > column);
+/// assert_eq!(p, vec![(2, 1), (3, 1), (3, 2)]);
 /// ```
-pub fn points_2d<F>(
-    (row_lb, row_ub): (usize, usize),
-    (col_lb, col_ub): (usize, usize),
-    criteria: F,
-) -> Vec<(usize, usize)>
+pub fn points_2d<F>((row_lb, row_ub): (usize, usize), (col_lb, col_ub): (usize, usize), criteria: F) -> Vec<(usize, usize)>
 where
     F: Fn(usize, usize) -> bool,
 {
@@ -58,15 +52,13 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::trace},
+///     matrix::{Matrix, utils::trace},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Word8>::of(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
-///         .unwrap();
-///     assert_eq!(trace(&m), Word8::of(15));
-/// }
+/// let m =
+///     Matrix::<Word8>::of(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+/// assert_eq!(trace(&m), Word8::of(15));
 /// ```
 pub fn trace<N>(m: &Matrix<N>) -> N
 where
@@ -84,21 +76,19 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::apply},
+///     matrix::{Matrix, utils::apply},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Word8>::of(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
-///         .unwrap();
-///     let n = Matrix::<Word8>::of(
-///         3,
-///         3,
-///         &[2, 4, 6, 8, 10, 12, 14, 16, 18].map(|e| Word8::of(e)),
-///     )
-///     .unwrap();
-///     assert_eq!(apply(&m, |e| e * Word8::of(2)), n);
-/// }
+/// let m =
+///     Matrix::<Word8>::of(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+/// let n = Matrix::<Word8>::of(
+///     3,
+///     3,
+///     &[2, 4, 6, 8, 10, 12, 14, 16, 18].map(|e| Word8::of(e)),
+/// )
+/// .unwrap();
+/// assert_eq!(apply(&m, |e| e * Word8::of(2)), n);
 /// ```
 pub fn apply<N, M, F>(m: &Matrix<N>, f: F) -> Matrix<M>
 where
@@ -120,17 +110,15 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::transpose},
+///     matrix::{Matrix, utils::transpose},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Word8>::of(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e)))
-///         .unwrap();
-///     let n = Matrix::<Word8>::of(3, 3, &[1, 4, 7, 2, 5, 8, 3, 6, 9].map(|e| Word8::of(e)))
-///         .unwrap();
-///     assert_eq!(transpose(&m), n);
-/// }
+/// let m =
+///     Matrix::<Word8>::of(3, 3, &[1, 2, 3, 4, 5, 6, 7, 8, 9].map(|e| Word8::of(e))).unwrap();
+/// let n =
+///     Matrix::<Word8>::of(3, 3, &[1, 4, 7, 2, 5, 8, 3, 6, 9].map(|e| Word8::of(e))).unwrap();
+/// assert_eq!(transpose(&m), n);
 /// ```
 pub fn transpose<N>(m: &Matrix<N>) -> Matrix<N>
 where
@@ -159,21 +147,19 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::project_matrix, vector::column_vector},
+///     matrix::{Matrix, utils::project_matrix, vector::column_vector},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let v1 = column_vector::<Float>(3, &[2.0, 3.0, 4.0].map(Float::of)).unwrap();
-///     let p = project_matrix(&v1);
-///     let p_expect = Matrix::<Float>::of(
-///         3,
-///         3,
-///         &[4.0, 6.0, 8.0, 6.0, 9.0, 12.0, 8.0, 12.0, 16.0].map(|e| Float::of(e / 29.0)),
-///     )
-///     .unwrap();
-///     assert_eq!(p, p_expect);
-/// }
+/// let v1 = column_vector::<Float>(3, &[2.0, 3.0, 4.0].map(Float::of)).unwrap();
+/// let p = project_matrix(&v1);
+/// let p_expect = Matrix::<Float>::of(
+///     3,
+///     3,
+///     &[4.0, 6.0, 8.0, 6.0, 9.0, 12.0, 8.0, 12.0, 16.0].map(|e| Float::of(e / 29.0)),
+/// )
+/// .unwrap();
+/// assert_eq!(p, p_expect);
 /// ```
 pub fn project_matrix<N>(to: &Matrix<N>) -> Matrix<N>
 where
@@ -197,19 +183,17 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::rank},
+///     matrix::{Matrix, utils::rank},
 ///     number::instances::double::Double,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Double>::of(
-///         3,
-///         3,
-///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
-///     )
-///     .unwrap();
-///     assert_eq!(rank(&m), 3);
-/// }
+/// let m = Matrix::<Double>::of(
+///     3,
+///     3,
+///     &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(|e| Double::of(e)),
+/// )
+/// .unwrap();
+/// assert_eq!(rank(&m), 3);
 /// ```
 pub fn rank<N>(m: &Matrix<N>) -> usize
 where
@@ -241,37 +225,31 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::null_space, vector::column_vector},
+///     matrix::{Matrix, utils::null_space, vector::column_vector},
 ///     number::instances::double::Double,
 /// };
 ///
-/// fn main() {
-///     let a = Matrix::<Double>::of(
-///         3,
-///         5,
-///         &[
-///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0,
-///             -4.0,
-///         ]
-///         .map(Double::of),
-///     )
-///     .unwrap();
-///     let ns = null_space(&a);
-///     // For this matrix, the null space contains only three elements.
-///     assert_eq!(ns.len(), 3);
-///     // Second column:
-///     let n1 =
-///         column_vector::<Double>(5, &[2.0, 1.0, 0.0, 0.0, 0.0].map(Double::of)).unwrap();
-///     assert_eq!(ns[0], n1);
-///     // Fourth column:
-///     let n2 =
-///         column_vector::<Double>(5, &[1.0, 0.0, -2.0, 1.0, 0.0].map(Double::of)).unwrap();
-///     assert_eq!(ns[1], n2);
-///     // Fifth column:
-///     let n3 =
-///         column_vector::<Double>(5, &[-3.0, 0.0, 2.0, 0.0, 1.0].map(Double::of)).unwrap();
-///     assert_eq!(ns[2], n3);
-/// }
+/// let a = Matrix::<Double>::of(
+///     3,
+///     5,
+///     &[
+///         -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///     ]
+///     .map(Double::of),
+/// )
+/// .unwrap();
+/// let ns = null_space(&a);
+/// // For this matrix, the null space contains only three elements.
+/// assert_eq!(ns.len(), 3);
+/// // Second column:
+/// let n1 = column_vector::<Double>(5, &[2.0, 1.0, 0.0, 0.0, 0.0].map(Double::of)).unwrap();
+/// assert_eq!(ns[0], n1);
+/// // Fourth column:
+/// let n2 = column_vector::<Double>(5, &[1.0, 0.0, -2.0, 1.0, 0.0].map(Double::of)).unwrap();
+/// assert_eq!(ns[1], n2);
+/// // Fifth column:
+/// let n3 = column_vector::<Double>(5, &[-3.0, 0.0, 2.0, 0.0, 1.0].map(Double::of)).unwrap();
+/// assert_eq!(ns[2], n3);
 /// ```
 pub fn null_space<N>(m: &Matrix<N>) -> Vec<Matrix<N>>
 where
@@ -291,7 +269,7 @@ where
     }
     let mut space = Vec::new();
     // Only rank-deficient matrices have a nullspace.
-    if row_flags.iter().any(|&e| e == 0) {
+    if row_flags.contains(&0) {
         for column in 1..=m.column {
             // The vector corresponding to unmarked columns is an element of the nullspace.
             if row_flags[column - 1] == 0 {
@@ -319,33 +297,30 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::column_space, vector::column_vector},
+///     matrix::{Matrix, utils::column_space, vector::column_vector},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let a = Matrix::<Float>::of(
-///         3,
-///         5,
-///         &[
-///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0,
-///             -4.0,
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     let column_space_a = column_space(&a);
-///     // The column space contains only two elements.
-///     assert_eq!(column_space_a.len(), 2);
-///     assert_eq!(
-///         column_space_a[0],
-///         column_vector::<Float>(3, &[-3.0, 1.0, 2.0].map(Float::of)).unwrap()
-///     );
-///     assert_eq!(
-///         column_space_a[1],
-///         column_vector::<Float>(3, &[-1.0, 2.0, 5.0].map(Float::of)).unwrap()
-///     );
-/// }
+/// let a = Matrix::<Float>::of(
+///     3,
+///     5,
+///     &[
+///         -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///     ]
+///     .map(Float::of),
+/// )
+/// .unwrap();
+/// let column_space_a = column_space(&a);
+/// // The column space contains only two elements.
+/// assert_eq!(column_space_a.len(), 2);
+/// assert_eq!(
+///     column_space_a[0],
+///     column_vector::<Float>(3, &[-3.0, 1.0, 2.0].map(Float::of)).unwrap()
+/// );
+/// assert_eq!(
+///     column_space_a[1],
+///     column_vector::<Float>(3, &[-1.0, 2.0, 5.0].map(Float::of)).unwrap()
+/// );
 /// ```
 pub fn column_space<N>(m: &Matrix<N>) -> Vec<Matrix<N>>
 where
@@ -385,33 +360,30 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::row_space, vector::column_vector},
+///     matrix::{Matrix, utils::row_space, vector::column_vector},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let a = Matrix::<Float>::of(
-///         3,
-///         5,
-///         &[
-///             -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0,
-///             -4.0,
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     let row_space_a = row_space(&a);
-///     // The column space contains only two elements.
-///     assert_eq!(row_space_a.len(), 2);
-///     assert_eq!(
-///         row_space_a[0],
-///         column_vector::<Float>(5, &[-3.0, 6.0, -1.0, 1.0, -7.0].map(Float::of)).unwrap()
-///     );
-///     assert_eq!(
-///         row_space_a[1],
-///         column_vector::<Float>(5, &[1.0, -2.0, 2.0, 3.0, -1.0].map(Float::of)).unwrap()
-///     );
-/// }
+/// let a = Matrix::<Float>::of(
+///     3,
+///     5,
+///     &[
+///         -3.0, 6.0, -1.0, 1.0, -7.0, 1.0, -2.0, 2.0, 3.0, -1.0, 2.0, -4.0, 5.0, 8.0, -4.0,
+///     ]
+///     .map(Float::of),
+/// )
+/// .unwrap();
+/// let row_space_a = row_space(&a);
+/// // The column space contains only two elements.
+/// assert_eq!(row_space_a.len(), 2);
+/// assert_eq!(
+///     row_space_a[0],
+///     column_vector::<Float>(5, &[-3.0, 6.0, -1.0, 1.0, -7.0].map(Float::of)).unwrap()
+/// );
+/// assert_eq!(
+///     row_space_a[1],
+///     column_vector::<Float>(5, &[1.0, -2.0, 2.0, 3.0, -1.0].map(Float::of)).unwrap()
+/// );
 /// ```
 pub fn row_space<N>(m: &Matrix<N>) -> Vec<Matrix<N>>
 where
@@ -430,17 +402,15 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::horizontal_concat},
+///     matrix::{Matrix, utils::horizontal_concat},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Word8>::of(2, 2, &[1, 2, 3, 4].map(|e| Word8::of(e))).unwrap();
-///     let n = Matrix::<Word8>::of(2, 2, &[5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
-///     let cat =
-///         Matrix::<Word8>::of(2, 4, &[1, 2, 5, 6, 3, 4, 7, 8].map(|e| Word8::of(e))).unwrap();
-///     assert_eq!(horizontal_concat(&m, &n), cat);
-/// }
+/// let m = Matrix::<Word8>::of(2, 2, &[1, 2, 3, 4].map(|e| Word8::of(e))).unwrap();
+/// let n = Matrix::<Word8>::of(2, 2, &[5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
+/// let cat =
+///     Matrix::<Word8>::of(2, 4, &[1, 2, 5, 6, 3, 4, 7, 8].map(|e| Word8::of(e))).unwrap();
+/// assert_eq!(horizontal_concat(&m, &n), cat);
 /// ```
 pub fn horizontal_concat<N>(m1: &Matrix<N>, m2: &Matrix<N>) -> Matrix<N>
 where
@@ -481,17 +451,15 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::vertical_concat},
+///     matrix::{Matrix, utils::vertical_concat},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Word8>::of(2, 2, &[1, 2, 3, 4].map(|e| Word8::of(e))).unwrap();
-///     let n = Matrix::<Word8>::of(2, 2, &[5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
-///     let cat =
-///         Matrix::<Word8>::of(4, 2, &[1, 2, 3, 4, 5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
-///     assert_eq!(vertical_concat(&m, &n), cat);
-/// }
+/// let m = Matrix::<Word8>::of(2, 2, &[1, 2, 3, 4].map(|e| Word8::of(e))).unwrap();
+/// let n = Matrix::<Word8>::of(2, 2, &[5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
+/// let cat =
+///     Matrix::<Word8>::of(4, 2, &[1, 2, 3, 4, 5, 6, 7, 8].map(|e| Word8::of(e))).unwrap();
+/// assert_eq!(vertical_concat(&m, &n), cat);
 /// ```
 pub fn vertical_concat<N>(m1: &Matrix<N>, m2: &Matrix<N>) -> Matrix<N>
 where
@@ -528,18 +496,16 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::from_columns, vector::column_vector},
+///     matrix::{Matrix, utils::from_columns, vector::column_vector},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let v1 = column_vector(3, &[1, 2, 3].map(Word8::of)).unwrap();
-///     let v2 = column_vector(3, &[4, 7, 9].map(Word8::of)).unwrap();
-///     let v3 = column_vector(3, &[5, 8, 6].map(Word8::of)).unwrap();
-///     let m = from_columns(3, 3, &[v1, v2, v3]);
-///     let m_expect = Matrix::of(3, 3, &[1, 4, 5, 2, 7, 8, 3, 9, 6].map(Word8::of));
-///     assert_eq!(m, m_expect);
-/// }
+/// let v1 = column_vector(3, &[1, 2, 3].map(Word8::of)).unwrap();
+/// let v2 = column_vector(3, &[4, 7, 9].map(Word8::of)).unwrap();
+/// let v3 = column_vector(3, &[5, 8, 6].map(Word8::of)).unwrap();
+/// let m = from_columns(3, 3, &[v1, v2, v3]);
+/// let m_expect = Matrix::of(3, 3, &[1, 4, 5, 2, 7, 8, 3, 9, 6].map(Word8::of));
+/// assert_eq!(m, m_expect);
 /// ```
 pub fn from_columns<N>(row: usize, column: usize, columns: &[Matrix<N>]) -> Option<Matrix<N>>
 where
@@ -551,9 +517,10 @@ where
     {
         let mut inner = Vec::with_capacity(row * column);
         for row_index in 1..=row {
-            for column_index in 0..column {
-                inner.push(columns[column_index][(row_index, 1)].clone());
-            }
+            columns
+                .iter()
+                .take(column)
+                .for_each(|e| inner.push(e[(row_index, 1)].clone()));
         }
         Some(Matrix { inner, row, column })
     } else {
@@ -568,18 +535,16 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{matrix::Matrix, utils::from_rows, vector::row_vector},
+///     matrix::{Matrix, utils::from_rows, vector::row_vector},
 ///     number::instances::word8::Word8,
 /// };
 ///
-/// fn main() {
-///     let v1 = row_vector(3, &[1, 2, 3].map(Word8::of)).unwrap();
-///     let v2 = row_vector(3, &[4, 7, 9].map(Word8::of)).unwrap();
-///     let v3 = row_vector(3, &[5, 8, 6].map(Word8::of)).unwrap();
-///     let m = from_rows(3, 3, &[v1, v2, v3]);
-///     let m_expect = Matrix::of(3, 3, &[1, 2, 3, 4, 7, 9, 5, 8, 6].map(Word8::of));
-///     assert_eq!(m, m_expect);
-/// }
+/// let v1 = row_vector(3, &[1, 2, 3].map(Word8::of)).unwrap();
+/// let v2 = row_vector(3, &[4, 7, 9].map(Word8::of)).unwrap();
+/// let v3 = row_vector(3, &[5, 8, 6].map(Word8::of)).unwrap();
+/// let m = from_rows(3, 3, &[v1, v2, v3]);
+/// let m_expect = Matrix::of(3, 3, &[1, 2, 3, 4, 7, 9, 5, 8, 6].map(Word8::of));
+/// assert_eq!(m, m_expect);
 /// ```
 pub fn from_rows<N>(row: usize, column: usize, rows: &[Matrix<N>]) -> Option<Matrix<N>>
 where
@@ -590,11 +555,11 @@ where
         .all(|v| is_row_vector(v) && v.column == column)
     {
         let mut inner = Vec::with_capacity(row * column);
-        for row_index in 0..row {
+        rows.iter().take(row).for_each(|e| {
             for column_index in 1..=column {
-                inner.push(rows[row_index][(1, column_index)].clone());
+                inner.push(e[(1, column_index)].clone());
             }
-        }
+        });
         Some(Matrix { inner, row, column })
     } else {
         eprintln!(concat!("Error[matrix::utils::from_rows]: ", ""));
@@ -610,7 +575,7 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
-///         matrix::Matrix,
+///         Matrix,
 ///         utils::{apply, gram_schmidt_process},
 ///         vector::dot_product,
 ///     },
@@ -620,36 +585,34 @@ where
 ///     },
 /// };
 ///
-/// fn main() {
-///     let basis =
-///         Matrix::<Float>::of(3, 2, &[1.0, 0.0, 1.0, 1.0, 1.0, 1.0].map(Float::of)).unwrap();
-///     let ob = gram_schmidt_process(&basis);
-///     let c1 = apply(&ob.get_column(1).unwrap(), |e: &Float| e.clone());
-///     let c2 = apply(&ob.get_column(2).unwrap(), |e: &Float| e.clone());
-///     // Each column vector is normalized.
-///     assert_eq!(
-///         (dot_product(&c1, &c1), dot_product(&c2, &c2)),
-///         (Float::one(), Float::one())
-///     );
-///     // The column vectors are mutually orthogonal.
-///     assert_eq!(dot_product(&c1, &c2), Float::zero());
-///     // Corresponding orthogonal basis.
-///     let ob_expect = Matrix::<Float>::of(
-///         3,
-///         2,
-///         &[
-///             1.0 / 3.0f32.sqrt(),
-///             -2.0 / 6.0f32.sqrt(),
-///             1.0 / 3.0f32.sqrt(),
-///             1.0 / 6.0f32.sqrt(),
-///             1.0 / 3.0f32.sqrt(),
-///             1.0 / 6.0f32.sqrt(),
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     assert_eq!(ob, ob_expect);
-/// }
+/// let basis =
+///     Matrix::<Float>::of(3, 2, &[1.0, 0.0, 1.0, 1.0, 1.0, 1.0].map(Float::of)).unwrap();
+/// let ob = gram_schmidt_process(&basis);
+/// let c1 = apply(&ob.get_column(1).unwrap(), |e: &Float| e.clone());
+/// let c2 = apply(&ob.get_column(2).unwrap(), |e: &Float| e.clone());
+/// // Each column vector is normalized.
+/// assert_eq!(
+///     (dot_product(&c1, &c1), dot_product(&c2, &c2)),
+///     (Float::one(), Float::one())
+/// );
+/// // The column vectors are mutually orthogonal.
+/// assert_eq!(dot_product(&c1, &c2), Float::zero());
+/// // Corresponding orthogonal basis.
+/// let ob_expect = Matrix::<Float>::of(
+///     3,
+///     2,
+///     &[
+///         1.0 / 3.0f32.sqrt(),
+///         -2.0 / 6.0f32.sqrt(),
+///         1.0 / 3.0f32.sqrt(),
+///         1.0 / 6.0f32.sqrt(),
+///         1.0 / 3.0f32.sqrt(),
+///         1.0 / 6.0f32.sqrt(),
+///     ]
+///     .map(Float::of),
+/// )
+/// .unwrap();
+/// assert_eq!(ob, ob_expect);
 /// ```
 pub fn gram_schmidt_process<N>(basis: &Matrix<N>) -> Matrix<N>
 where
@@ -695,36 +658,34 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{math::is_orthogonal_matrix, matrix::Matrix, utils::givens_rotation_matrix},
+///     matrix::{Matrix, math::is_orthogonal_matrix, utils::givens_rotation_matrix},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Float>::of(
-///         4,
-///         4,
-///         &[
-///             1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 9.2, 10.1, 11.0, 12.9, 13.8, 14.7,
-///             15.6, 16.5,
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     let g = givens_rotation_matrix(&m, 4, 1);
-///     assert!(is_orthogonal_matrix(&g));
-///     let p = g * m;
-///     let p_expect = Matrix::<Float>::of(
-///         4,
-///         4,
-///         &[
-///             1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 16.5855, 17.8336, 19.0817, 20.8845,
-///             0.0, -0.2496, -0.4992, -1.5809,
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     assert_eq!(p, p_expect);
-/// }
+/// let m = Matrix::<Float>::of(
+///     4,
+///     4,
+///     &[
+///         1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 9.2, 10.1, 11.0, 12.9, 13.8, 14.7, 15.6,
+///         16.5,
+///     ]
+///     .map(Float::of),
+/// )
+/// .unwrap();
+/// let g = givens_rotation_matrix(&m, 4, 1);
+/// assert!(is_orthogonal_matrix(&g));
+/// let p = g * m;
+/// let p_expect = Matrix::<Float>::of(
+///     4,
+///     4,
+///     &[
+///         1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 16.5855, 17.8336, 19.0817, 20.8845, 0.0,
+///         -0.2496, -0.4992, -1.5809,
+///     ]
+///     .map(Float::of),
+/// )
+/// .unwrap();
+/// assert_eq!(p, p_expect);
 /// ```
 pub fn givens_rotation_matrix<N>(m: &Matrix<N>, row: usize, column: usize) -> Matrix<N>
 where
@@ -762,34 +723,32 @@ where
 /// use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 /// use rmatrix_ks::{
 ///     matrix::{
+///         Matrix,
 ///         math::is_orthogonal_matrix,
-///         matrix::Matrix,
 ///         utils::{hessenberg_decomposition, points_2d, transpose},
 ///     },
 ///     number::{instances::float::Float, traits::zero::Zero},
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Float>::of(
-///         4,
-///         4,
-///         &[
-///             1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 9.2, 10.1, 11.0, 12.9, 13.8, 14.7,
-///             15.6, 16.5,
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     let (p, h) = hessenberg_decomposition(&m);
-///     assert!(
-///         points_2d((1, 4), (1, 4), |r, c| r > c + 1)
-///             .par_iter()
-///             .all(|&p| h[p].is_zero())
-///     );
-///     assert!(is_orthogonal_matrix(&p));
-///     // P . H . P^T == M
-///     assert!(p.clone() * h * transpose(&p) == m);
-/// }
+/// let m = Matrix::<Float>::of(
+///     4,
+///     4,
+///     &[
+///         1.0, 2.9, 3.8, 4.7, 5.6, 6.5, 7.4, 8.3, 9.2, 10.1, 11.0, 12.9, 13.8, 14.7, 15.6,
+///         16.5,
+///     ]
+///     .map(Float::of),
+/// )
+/// .unwrap();
+/// let (p, h) = hessenberg_decomposition(&m);
+/// assert!(
+///     points_2d((1, 4), (1, 4), |r, c| r > c + 1)
+///         .par_iter()
+///         .all(|&p| h[p].is_zero())
+/// );
+/// assert!(is_orthogonal_matrix(&p));
+/// // P . H . P^T == M
+/// assert!(p.clone() * h * transpose(&p) == m);
 /// ```
 pub fn hessenberg_decomposition<N>(m: &Matrix<N>) -> (Matrix<N>, Matrix<N>)
 where

@@ -6,8 +6,8 @@
 
 use rmatrix_ks::{
     matrix::{
+        Matrix,
         complex::{is_hermitian_matrix, moore_penrose_inverse},
-        matrix::Matrix,
     },
     number::instances::{complex::Complex, float::Float},
 };

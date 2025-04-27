@@ -38,7 +38,7 @@ impl Double {
     /// ```rust
     /// use rmatrix_ks::number::instances::double::Double;
     ///
-    /// fn main() { let _d = Double::of(12.0); }
+    /// let _d = Double::of(12.0);
     /// ```
     pub const fn of(num: f64) -> Self { Self { inner: num } }
 
@@ -49,15 +49,11 @@ impl Double {
     /// ```rust
     /// use rmatrix_ks::number::{instances::double::Double, traits::zero::Zero};
     ///
-    /// fn main() {
-    ///     let sd = Double::of_str("-12.0").unwrap();
-    ///     let d = Double::of(-12.0);
-    ///     assert!((sd - d).is_zero());
-    /// }
+    /// let sd = Double::of_str("-12.0").unwrap();
+    /// let d = Double::of(-12.0);
+    /// assert!((sd - d).is_zero());
     /// ```
-    pub fn of_str(float_number: &str) -> Option<Self> {
-        std::str::FromStr::from_str(float_number).ok()
-    }
+    pub fn of_str(float_number: &str) -> Option<Self> { std::str::FromStr::from_str(float_number).ok() }
 
     /// Get the raw value of a double number.
     ///
@@ -66,10 +62,8 @@ impl Double {
     /// ```rust
     /// use rmatrix_ks::number::{instances::double::Double, traits::zero::Zero};
     ///
-    /// fn main() {
-    ///     let d = Double::of(3.2);
-    ///     assert!(Double::of(d.raw() - 3.2).is_zero());
-    /// }
+    /// let d = Double::of(3.2);
+    /// assert!(Double::of(d.raw() - 3.2).is_zero());
     /// ```
     pub fn raw(&self) -> f64 { self.inner }
 }
@@ -85,10 +79,8 @@ impl Zero for Double {
     /// ```rust
     /// use rmatrix_ks::number::{instances::double::Double, traits::zero::Zero};
     ///
-    /// fn main() {
-    ///     let d = Double::of(f64::EPSILON);
-    ///     assert!(d.is_zero());
-    /// }
+    /// let d = Double::of(f64::EPSILON);
+    /// assert!(d.is_zero());
     /// ```
     fn is_zero(&self) -> bool { self.inner.abs() <= 1.9073486328125e-6 }
 }
@@ -189,11 +181,9 @@ impl Number for Double {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let i1 = Integer::of_str("12345678910").unwrap();
-    ///     let d1 = Double::from_integer(i1);
-    ///     assert_eq!(d1, Double::of(12345678910.0));
-    /// }
+    /// let i1 = Integer::of_str("12345678910").unwrap();
+    /// let d1 = Double::from_integer(i1);
+    /// assert_eq!(d1, Double::of(12345678910.0));
     /// ```
     ///
     /// ## Warnings
@@ -210,14 +200,12 @@ impl Number for Double {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let i2 = Integer::of_str("123456789101112131415161718192021222324252627").unwrap();
-    ///     let d2 = Double::from_integer(i2);
-    ///     assert_eq!(
-    ///         d2,
-    ///         Double::of(123456789101112130000000000000000000000000000.0)
-    ///     );
-    /// }
+    /// let i2 = Integer::of_str("123456789101112131415161718192021222324252627").unwrap();
+    /// let d2 = Double::from_integer(i2);
+    /// assert_eq!(
+    ///     d2,
+    ///     Double::of(123456789101112130000000000000000000000000000.0)
+    /// );
     /// ```
     ///
     /// </div>
@@ -225,12 +213,9 @@ impl Number for Double {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{:?}", integer_number)
+            let inner = format!("{integer_number:?}")
                 .parse::<f64>()
-                .expect(&format!(
-                    "Error[Double::from_Integer]: ({}) should be a valid f64 number.",
-                    integer_number
-                ));
+                .unwrap_or_else(|_| panic!("Error[Double::from_Integer]: ({integer_number}) should be a valid f64 number."));
             Self { inner }
         }
     }
@@ -281,18 +266,15 @@ impl Real for Double {
     ///     traits::real::Real,
     /// };
     ///
-    /// fn main() {
-    ///     let m = Double::of(3.14);
-    ///     let m_rat = m.to_rational();
-    ///     let rat_expect = Rational::of_str("7070651414971679 % 2251799813685248").unwrap();
-    ///     assert_eq!(m_rat, rat_expect);
-    /// }
+    /// let m = Double::of(3.14);
+    /// let m_rat = m.to_rational();
+    /// let rat_expect = Rational::of_str("7070651414971679 % 2251799813685248").unwrap();
+    /// assert_eq!(m_rat, rat_expect);
     /// ```
     fn to_rational(self) -> Rational {
         assert!(
             !(self.is_not_a_number() || self.is_infinite_number()),
-            "Error[Double::to_rational]: {} is not a valid floating number",
-            self
+            "Error[Double::to_rational]: {self} is not a valid floating number"
         );
 
         if self.is_zero() {
@@ -302,12 +284,10 @@ impl Real for Double {
             }
         } else {
             let (sig, exp) = self.decode_float();
-            let denominator =
-                non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value())
-                    .expect(concat!(
-                        "Error[Double::to_rational]: ",
-                        "Failed to compute the denominator via exponentiation."
-                    ));
+            let denominator = non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value()).expect(concat!(
+                "Error[Double::to_rational]: ",
+                "Failed to compute the denominator via exponentiation."
+            ));
             Rational::of(sig, denominator).refine()
         }
     }
@@ -407,23 +387,18 @@ impl Fractional for Double {
     }
 
     fn from_rational(rational_number: Rational) -> Self {
-        Self::from_integer(rational_number.numerator)
-            / Self::from_integer(rational_number.denominator)
+        Self::from_integer(rational_number.numerator) / Self::from_integer(rational_number.denominator)
     }
 }
 
 /// Implement Display for Double.
 impl std::fmt::Display for Double {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.inner) }
 }
 
 /// Implement Debug for Double.
 impl std::fmt::Debug for Double {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:+}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:+}", self.inner) }
 }
 
 /// Implement FromStr for Double.
@@ -435,10 +410,7 @@ impl std::str::FromStr for Double {
         if let Ok(num) = trimmed_s.parse::<f64>() {
             Ok(Self { inner: num })
         } else {
-            eprintln!(
-                "Error[Double::from_str]: ({}) is not a valid Double literal.",
-                trimmed_s
-            );
+            eprintln!("Error[Double::from_str]: ({trimmed_s}) is not a valid Double literal.");
             Err(())
         }
     }
@@ -462,10 +434,7 @@ impl UniformSampler for UniformF64 {
         )?))
     }
 
-    fn new_inclusive<B1, B2>(
-        low: B1,
-        high: B2,
-    ) -> Result<UniformF64, rand::distr::uniform::Error>
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Result<UniformF64, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
@@ -476,9 +445,7 @@ impl UniformSampler for UniformF64 {
         )?))
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        Self::X::of(self.0.sample(rng))
-    }
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X { Self::X::of(self.0.sample(rng)) }
 }
 
 /// Implement uniform sampling for double numbers.

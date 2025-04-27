@@ -8,7 +8,7 @@ use rand::{Rng, distr::uniform::SampleUniform};
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use rmatrix_ks::{
     matrix::{
-        matrix::Matrix,
+        Matrix,
         serde::{from_file, to_file},
         utils::{apply, transpose},
         vector::{basis_vector, column_vector, is_column_vector, layer_product},
@@ -118,10 +118,7 @@ where
     let data = column_vector(
         img.len(),
         &img.iter()
-            .map(|&e| {
-                from_integral::<N, Word8>(Word8::of(e))
-                    / from_integral::<N, Word>(Word::of(256))
-            })
+            .map(|&e| from_integral::<N, Word8>(Word8::of(e)) / from_integral::<N, Word>(Word::of(256)))
             .collect::<Vec<N>>(),
     )
     .unwrap();
@@ -149,12 +146,12 @@ pub fn buffer_to_usize(buf: &[u8], is_big_endian: bool) -> usize {
     let mut p = 0;
     if is_big_endian {
         for idx in (0..buf.len()).rev() {
-            p = p + buf[idx] as usize * 2usize.pow(8 * ((buf.len() - idx) as u32 - 1));
+            p += buf[idx] as usize * 2usize.pow(8 * ((buf.len() - idx) as u32 - 1));
         }
     } else {
-        for idx in 0..buf.len() {
-            p = p + buf[idx] as usize * 2usize.pow(8 * idx as u32);
-        }
+        buf.iter()
+            .enumerate()
+            .for_each(|(idx, e)| p += *e as usize * 2usize.pow(8 * idx as u32));
     }
     p
 }
@@ -170,17 +167,20 @@ where
         .unwrap();
     let mut reader = buffer.iter().skip(4);
     let mut number_buffer = [0u8; 4];
-    for p in 0..4 {
-        number_buffer[p] = reader.next().unwrap().clone();
-    }
+    number_buffer
+        .iter_mut()
+        .take(4)
+        .for_each(|p| *p = *reader.next().unwrap());
     let image_count = buffer_to_usize(&number_buffer, true);
-    for p in 0..4 {
-        number_buffer[p] = reader.next().unwrap().clone();
-    }
+    number_buffer
+        .iter_mut()
+        .take(4)
+        .for_each(|p| *p = *reader.next().unwrap());
     let row_shape = buffer_to_usize(&number_buffer, true) as u32;
-    for p in 0..4 {
-        number_buffer[p] = reader.next().unwrap().clone();
-    }
+    number_buffer
+        .iter_mut()
+        .take(4)
+        .for_each(|p| *p = *reader.next().unwrap());
     let column_shape = buffer_to_usize(&number_buffer, true) as u32;
     let mnist_data = reader.cloned().collect::<Vec<u8>>();
     let mnist_data = mnist_data
@@ -203,15 +203,16 @@ where
         .unwrap();
     let mut reader = buffer.iter().skip(4);
     let mut number_buffer = [0u8; 4];
-    for p in 0..4 {
-        number_buffer[p] = reader.next().unwrap().clone();
-    }
+    number_buffer
+        .iter_mut()
+        .take(4)
+        .for_each(|p| *p = *reader.next().unwrap());
     let label_count = buffer_to_usize(&number_buffer, true);
     let mnist_label_data = reader.cloned().collect::<Vec<u8>>();
     (label_count, mnist_label_data)
 }
 
-pub fn read_mnist_label(data: &[u8], idx: usize) -> u8 { data[idx].clone() }
+pub fn read_mnist_label(data: &[u8], idx: usize) -> u8 { data[idx] }
 
 pub fn mnist_image_buffer_save(filename: &str, buf: &[u8], shape: (u32, u32)) {
     image::save_buffer(
@@ -224,11 +225,7 @@ pub fn mnist_image_buffer_save(filename: &str, buf: &[u8], shape: (u32, u32)) {
     .unwrap();
 }
 
-fn validate_loss<N>(
-    validate_dataset: &[Vec<u8>],
-    validate_labels: &[u8],
-    parameters: (&Matrix<N>, &Matrix<N>, &Matrix<N>),
-) -> N
+fn validate_loss<N>(validate_dataset: &[Vec<u8>], validate_labels: &[u8], parameters: (&Matrix<N>, &Matrix<N>, &Matrix<N>)) -> N
 where
     N: RealFloat,
 {
@@ -277,8 +274,7 @@ where
     N: RealFloat + SampleUniform,
 {
     // load train data
-    let (count, row_shape, column_shape, mnist_data) =
-        load_mnist_images("data/mnist/train-images.idx3-ubyte");
+    let (count, row_shape, column_shape, mnist_data) = load_mnist_images("data/mnist/train-images.idx3-ubyte");
     let (_, mnist_label_data) = load_mnist_labels("data/mnist/train-labels.idx1-ubyte");
 
     // init parameters, only two layer
@@ -295,8 +291,7 @@ where
         init_boundary,
     );
     let mut learn_rate = init_learn_rate;
-    let nine_over_ten =
-        from_integral::<N, Word8>(Word8::of(9)) / from_integral::<N, Word8>(Word8::of(10));
+    let nine_over_ten = from_integral::<N, Word8>(Word8::of(9)) / from_integral::<N, Word8>(Word8::of(10));
 
     // split validate dataset
     let validate_count = (count as f32 * validate).round_ties_even() as usize;
@@ -312,10 +307,7 @@ where
             .par_bridge()
             .map(|idx| {
                 grad_parameters(
-                    &read_mnist_image(
-                        &train_set[(p * batch_count)..((p + 1) * batch_count)],
-                        idx,
-                    ),
+                    &read_mnist_image(&train_set[(p * batch_count)..((p + 1) * batch_count)], idx),
                     train_label_set[(p * batch_count)..((p + 1) * batch_count)][idx],
                     (&b0, &w1, &b1),
                 )
@@ -377,10 +369,7 @@ where
     let data = column_vector(
         img.len(),
         &img.iter()
-            .map(|&e| {
-                from_integral::<N, Word8>(Word8::of(e))
-                    / from_integral::<N, Word>(Word::of(256))
-            })
+            .map(|&e| from_integral::<N, Word8>(Word8::of(e)) / from_integral::<N, Word>(Word::of(256)))
             .collect::<Vec<N>>(),
     )
     .unwrap();
@@ -397,8 +386,7 @@ fn main() {
     train(160, 0.05, Float::of(1.92), boundary); // comment to skip train
 
     // load test data
-    let (count, row_shape, column_shape, test_mnist_data) =
-        load_mnist_images("data/mnist/t10k-images.idx3-ubyte");
+    let (count, row_shape, column_shape, test_mnist_data) = load_mnist_images("data/mnist/t10k-images.idx3-ubyte");
     let (_, test_mnist_label_data) = load_mnist_labels("data/mnist/t10k-labels.idx1-ubyte");
 
     // load trained parameters
@@ -430,5 +418,5 @@ fn main() {
             max = p;
         }
     }
-    println!("load label: {}, pred: {}", label, max);
+    println!("load label: {label}, pred: {max}");
 }

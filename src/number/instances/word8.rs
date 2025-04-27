@@ -26,7 +26,7 @@ impl Word8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::word8::Word8;
     ///
-    /// fn main() { let _w = Word8::of(12); }
+    /// let _w = Word8::of(12);
     /// ```
     pub const fn of(num: u8) -> Self { Self { inner: num } }
 
@@ -37,15 +37,11 @@ impl Word8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::word8::Word8;
     ///
-    /// fn main() {
-    ///     let sw = Word8::of_str("23").unwrap();
-    ///     let w = Word8::of(23);
-    ///     assert_eq!(sw, w);
-    /// }
+    /// let sw = Word8::of_str("23").unwrap();
+    /// let w = Word8::of(23);
+    /// assert_eq!(sw, w);
     /// ```
-    pub fn of_str(uint8_number: &str) -> Option<Self> {
-        std::str::FromStr::from_str(uint8_number).ok()
-    }
+    pub fn of_str(uint8_number: &str) -> Option<Self> { std::str::FromStr::from_str(uint8_number).ok() }
 
     /// Return the digit at each position.
     ///
@@ -54,17 +50,15 @@ impl Word8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::word8::Word8;
     ///
-    /// fn main() {
-    ///     let w = Word8::of(254);
-    ///     let digits = w.digits();
-    ///     assert_eq!(digits, vec![2, 5, 4]);
-    /// }
+    /// let w = Word8::of(254);
+    /// let digits = w.digits();
+    /// assert_eq!(digits, vec![2, 5, 4]);
     /// ```
     pub fn digits(&self) -> Vec<u8> {
         let string_view = self.inner.to_string();
         string_view
             .chars()
-            .map(|digit: char| digit as u8 - '0' as u8)
+            .map(|digit: char| digit as u8 - b'0')
             .collect::<Vec<_>>()
     }
 
@@ -75,10 +69,8 @@ impl Word8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::word8::Word8;
     ///
-    /// fn main() {
-    ///     let w = Word8::of(69);
-    ///     assert_eq!(w.raw(), 69);
-    /// }
+    /// let w = Word8::of(69);
+    /// assert_eq!(w.raw(), 69);
     /// ```
     pub fn raw(&self) -> u8 { self.inner }
 }
@@ -115,10 +107,8 @@ impl std::ops::Neg for Word8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::word8::Word8;
     ///
-    /// fn main() {
-    ///     let w = Word8::of(12);
-    ///     assert_eq!(-w, Word8::of(243));
-    /// }
+    /// let w = Word8::of(12);
+    /// assert_eq!(-w, Word8::of(243));
     /// ```
     fn neg(self) -> Self::Output {
         Self {
@@ -186,11 +176,9 @@ impl Number for Word8 {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let integer = Integer::of_str("18");
-    ///     let word = integer.map(|w| Word8::from_integer(w));
-    ///     assert_eq!(word, Some(Word8::of(18)));
-    /// }
+    /// let integer = Integer::of_str("18");
+    /// let word = integer.map(|w| Word8::from_integer(w));
+    /// assert_eq!(word, Some(Word8::of(18)));
     /// ```
     ///
     /// ## Panics
@@ -204,22 +192,17 @@ impl Number for Word8 {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let integer = Integer::of_str("576");
-    ///     // Panic occurs here.
-    ///     let _ = integer.map(|w| Word8::from_integer(w));
-    /// }
+    /// let integer = Integer::of_str("576");
+    /// // Panic occurs here.
+    /// let _ = integer.map(|w| Word8::from_integer(w));
     /// ```
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{:?}", integer_number)
+            let inner = format!("{integer_number:?}")
                 .parse::<u8>()
-                .expect(&format!(
-                    "Error[Word8::from_Integer]: ({}) should be a valid u8 number.",
-                    integer_number
-                ));
+                .unwrap_or_else(|_| panic!("Error[Word8::from_Integer]: ({integer_number}) should be a valid u8 number."));
             Self { inner }
         }
     }
@@ -259,25 +242,19 @@ impl Integral for Word8 {
     }
 
     fn to_integer(self) -> Integer {
-        Integer::of_str(&format!("{}", self)).expect(&format!(
-            "Error[Word8::to_integer]: ({}) should be a valid Integer.",
-            self
-        ))
+        Integer::of_str(&format!("{self}"))
+            .unwrap_or_else(|| panic!("Error[Word8::to_integer]: ({self}) should be a valid Integer."))
     }
 }
 
 /// Implement Display for Word8.
 impl std::fmt::Display for Word8 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.inner) }
 }
 
 /// Implement Debug for Word8.
 impl std::fmt::Debug for Word8 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:+}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:+}", self.inner) }
 }
 
 /// Implement FromStr for Word8.
@@ -289,10 +266,7 @@ impl std::str::FromStr for Word8 {
         if let Ok(num) = trimmed_s.parse::<u8>() {
             Ok(Self { inner: num })
         } else {
-            eprintln!(
-                "Error[Word8::from_str]: ({}) is not a valid Word8 literal.",
-                trimmed_s
-            );
+            eprintln!("Error[Word8::from_str]: ({trimmed_s}) is not a valid Word8 literal.");
             Err(())
         }
     }
@@ -316,10 +290,7 @@ impl UniformSampler for UniformU8 {
         )?))
     }
 
-    fn new_inclusive<B1, B2>(
-        low: B1,
-        high: B2,
-    ) -> Result<UniformU8, rand::distr::uniform::Error>
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Result<UniformU8, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
@@ -330,9 +301,7 @@ impl UniformSampler for UniformU8 {
         )?))
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        Self::X::of(self.0.sample(rng))
-    }
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X { Self::X::of(self.0.sample(rng)) }
 }
 
 /// Implement uniform sampling for word8 numbers.
