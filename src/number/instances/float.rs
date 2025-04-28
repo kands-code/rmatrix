@@ -37,7 +37,7 @@ impl Float {
     /// ```rust
     /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
     ///
-    /// fn main() { let _f = Float::of(12.0); }
+    /// let _f = Float::of(12.0);
     /// ```
     pub const fn of(num: f32) -> Self { Self { inner: num } }
 
@@ -48,15 +48,11 @@ impl Float {
     /// ```rust
     /// use rmatrix_ks::number::instances::float::Float;
     ///
-    /// fn main() {
-    ///     let sf = Float::of_str("-12.0").unwrap();
-    ///     let f = Float::of(-12.0);
-    ///     assert_eq!(sf, f);
-    /// }
+    /// let sf = Float::of_str("-12.0").unwrap();
+    /// let f = Float::of(-12.0);
+    /// assert_eq!(sf, f);
     /// ```
-    pub fn of_str(float_number: &str) -> Option<Self> {
-        std::str::FromStr::from_str(float_number).ok()
-    }
+    pub fn of_str(float_number: &str) -> Option<Self> { std::str::FromStr::from_str(float_number).ok() }
 
     /// Get the raw value of a float number.
     ///
@@ -65,10 +61,8 @@ impl Float {
     /// ```rust
     /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
     ///
-    /// fn main() {
-    ///     let d = Float::of(3.2);
-    ///     assert!(Float::of(d.raw() - 3.2).is_zero());
-    /// }
+    /// let d = Float::of(3.2);
+    /// assert!(Float::of(d.raw() - 3.2).is_zero());
     /// ```
     pub fn raw(&self) -> f32 { self.inner }
 }
@@ -84,10 +78,8 @@ impl Zero for Float {
     /// ```rust
     /// use rmatrix_ks::number::{instances::float::Float, traits::zero::Zero};
     ///
-    /// fn main() {
-    ///     let f = Float::of(f32::EPSILON);
-    ///     assert!(f.is_zero());
-    /// }
+    /// let f = Float::of(f32::EPSILON);
+    /// assert!(f.is_zero());
     /// ```
     fn is_zero(&self) -> bool { self.inner.abs() <= 1.953125e-3 }
 }
@@ -188,11 +180,9 @@ impl Number for Float {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let i1 = Integer::of_str("123456789").unwrap();
-    ///     let f1 = Float::from_integer(i1);
-    ///     assert_eq!(f1, Float::of(123456789.0));
-    /// }
+    /// let i1 = Integer::of_str("123456789").unwrap();
+    /// let f1 = Float::from_integer(i1);
+    /// assert_eq!(f1, Float::of(123456789.0));
     /// ```
     ///
     /// ## Warnings
@@ -209,11 +199,9 @@ impl Number for Float {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let i2 = Integer::of_str("1234567891011121314151617181920").unwrap();
-    ///     let f2 = Float::from_integer(i2);
-    ///     assert_eq!(f2, Float::of(1234567900000000000000000000000.0));
-    /// }
+    /// let i2 = Integer::of_str("1234567891011121314151617181920").unwrap();
+    /// let f2 = Float::from_integer(i2);
+    /// assert_eq!(f2, Float::of(1234567900000000000000000000000.0));
     /// ```
     ///
     /// </div>
@@ -221,12 +209,9 @@ impl Number for Float {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{:?}", integer_number)
+            let inner = format!("{integer_number:?}")
                 .parse::<f32>()
-                .expect(&format!(
-                    "Error[Float::from_Integer]: ({}) should be a valid f32 number.",
-                    integer_number
-                ));
+                .unwrap_or_else(|_| panic!("Error[Float::from_Integer]: ({integer_number}) should be a valid f32 number."));
             Self { inner }
         }
     }
@@ -274,18 +259,15 @@ impl Real for Float {
     ///     traits::{floating::Floating, real::Real},
     /// };
     ///
-    /// fn main() {
-    ///     let m = Float::PI;
-    ///     let m_rat = m.to_rational();
-    ///     let rat_expect = Rational::of_str("13176795 % 4194304").unwrap();
-    ///     assert_eq!(m_rat, rat_expect);
-    /// }
+    /// let m = Float::PI;
+    /// let m_rat = m.to_rational();
+    /// let rat_expect = Rational::of_str("13176795 % 4194304").unwrap();
+    /// assert_eq!(m_rat, rat_expect);
     /// ```
     fn to_rational(self) -> Rational {
         assert!(
             !(self.is_not_a_number() || self.is_infinite_number()),
-            "Error[Float::to_rational]: {} is not a valid floating number",
-            self
+            "Error[Float::to_rational]: {self} is not a valid floating number"
         );
 
         if self.is_zero() {
@@ -295,12 +277,10 @@ impl Real for Float {
             }
         } else {
             let (sig, exp) = self.decode_float();
-            let denominator =
-                non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value())
-                    .expect(concat!(
-                        "Error[Float::to_rational]: ",
-                        "Failed to compute the denominator via exponentiation."
-                    ));
+            let denominator = non_negative_integral_power(Int::of(2).to_integer(), exp.absolute_value()).expect(concat!(
+                "Error[Float::to_rational]: ",
+                "Failed to compute the denominator via exponentiation."
+            ));
             Rational::of(sig, denominator).refine()
         }
     }
@@ -400,23 +380,18 @@ impl Fractional for Float {
     }
 
     fn from_rational(rational_number: Rational) -> Self {
-        Self::from_integer(rational_number.numerator)
-            / Self::from_integer(rational_number.denominator)
+        Self::from_integer(rational_number.numerator) / Self::from_integer(rational_number.denominator)
     }
 }
 
 /// Implement Display for Float.
 impl std::fmt::Display for Float {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.inner) }
 }
 
 /// Implement Debug for Float.
 impl std::fmt::Debug for Float {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:+}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:+}", self.inner) }
 }
 
 /// Implement FromStr for Float.
@@ -428,10 +403,7 @@ impl std::str::FromStr for Float {
         if let Ok(num) = trimmed_s.parse::<f32>() {
             Ok(Self { inner: num })
         } else {
-            eprintln!(
-                "Error[Float::from_str]: ({}) is not a valid Float literal.",
-                trimmed_s
-            );
+            eprintln!("Error[Float::from_str]: ({trimmed_s}) is not a valid Float literal.");
             Err(())
         }
     }
@@ -455,10 +427,7 @@ impl UniformSampler for UniformF32 {
         )?))
     }
 
-    fn new_inclusive<B1, B2>(
-        low: B1,
-        high: B2,
-    ) -> Result<UniformF32, rand::distr::uniform::Error>
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Result<UniformF32, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
@@ -469,9 +438,7 @@ impl UniformSampler for UniformF32 {
         )?))
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        Self::X::of(self.0.sample(rng))
-    }
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X { Self::X::of(self.0.sample(rng)) }
 }
 
 /// Implement uniform sampling for float numbers.

@@ -9,9 +9,9 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use crate::{
     matrix::{
         DEFAULT_MAX_ITER,
+        Matrix,
         complex,
         math::inverse,
-        matrix::Matrix,
         utils::{apply, gram_schmidt_process, transpose},
         vector::{VectorC, normalize},
     },
@@ -32,33 +32,24 @@ use crate::{
 /// ```rust
 /// #![allow(incomplete_features)]
 /// #![feature(generic_const_exprs)]
-///
 /// use rmatrix_ks::{
-///     matrix::{extra::kronecker_product, matrix::Matrix},
+///     matrix::{Matrix, extra::kronecker_product},
 ///     number::instances::int::Int,
 /// };
 ///
-/// fn main() {
-///     let m1 = Matrix::<Int, 2, 2>::of(&[1, 2, 0, -1].map(Int::of)).unwrap();
-///     let m2 = Matrix::<Int, 2, 3>::of(&[1, 2, 3, 4, 5, 6].map(Int::of)).unwrap();
-///     let p = kronecker_product(&m1, &m2);
-///     let p_expect = Matrix::<Int, 4, 6>::of(
-///         &[
-///             1, 2, 3, 2, 4, 6, 4, 5, 6, 8, 10, 12, 0, 0, 0, -1, -2, -3, 0, 0, 0, -4, -5, -6,
-///         ]
-///         .map(Int::of),
-///     )
-///     .unwrap();
-///     assert_eq!(p, p_expect);
-/// }
+/// let m1 = Matrix::<Int, 2, 2>::of(&[1, 2, 0, -1].map(Int::of)).unwrap();
+/// let m2 = Matrix::<Int, 2, 3>::of(&[1, 2, 3, 4, 5, 6].map(Int::of)).unwrap();
+/// let p = kronecker_product(&m1, &m2);
+/// let p_expect = Matrix::<Int, 4, 6>::of(
+///     &[
+///         1, 2, 3, 2, 4, 6, 4, 5, 6, 8, 10, 12, 0, 0, 0, -1, -2, -3, 0, 0, 0, -4, -5, -6,
+///     ]
+///     .map(Int::of),
+/// )
+/// .unwrap();
+/// assert_eq!(p, p_expect);
 /// ```
-pub fn kronecker_product<
-    N,
-    const R1: usize,
-    const C1: usize,
-    const R2: usize,
-    const C2: usize,
->(
+pub fn kronecker_product<N, const R1: usize, const C1: usize, const R2: usize, const C2: usize>(
     m1: &Matrix<N, R1, C1>,
     m2: &Matrix<N, R2, C2>,
 ) -> Matrix<N, { R1 * R2 }, { C1 * C2 }>
@@ -90,23 +81,21 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
+///         Matrix,
 ///         extra::qr_decomposition_gs,
 ///         math::{is_orthogonal_matrix, is_upper_triangular_matrix},
-///         matrix::Matrix,
 ///     },
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Float, 3, 3>::of(
-///         &[12.0, -51.0, 4.0, 6.0, 167.0, -68.0, -4.0, 24.0, -41.0].map(Float::of),
-///     )
-///     .unwrap();
-///     let (q, r) = qr_decomposition_gs(&m).unwrap();
-///     assert!(is_orthogonal_matrix(&q));
-///     assert!(is_upper_triangular_matrix(&r));
-///     assert_eq!(q * r, m);
-/// }
+/// let m = Matrix::<Float, 3, 3>::of(
+///     &[12.0, -51.0, 4.0, 6.0, 167.0, -68.0, -4.0, 24.0, -41.0].map(Float::of),
+/// )
+/// .unwrap();
+/// let (q, r) = qr_decomposition_gs(&m).unwrap();
+/// assert!(is_orthogonal_matrix(&q));
+/// assert!(is_upper_triangular_matrix(&r));
+/// assert_eq!(q * r, m);
 /// ```
 ///
 /// ## Warnings
@@ -122,9 +111,7 @@ where
 /// which is not possible for wide matrices.
 ///
 /// </div>
-pub fn qr_decomposition_gs<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> Option<(Matrix<N, R, C>, Matrix<N, C, C>)>
+pub fn qr_decomposition_gs<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Option<(Matrix<N, R, C>, Matrix<N, C, C>)>
 where
     N: RealFloat,
 {
@@ -140,27 +127,23 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
+///         Matrix,
 ///         extra::qr_decomposition_h,
 ///         math::{is_orthogonal_matrix, is_upper_triangular_matrix},
-///         matrix::Matrix,
 ///     },
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Float, 3, 3>::of(
-///         &[12.0, -51.0, 4.0, 6.0, 167.0, -68.0, -4.0, 24.0, -41.0].map(Float::of),
-///     )
-///     .unwrap();
-///     let (q, r) = qr_decomposition_h(&m);
-///     assert!(is_orthogonal_matrix(&q));
-///     assert!(is_upper_triangular_matrix(&r));
-///     assert_eq!(q * r, m);
-/// }
+/// let m = Matrix::<Float, 3, 3>::of(
+///     &[12.0, -51.0, 4.0, 6.0, 167.0, -68.0, -4.0, 24.0, -41.0].map(Float::of),
+/// )
+/// .unwrap();
+/// let (q, r) = qr_decomposition_h(&m);
+/// assert!(is_orthogonal_matrix(&q));
+/// assert!(is_upper_triangular_matrix(&r));
+/// assert_eq!(q * r, m);
 /// ```
-pub fn qr_decomposition_h<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> (Matrix<N, R, R>, Matrix<N, R, C>)
+pub fn qr_decomposition_h<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> (Matrix<N, R, R>, Matrix<N, R, C>)
 where
     N: RealFloat,
 {
@@ -176,27 +159,23 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
+///         Matrix,
 ///         extra::qr_decomposition_gr,
 ///         math::{is_orthogonal_matrix, is_upper_triangular_matrix},
-///         matrix::Matrix,
 ///     },
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Float, 3, 3>::of(
-///         &[12.0, -51.0, 4.0, 6.0, 167.0, -68.0, -4.0, 24.0, -41.0].map(Float::of),
-///     )
-///     .unwrap();
-///     let (q, r) = qr_decomposition_gr(&m);
-///     assert!(is_orthogonal_matrix(&q));
-///     assert!(is_upper_triangular_matrix(&r));
-///     assert_eq!(q * r, m);
-/// }
+/// let m = Matrix::<Float, 3, 3>::of(
+///     &[12.0, -51.0, 4.0, 6.0, 167.0, -68.0, -4.0, 24.0, -41.0].map(Float::of),
+/// )
+/// .unwrap();
+/// let (q, r) = qr_decomposition_gr(&m);
+/// assert!(is_orthogonal_matrix(&q));
+/// assert!(is_upper_triangular_matrix(&r));
+/// assert_eq!(q * r, m);
 /// ```
-pub fn qr_decomposition_gr<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> (Matrix<N, R, R>, Matrix<N, R, C>)
+pub fn qr_decomposition_gr<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> (Matrix<N, R, R>, Matrix<N, R, C>)
 where
     N: RealFloat,
 {
@@ -218,42 +197,40 @@ where
 /// #![feature(generic_const_exprs)]
 ///
 /// use rmatrix_ks::{
-///     matrix::{extra::qr_decomposition_es, math::is_orthogonal_matrix, matrix::Matrix},
+///     matrix::{Matrix, extra::qr_decomposition_es, math::is_orthogonal_matrix},
 ///     number::instances::double::Double,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Double, 4, 3>::of(
-///         &[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, -1.0, 1.0, 0.0, 4.0].map(Double::of),
-///     )
-///     .unwrap();
-///     let (q, r) = qr_decomposition_es(&m);
-///     let q_expect = Matrix::<Double, 4, 3>::of(
-///         &[
-///             0.5,
-///             0.5,
-///             1.0 / (2.0 * 13.0f64.sqrt()),
-///             0.5,
-///             0.5,
-///             -1.0 / (2.0 * 13.0f64.sqrt()),
-///             0.5,
-///             -0.5,
-///             -5.0 / (2.0 * 13.0f64.sqrt()),
-///             0.5,
-///             -0.5,
-///             5.0 / (2.0 * 13.0f64.sqrt()),
-///         ]
-///         .map(Double::of),
-///     )
-///     .unwrap();
-///     assert!(is_orthogonal_matrix(&q));
-///     assert_eq!(q, q_expect);
-///     let r_expect = Matrix::<Double, 3, 3>::of(
-///         &[2.0, 1.0, 2.0, 0.0, 1.0, -1.0, 0.0, 0.0, 13.0f64.sqrt()].map(Double::of),
-///     )
-///     .unwrap();
-///     assert_eq!(r, r_expect);
-/// }
+/// let m = Matrix::<Double, 4, 3>::of(
+///     &[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, -1.0, 1.0, 0.0, 4.0].map(Double::of),
+/// )
+/// .unwrap();
+/// let (q, r) = qr_decomposition_es(&m);
+/// let q_expect = Matrix::<Double, 4, 3>::of(
+///     &[
+///         0.5,
+///         0.5,
+///         1.0 / (2.0 * 13.0f64.sqrt()),
+///         0.5,
+///         0.5,
+///         -1.0 / (2.0 * 13.0f64.sqrt()),
+///         0.5,
+///         -0.5,
+///         -5.0 / (2.0 * 13.0f64.sqrt()),
+///         0.5,
+///         -0.5,
+///         5.0 / (2.0 * 13.0f64.sqrt()),
+///     ]
+///     .map(Double::of),
+/// )
+/// .unwrap();
+/// assert!(is_orthogonal_matrix(&q));
+/// assert_eq!(q, q_expect);
+/// let r_expect = Matrix::<Double, 3, 3>::of(
+///     &[2.0, 1.0, 2.0, 0.0, 1.0, -1.0, 0.0, 0.0, 13.0f64.sqrt()].map(Double::of),
+/// )
+/// .unwrap();
+/// assert_eq!(r, r_expect);
 /// ```
 pub fn qr_decomposition_es<N, const R: usize, const C: usize>(
     m: &Matrix<N, R, C>,
@@ -284,29 +261,27 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::linear_solve_t, matrix::Matrix},
+///     matrix::{Matrix, extra::linear_solve_t},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     // x
-///     let m = Matrix::<Float, 10, 2>::vandermonde(
-///         &[
-///             208.0, 152.0, 113.0, 227.0, 137.0, 238.0, 178.0, 104.0, 191.0, 130.0,
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     // y
-///     let b = Matrix::<Float, 10, 1>::of(
-///         &[21.6, 15.5, 10.4, 31.0, 13.0, 32.4, 19.0, 10.4, 19.0, 11.8].map(Float::of),
-///     )
-///     .unwrap();
-///     // y = sol[0] + sol[1] x
-///     let sol = linear_solve_t(&m, &b);
-///     let sol_expect = Matrix::<Float, 2, 1>::of(&[-8.6451, 0.1612].map(Float::of)).unwrap();
-///     assert_eq!(sol, sol_expect);
-/// }
+/// // x
+/// let m = Matrix::<Float, 10, 2>::vandermonde(
+///     &[
+///         208.0, 152.0, 113.0, 227.0, 137.0, 238.0, 178.0, 104.0, 191.0, 130.0,
+///     ]
+///     .map(Float::of),
+/// )
+/// .unwrap();
+/// // y
+/// let b = Matrix::<Float, 10, 1>::of(
+///     &[21.6, 15.5, 10.4, 31.0, 13.0, 32.4, 19.0, 10.4, 19.0, 11.8].map(Float::of),
+/// )
+/// .unwrap();
+/// // y = sol[0] + sol[1] x
+/// let sol = linear_solve_t(&m, &b);
+/// let sol_expect = Matrix::<Float, 2, 1>::of(&[-8.6451, 0.1612].map(Float::of)).unwrap();
+/// assert_eq!(sol, sol_expect);
 /// ```
 ///
 /// ## Warnings
@@ -317,23 +292,20 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::linear_solve_t, matrix::Matrix},
+///     matrix::{Matrix, extra::linear_solve_t},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     // M
-///     let m = Matrix::<Float, 5, 2>::vandermonde(
-///         &[208.0, 152.0, 113.0, 227.0, 137.0].map(Float::of),
-///     )
-///     .unwrap();
-///     // b
-///     let b = Matrix::<Float, 5, 1>::default();
-///     let sol = linear_solve_t(&m, &b);
-///     // Should return a zero matrix.
-///     let sol_expect = Matrix::<Float, 2, 1>::default();
-///     assert_eq!(sol, sol_expect);
-/// }
+/// // M
+/// let m =
+///     Matrix::<Float, 5, 2>::vandermonde(&[208.0, 152.0, 113.0, 227.0, 137.0].map(Float::of))
+///         .unwrap();
+/// // b
+/// let b = Matrix::<Float, 5, 1>::default();
+/// let sol = linear_solve_t(&m, &b);
+/// // Should return a zero matrix.
+/// let sol_expect = Matrix::<Float, 2, 1>::default();
+/// assert_eq!(sol, sol_expect);
 /// ```
 ///
 /// </div>
@@ -347,7 +319,7 @@ where
     if b.inner.par_iter().all(|e| e.is_zero()) {
         Matrix::default()
     } else {
-        let (q, r) = qr_decomposition_gs(&m).expect(concat!(
+        let (q, r) = qr_decomposition_gs(m).expect(concat!(
             "Error[matrix::extra::linear_solve_t]: ",
             "Only high matrices or square matrices ",
             "can use this function to solve linear equations."
@@ -379,22 +351,19 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::linear_solve_w, matrix::Matrix},
+///     matrix::{Matrix, extra::linear_solve_w},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     // M
-///     let m =
-///         Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
-///     // b
-///     let b = Matrix::<Float, 2, 1>::of(&[7.0, 8.0].map(Float::of)).unwrap();
-///     let sol = linear_solve_w(&m, &b);
-///     // Will return one of the possible solutions.
-///     let sol_expect =
-///         Matrix::<Float, 3, 1>::of(&[-3.0556, 0.1111, 3.2778].map(Float::of)).unwrap();
-///     assert_eq!(sol, sol_expect);
-/// }
+/// // M
+/// let m = Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
+/// // b
+/// let b = Matrix::<Float, 2, 1>::of(&[7.0, 8.0].map(Float::of)).unwrap();
+/// let sol = linear_solve_w(&m, &b);
+/// // Will return one of the possible solutions.
+/// let sol_expect =
+///     Matrix::<Float, 3, 1>::of(&[-3.0556, 0.1111, 3.2778].map(Float::of)).unwrap();
+/// assert_eq!(sol, sol_expect);
 /// ```
 ///
 /// The information for the complete solution
@@ -408,20 +377,18 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::linear_solve_w, matrix::Matrix},
+///     matrix::{Matrix, extra::linear_solve_w},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     // M
-///     let m = Matrix::<Float, 2, 2>::vandermonde(&[208.0, 137.0].map(Float::of)).unwrap();
-///     // b
-///     let b = Matrix::<Float, 2, 1>::default();
-///     let sol = linear_solve_w(&m, &b);
-///     // Should return a zero matrix.
-///     let sol_expect = Matrix::<Float, 2, 1>::default();
-///     assert_eq!(sol, sol_expect);
-/// }
+/// // M
+/// let m = Matrix::<Float, 2, 2>::vandermonde(&[208.0, 137.0].map(Float::of)).unwrap();
+/// // b
+/// let b = Matrix::<Float, 2, 1>::default();
+/// let sol = linear_solve_w(&m, &b);
+/// // Should return a zero matrix.
+/// let sol_expect = Matrix::<Float, 2, 1>::default();
+/// assert_eq!(sol, sol_expect);
 /// ```
 ///
 /// </div>
@@ -456,33 +423,31 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
+///         Matrix,
 ///         extra::eigen_system_qr,
-///         matrix::Matrix,
 ///         utils::{apply, transpose},
 ///         vector::VectorC,
 ///     },
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Float, 3, 3>::of(
-///         &[1.0, 3.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 4.0].map(Float::of),
-///     )
-///     .unwrap();
-///     let (es, evs) = eigen_system_qr(&(transpose(&m) * m), 1024);
-///     assert_eq!(
-///         apply(&es, |e| e.real.clone()),
-///         VectorC::<Float, 3>::of(&[20.2907, 0.4302, 9.2791].map(Float::of)).unwrap()
-///     );
-///     let evs_expect = Matrix::<Float, 3, 3>::of(
-///         &[
-///             0.3372, -0.9225, -0.1877, 0.3819, 0.3163, -0.8684, 0.8605, 0.2211, 0.45898,
-///         ]
-///         .map(Float::of),
-///     )
-///     .unwrap();
-///     assert_eq!(apply(&evs, |e| e.real.clone()), evs_expect);
-/// }
+/// let m = Matrix::<Float, 3, 3>::of(
+///     &[1.0, 3.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 4.0].map(Float::of),
+/// )
+/// .unwrap();
+/// let (es, evs) = eigen_system_qr(&(transpose(&m) * m), 1024);
+/// assert_eq!(
+///     apply(&es, |e| e.real.clone()),
+///     VectorC::<Float, 3>::of(&[20.2907, 0.4302, 9.2791].map(Float::of)).unwrap()
+/// );
+/// let evs_expect = Matrix::<Float, 3, 3>::of(
+///     &[
+///         0.3372, -0.9225, -0.1877, 0.3819, 0.3163, -0.8684, 0.8605, 0.2211, 0.45898,
+///     ]
+///     .map(Float::of),
+/// )
+/// .unwrap();
+/// assert_eq!(apply(&evs, |e| e.real.clone()), evs_expect);
 /// ```
 pub fn eigen_system_qr<N, const E: usize>(
     m: &Matrix<N, E, E>,
@@ -503,16 +468,13 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::induced_l2_matrix_norm, matrix::Matrix},
+///     matrix::{Matrix, extra::induced_l2_matrix_norm},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let m =
-///         Matrix::<Float, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
-///     let n = induced_l2_matrix_norm(&m);
-///     assert_eq!(n, Float::of(9.5255));
-/// }
+/// let m = Matrix::<Float, 3, 2>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
+/// let n = induced_l2_matrix_norm(&m);
+/// assert_eq!(n, Float::of(9.5255));
 /// ```
 pub fn induced_l2_matrix_norm<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> N
 where
@@ -531,20 +493,18 @@ where
 ///
 /// ```rust
 /// use rmatrix_ks::{
-///     matrix::{extra::singular_value_decomposition, matrix::Matrix, utils::transpose},
+///     matrix::{Matrix, extra::singular_value_decomposition, utils::transpose},
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Float, 2, 2>::of(&[2.0, 8.0, 6.0, 0.0].map(Float::of)).unwrap();
-///     let (u, s, v) = singular_value_decomposition(&m);
-///     let s_expect = Matrix::<Float, 2, 2>::of(
-///         &[6.0 * 2.0f32.sqrt(), 0.0, 0.0, 4.0 * 2.0f32.sqrt()].map(Float::of),
-///     )
-///     .unwrap();
-///     assert_eq!(s, s_expect);
-///     assert_eq!(m, u * s * transpose(&v));
-/// }
+/// let m = Matrix::<Float, 2, 2>::of(&[2.0, 8.0, 6.0, 0.0].map(Float::of)).unwrap();
+/// let (u, s, v) = singular_value_decomposition(&m);
+/// let s_expect = Matrix::<Float, 2, 2>::of(
+///     &[6.0 * 2.0f32.sqrt(), 0.0, 0.0, 4.0 * 2.0f32.sqrt()].map(Float::of),
+/// )
+/// .unwrap();
+/// assert_eq!(s, s_expect);
+/// assert_eq!(m, u * s * transpose(&v));
 /// ```
 pub fn singular_value_decomposition<N, const R: usize, const C: usize>(
     m: &Matrix<N, R, C>,
@@ -658,41 +618,37 @@ where
 /// ```rust
 /// use rmatrix_ks::{
 ///     matrix::{
+///         Matrix,
 ///         extra::moore_penrose_inverse,
 ///         math::{inverse, is_symmetric_matrix},
-///         matrix::Matrix,
 ///     },
 ///     number::instances::float::Float,
 /// };
 ///
-/// fn main() {
-///     let m = Matrix::<Float, 3, 3>::of(
-///         &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(Float::of),
-///     )
-///     .unwrap();
-///     let mp = moore_penrose_inverse(&m);
-///     let m_inv = inverse(&m).unwrap();
-///     // For invertible matrices,
-///     // the Moore-Penrose inverse is
-///     // the corresponding matrix inverse.
-///     assert_eq!(mp, m_inv);
-///     // Properties that the Moore-Penrose inverse must satisfy.
-///     let rect =
-///         Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
-///     let rectp = moore_penrose_inverse(&rect);
-///     // A . Ap . A = A
-///     assert_eq!(rect.clone() * rectp.clone() * rect.clone(), rect);
-///     // Ap . A . Ap = Ap
-///     assert_eq!(rectp.clone() * rect.clone() * rectp.clone(), rectp);
-///     // A . Ap is a symmetric matrix.
-///     assert!(is_symmetric_matrix(&(rect.clone() * rectp.clone())));
-///     // Ap . A is also a symmetric matrix.
-///     assert!(is_symmetric_matrix(&(rectp * rect)));
-/// }
+/// let m = Matrix::<Float, 3, 3>::of(
+///     &[2.0, 1.0, -1.0, -3.0, -1.0, 2.0, -2.0, 1.0, 2.0].map(Float::of),
+/// )
+/// .unwrap();
+/// let mp = moore_penrose_inverse(&m);
+/// let m_inv = inverse(&m).unwrap();
+/// // For invertible matrices,
+/// // the Moore-Penrose inverse is
+/// // the corresponding matrix inverse.
+/// assert_eq!(mp, m_inv);
+/// // Properties that the Moore-Penrose inverse must satisfy.
+/// let rect =
+///     Matrix::<Float, 2, 3>::of(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0].map(Float::of)).unwrap();
+/// let rectp = moore_penrose_inverse(&rect);
+/// // A . Ap . A = A
+/// assert_eq!(rect.clone() * rectp.clone() * rect.clone(), rect);
+/// // Ap . A . Ap = Ap
+/// assert_eq!(rectp.clone() * rect.clone() * rectp.clone(), rectp);
+/// // A . Ap is a symmetric matrix.
+/// assert!(is_symmetric_matrix(&(rect.clone() * rectp.clone())));
+/// // Ap . A is also a symmetric matrix.
+/// assert!(is_symmetric_matrix(&(rectp * rect)));
 /// ```
-pub fn moore_penrose_inverse<N, const R: usize, const C: usize>(
-    m: &Matrix<N, R, C>,
-) -> Matrix<N, C, R>
+pub fn moore_penrose_inverse<N, const R: usize, const C: usize>(m: &Matrix<N, R, C>) -> Matrix<N, C, R>
 where
     N: RealFloat,
 {

@@ -1,6 +1,6 @@
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use rmatrix_ks::{
-    matrix::{math::is_square_matrix, matrix::Matrix, serde::to_file},
+    matrix::{Matrix, math::is_square_matrix, serde::to_file},
     number::{
         instances::{word::Word, word8::Word8},
         traits::integral::Integral,
@@ -53,9 +53,9 @@ fn main() {
     let magic_square = permutation(&one_to_nine)
         .iter()
         .map(|p| Matrix::<Word8, 3, 3>::of(p).unwrap())
-        .filter(|m| is_magic_square(m))
+        .filter(is_magic_square)
         .take(1)
         .collect::<Vec<Matrix<Word8, 3, 3>>>()[0]
         .clone();
-    to_file(&magic_square, &format!("data/magic_square.txt"));
+    to_file(&magic_square, "data/magic_square.txt".to_string());
 }

@@ -32,14 +32,12 @@ where
     /// ```rust
     /// use rmatrix_ks::number::{instances::integer::Integer, traits::integral::Integral};
     ///
-    /// fn main() {
-    ///     let i1 = Integer::of_str("8").unwrap();
-    ///     let i2 = Integer::of_str("-3").unwrap();
-    ///     let (quot, rem) = i1.clone().quot_rem(i2.clone());
-    ///     assert_eq!(quot, Integer::of_str("-2").unwrap());
-    ///     assert_eq!(rem, Integer::of_str("2").unwrap());
-    ///     assert_eq!(quot * i2 + rem, i1);
-    /// }
+    /// let i1 = Integer::of_str("8").unwrap();
+    /// let i2 = Integer::of_str("-3").unwrap();
+    /// let (quot, rem) = i1.clone().quot_rem(i2.clone());
+    /// assert_eq!(quot, Integer::of_str("-2").unwrap());
+    /// assert_eq!(rem, Integer::of_str("2").unwrap());
+    /// assert_eq!(quot * i2 + rem, i1);
     /// ```
     fn quot_rem(self, rhs: Self) -> (Self, Self);
 
@@ -51,14 +49,12 @@ where
     /// ```rust
     /// use rmatrix_ks::number::{instances::integer::Integer, traits::integral::Integral};
     ///
-    /// fn main() {
-    ///     let i1 = Integer::of_str("8").unwrap();
-    ///     let i2 = Integer::of_str("-3").unwrap();
-    ///     let (div, m) = i1.clone().div_mod(i2.clone());
-    ///     assert_eq!(div, Integer::of_str("-3").unwrap());
-    ///     assert_eq!(m, Integer::of_str("-1").unwrap());
-    ///     assert_eq!(div * i2 + m, i1);
-    /// }
+    /// let i1 = Integer::of_str("8").unwrap();
+    /// let i2 = Integer::of_str("-3").unwrap();
+    /// let (div, m) = i1.clone().div_mod(i2.clone());
+    /// assert_eq!(div, Integer::of_str("-3").unwrap());
+    /// assert_eq!(m, Integer::of_str("-1").unwrap());
+    /// assert_eq!(div * i2 + m, i1);
     /// ```
     fn div_mod(self, rhs: Self) -> (Self, Self);
 
@@ -66,9 +62,7 @@ where
     fn to_integer(self) -> Integer;
 
     /// Validate whether an integral number is even.
-    fn is_even(&self) -> bool {
-        self.clone().modulus(Self::one() + Self::one()) == Self::zero()
-    }
+    fn is_even(&self) -> bool { self.clone().modulus(Self::one() + Self::one()) == Self::zero() }
 
     /// Validate whether an integral number is odd.
     fn is_odd(&self) -> bool { !self.is_even() }

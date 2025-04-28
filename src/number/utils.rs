@@ -14,11 +14,9 @@ use crate::number::{
 /// ```rust
 /// use rmatrix_ks::number::utils::i8_div_mod;
 ///
-/// fn main() {
-///     let a = -17i8;
-///     let b = 10i8;
-///     assert_eq!(i8_div_mod(a, b), (-2i8, 3i8))
-/// }
+/// let a = -17i8;
+/// let b = 10i8;
+/// assert_eq!(i8_div_mod(a, b), (-2i8, 3i8))
 /// ```
 pub fn i8_div_mod(lhs: i8, rhs: i8) -> (i8, i8) {
     let quot = lhs / rhs;
@@ -37,19 +35,17 @@ pub fn i8_div_mod(lhs: i8, rhs: i8) -> (i8, i8) {
 /// ```rust
 /// use rmatrix_ks::number::utils::permutation;
 ///
-/// fn main() {
-///     let mut p = permutation(&[1, 2, 3]);
-///     p.sort();
-///     let p_expect = vec![
-///         vec![1, 2, 3],
-///         vec![1, 3, 2],
-///         vec![2, 1, 3],
-///         vec![2, 3, 1],
-///         vec![3, 1, 2],
-///         vec![3, 2, 1],
-///     ];
-///     assert_eq!(p, p_expect);
-/// }
+/// let mut p = permutation(&[1, 2, 3]);
+/// p.sort();
+/// let p_expect = vec![
+///     vec![1, 2, 3],
+///     vec![1, 3, 2],
+///     vec![2, 1, 3],
+///     vec![2, 3, 1],
+///     vec![3, 1, 2],
+///     vec![3, 2, 1],
+/// ];
+/// assert_eq!(p, p_expect);
 /// ```
 pub fn permutation<N>(elements: &[N]) -> Vec<Vec<N>>
 where
@@ -71,7 +67,7 @@ where
                     &elements
                         .iter()
                         .filter(|e| e != &elem)
-                        .map(|e| e.clone())
+                        .cloned()
                         .collect::<Vec<N>>(),
                     &next,
                     acc,
@@ -91,13 +87,11 @@ where
 /// ```rust
 /// use rmatrix_ks::number::utils::inversion_count;
 ///
-/// fn main() {
-///     let p1 = [1, 3, 2];
-///     assert_eq!(inversion_count(&p1), 1);
-///     let p2 = [1, 2, 3];
-///     assert_eq!(inversion_count(&p2), 0);
-///     assert_eq!(inversion_count::<usize>(&[]), 0);
-/// }
+/// let p1 = [1, 3, 2];
+/// assert_eq!(inversion_count(&p1), 1);
+/// let p2 = [1, 2, 3];
+/// assert_eq!(inversion_count(&p2), 0);
+/// assert_eq!(inversion_count::<usize>(&[]), 0);
 /// ```
 pub fn inversion_count<T>(elements: &[T]) -> usize
 where
@@ -115,7 +109,7 @@ where
             }
             if min != idx {
                 (cloned[idx], cloned[min]) = (cloned[min].clone(), cloned[idx].clone());
-                exchange = exchange + 1;
+                exchange += 1;
             }
         }
     }
@@ -129,12 +123,10 @@ where
 /// ```rust
 /// use rmatrix_ks::number::{instances::int::Int, utils::non_negative_integral_power};
 ///
-/// fn main() {
-///     let a = Int::of(8i32);
-///     let b = Int::of(3i32);
+/// let a = Int::of(8i32);
+/// let b = Int::of(3i32);
 ///
-///     assert_eq!(non_negative_integral_power(a, b), Some(Int::of(512i32)));
-/// }
+/// assert_eq!(non_negative_integral_power(a, b), Some(Int::of(512i32)));
 /// ```
 pub fn non_negative_integral_power<N: Number, I: Integral>(base: N, exponents: I) -> Option<N> {
     /// Optimize calculations using divide and conquer method.
@@ -201,11 +193,9 @@ pub fn non_negative_integral_power<N: Number, I: Integral>(base: N, exponents: I
 /// ```rust
 /// use rmatrix_ks::number::{instances::int::Int, utils::clamp};
 ///
-/// fn main() {
-///     let m = Int::of(-10);
-///     let n = Int::of(5);
-///     assert_eq!(clamp(m, n), Int::of(10));
-/// }
+/// let m = Int::of(-10);
+/// let n = Int::of(5);
+/// assert_eq!(clamp(m, n), Int::of(10));
 /// ```
 pub fn clamp(first: Int, second: Int) -> Int { (-first.clone()).max(first.min(second)) }
 
@@ -220,11 +210,9 @@ pub fn clamp(first: Int, second: Int) -> Int { (-first.clone()).max(first.min(se
 ///     utils::integral_power,
 /// };
 ///
-/// fn main() {
-///     let m = Int::of(-2);
-///     let n = Float::of(2.0);
-///     assert!((integral_power(n, m).is_some_and(|e| (e - Float::of(0.25)).is_zero())));
-/// }
+/// let m = Int::of(-2);
+/// let n = Float::of(2.0);
+/// assert!((integral_power(n, m).is_some_and(|e| (e - Float::of(0.25)).is_zero())));
 /// ```
 pub fn integral_power<F: Fractional, I: Integral>(base: F, exponents: I) -> Option<F> {
     if exponents < I::zero() {
@@ -241,11 +229,9 @@ pub fn integral_power<F: Fractional, I: Integral>(base: F, exponents: I) -> Opti
 /// ```rust
 /// use rmatrix_ks::number::{instances::int::Int, utils::gcd};
 ///
-/// fn main() {
-///     let m = Int::of(128);
-///     let n = Int::of(96);
-///     assert_eq!(gcd(m, n), Int::of(32));
-/// }
+/// let m = Int::of(128);
+/// let n = Int::of(96);
+/// assert_eq!(gcd(m, n), Int::of(32));
 /// ```
 pub fn gcd<I: Integral>(lhs: I, rhs: I) -> I {
     fn inner_gcd<I: Integral>(lhs: I, rhs: I) -> I {
@@ -265,11 +251,9 @@ pub fn gcd<I: Integral>(lhs: I, rhs: I) -> I {
 /// ```rust
 /// use rmatrix_ks::number::{instances::int::Int, utils::lcm};
 ///
-/// fn main() {
-///     let m = Int::of(15);
-///     let n = Int::of(6);
-///     assert_eq!(lcm(m, n), Int::of(30));
-/// }
+/// let m = Int::of(15);
+/// let n = Int::of(6);
+/// assert_eq!(lcm(m, n), Int::of(30));
 /// ```
 pub fn lcm<I: Integral>(lhs: I, rhs: I) -> I {
     if lhs.is_zero() || rhs.is_zero() {
@@ -287,15 +271,11 @@ pub fn lcm<I: Integral>(lhs: I, rhs: I) -> I {
 ///     utils::from_integral,
 /// };
 ///
-/// fn main() {
-///     let m = Int::of(15);
-///     let f = Float::of(15.0);
-///     assert_eq!(from_integral::<Float, Int>(m), f);
-/// }
+/// let m = Int::of(15);
+/// let f = Float::of(15.0);
+/// assert_eq!(from_integral::<Float, Int>(m), f);
 /// ```
-pub fn from_integral<N: Number, I: Integral>(integral_number: I) -> N {
-    N::from_integer(integral_number.to_integer())
-}
+pub fn from_integral<N: Number, I: Integral>(integral_number: I) -> N { N::from_integer(integral_number.to_integer()) }
 
 /// Convert Real to Fractional.
 ///
@@ -305,15 +285,11 @@ pub fn from_integral<N: Number, I: Integral>(integral_number: I) -> N {
 ///     utils::real_to_frac,
 /// };
 ///
-/// fn main() {
-///     let m = Rational::of_str("12 % 5").unwrap();
-///     let f = Double::of(2.4);
-///     assert_eq!(real_to_frac::<Rational, Double>(m), f);
-/// }
+/// let m = Rational::of_str("12 % 5").unwrap();
+/// let f = Double::of(2.4);
+/// assert_eq!(real_to_frac::<Rational, Double>(m), f);
 /// ```
-pub fn real_to_frac<R: Real, F: Fractional>(real_number: R) -> F {
-    F::from_rational(real_number.to_rational())
-}
+pub fn real_to_frac<R: Real, F: Fractional>(real_number: R) -> F { F::from_rational(real_number.to_rational()) }
 
 /// Convert an integer to binary format.
 ///
@@ -327,19 +303,17 @@ pub fn real_to_frac<R: Real, F: Fractional>(real_number: R) -> F {
 /// ```rust
 /// use rmatrix_ks::number::{instances::int::Int, utils::integral_to_binary};
 ///
-/// fn main() {
-///     let i1 = Int::of(123);
-///     let i1_digits = integral_to_binary(i1);
-///     //  123 = 0b0111011
-///     assert_eq!(i1_digits, vec![0, 1, 1, 1, 1, 0, 1, 1]);
-///     let i2 = Int::of(-123456);
-///     // -123456 = 0b100001110111000000
-///     let i2_digits = integral_to_binary(i2);
-///     assert_eq!(
-///         i2_digits,
-///         vec![1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0]
-///     );
-/// }
+/// let i1 = Int::of(123);
+/// let i1_digits = integral_to_binary(i1);
+/// //  123 = 0b0111011
+/// assert_eq!(i1_digits, vec![0, 1, 1, 1, 1, 0, 1, 1]);
+/// let i2 = Int::of(-123456);
+/// // -123456 = 0b100001110111000000
+/// let i2_digits = integral_to_binary(i2);
+/// assert_eq!(
+///     i2_digits,
+///     vec![1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0]
+/// );
 /// ```
 pub fn integral_to_binary<I: Integral>(int_val: I) -> Vec<u8> {
     fn integral_to_binary_inner<I: Integral>(int: I, acc: &mut Vec<u8>) {
@@ -350,7 +324,7 @@ pub fn integral_to_binary<I: Integral>(int_val: I) -> Vec<u8> {
         } else {
             let two: I = I::one() + I::one();
             let (d, m) = int.div_mod(two);
-            format!("{}", m).chars().nth(0).map_or_else(
+            format!("{m}").chars().next().map_or_else(
                 || {
                     eprintln!(
                         concat!(
@@ -360,7 +334,7 @@ pub fn integral_to_binary<I: Integral>(int_val: I) -> Vec<u8> {
                         m
                     )
                 },
-                |c| acc.insert(0, c as u8 - '0' as u8),
+                |c| acc.insert(0, c as u8 - b'0'),
             );
             integral_to_binary_inner(d, acc);
         }

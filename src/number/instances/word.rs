@@ -26,7 +26,7 @@ impl Word {
     /// ```rust
     /// use rmatrix_ks::number::instances::word::Word;
     ///
-    /// fn main() { let _w = Word::of(12); }
+    /// let _w = Word::of(12);
     /// ```
     pub const fn of(num: u32) -> Self { Self { inner: num } }
 
@@ -37,15 +37,11 @@ impl Word {
     /// ```rust
     /// use rmatrix_ks::number::instances::word::Word;
     ///
-    /// fn main() {
-    ///     let sw = Word::of_str("23").unwrap();
-    ///     let w = Word::of(23);
-    ///     assert_eq!(sw, w);
-    /// }
+    /// let sw = Word::of_str("23").unwrap();
+    /// let w = Word::of(23);
+    /// assert_eq!(sw, w);
     /// ```
-    pub fn of_str(int_number: &str) -> Option<Self> {
-        std::str::FromStr::from_str(int_number).ok()
-    }
+    pub fn of_str(int_number: &str) -> Option<Self> { std::str::FromStr::from_str(int_number).ok() }
 
     /// Return the digit at each position.
     ///
@@ -54,18 +50,16 @@ impl Word {
     /// ```rust
     /// use rmatrix_ks::number::instances::word::Word;
     ///
-    /// fn main() {
-    ///     let w = Word::of(125436);
-    ///     let digits = w.digits();
-    ///     assert_eq!(digits, vec![1, 2, 5, 4, 3, 6]);
-    /// }
+    /// let w = Word::of(125436);
+    /// let digits = w.digits();
+    /// assert_eq!(digits, vec![1, 2, 5, 4, 3, 6]);
     /// ```
     pub fn digits(&self) -> Vec<u8> {
         let string_view = self.inner.to_string();
         string_view
             .chars()
             .skip_while(|ch| !ch.is_ascii_digit())
-            .map(|digit: char| digit as u8 - '0' as u8)
+            .map(|digit: char| digit as u8 - b'0')
             .collect::<Vec<_>>()
     }
 
@@ -76,10 +70,8 @@ impl Word {
     /// ```rust
     /// use rmatrix_ks::number::instances::word::Word;
     ///
-    /// fn main() {
-    ///     let w = Word::of(69);
-    ///     assert_eq!(w.raw(), 69);
-    /// }
+    /// let w = Word::of(69);
+    /// assert_eq!(w.raw(), 69);
     /// ```
     pub fn raw(&self) -> u32 { self.inner }
 }
@@ -116,10 +108,8 @@ impl std::ops::Neg for Word {
     /// ```rust
     /// use rmatrix_ks::number::instances::word::Word;
     ///
-    /// fn main() {
-    ///     let w = Word::of(224756);
-    ///     assert_eq!(-w, Word::of(4294742539));
-    /// }
+    /// let w = Word::of(224756);
+    /// assert_eq!(-w, Word::of(4294742539));
     /// ```
     fn neg(self) -> Self::Output {
         Self {
@@ -187,12 +177,10 @@ impl Number for Word {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let digits = (1..10).collect::<Vec<u8>>();
-    ///     let integer = Integer::of(true, &digits);
-    ///     let word = integer.map(|w| Word::from_integer(w));
-    ///     assert_eq!(word, Some(Word::of(123456789)));
-    /// }
+    /// let digits = (1..10).collect::<Vec<u8>>();
+    /// let integer = Integer::of(true, &digits);
+    /// let word = integer.map(|w| Word::from_integer(w));
+    /// assert_eq!(word, Some(Word::of(123456789)));
     /// ```
     ///
     /// ## Panics
@@ -206,22 +194,17 @@ impl Number for Word {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let integer = Integer::of_str("12345678910111213141516");
-    ///     // Panic occurs here.
-    ///     let _ = integer.map(|w| Word::from_integer(w));
-    /// }
+    /// let integer = Integer::of_str("12345678910111213141516");
+    /// // Panic occurs here.
+    /// let _ = integer.map(|w| Word::from_integer(w));
     /// ```
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{:?}", integer_number)
+            let inner = format!("{integer_number:?}")
                 .parse::<u32>()
-                .expect(&format!(
-                    "Error[Word::from_Integer]: ({}) should be a valid u32 number.",
-                    integer_number
-                ));
+                .unwrap_or_else(|_| panic!("Error[Word::from_Integer]: ({integer_number}) should be a valid u32 number."));
             Self { inner }
         }
     }
@@ -261,25 +244,19 @@ impl Integral for Word {
     }
 
     fn to_integer(self) -> Integer {
-        Integer::of_str(&format!("{}", self)).expect(&format!(
-            "Error[Word::to_integer]: ({}) should be a valid Integer.",
-            self
-        ))
+        Integer::of_str(&format!("{self}"))
+            .unwrap_or_else(|| panic!("Error[Word::to_integer]: ({self}) should be a valid Integer."))
     }
 }
 
 /// Implement Display for Word.
 impl std::fmt::Display for Word {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.inner) }
 }
 
 /// Implement Debug for Word.
 impl std::fmt::Debug for Word {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:+}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:+}", self.inner) }
 }
 
 /// Implement FromStr for Word.
@@ -291,10 +268,7 @@ impl std::str::FromStr for Word {
         if let Ok(num) = trimmed_s.parse::<u32>() {
             Ok(Self { inner: num })
         } else {
-            eprintln!(
-                "Error[Word::from_str]: ({}) is not a valid Word literal.",
-                trimmed_s
-            );
+            eprintln!("Error[Word::from_str]: ({trimmed_s}) is not a valid Word literal.");
             Err(())
         }
     }
@@ -318,10 +292,7 @@ impl UniformSampler for UniformU32 {
         )?))
     }
 
-    fn new_inclusive<B1, B2>(
-        low: B1,
-        high: B2,
-    ) -> Result<UniformU32, rand::distr::uniform::Error>
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Result<UniformU32, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
@@ -332,9 +303,7 @@ impl UniformSampler for UniformU32 {
         )?))
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        Self::X::of(self.0.sample(rng))
-    }
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X { Self::X::of(self.0.sample(rng)) }
 }
 
 /// Implement uniform sampling for word numbers.

@@ -46,12 +46,10 @@ impl<I: Integral> Ratio<I> {
     /// ```rust
     /// use rmatrix_ks::number::instances::{int8::Int8, ratio::Ratio};
     ///
-    /// fn main() {
-    ///     let r1 = Ratio::of(Int8::of(8), Int8::of(-3));
-    ///     let r2 = Ratio::of(Int8::of(-8), Int8::of(3));
+    /// let r1 = Ratio::of(Int8::of(8), Int8::of(-3));
+    /// let r2 = Ratio::of(Int8::of(-8), Int8::of(3));
     ///
-    ///     assert_eq!(r1, r2);
-    /// }
+    /// assert_eq!(r1, r2);
     /// ```
     pub const fn of(numerator: I, denominator: I) -> Self {
         Ratio {
@@ -71,15 +69,11 @@ impl<I: Integral> Ratio<I> {
     /// ```rust
     /// use rmatrix_ks::number::instances::{int8::Int8, ratio::Ratio};
     ///
-    /// fn main() {
-    ///     let r1 = Ratio::<Int8>::of_str("-8 % -3");
-    ///     let r2 = Ratio::of(Int8::of(8), Int8::of(3));
-    ///     assert_eq!(r1, Some(r2));
-    /// }
+    /// let r1 = Ratio::<Int8>::of_str("-8 % -3");
+    /// let r2 = Ratio::of(Int8::of(8), Int8::of(3));
+    /// assert_eq!(r1, Some(r2));
     /// ```
-    pub fn of_str(ratio_numbwe: &str) -> Option<Self> {
-        std::str::FromStr::from_str(ratio_numbwe).ok()
-    }
+    pub fn of_str(ratio_numbwe: &str) -> Option<Self> { std::str::FromStr::from_str(ratio_numbwe).ok() }
 
     /// Simplify the ratio by dividing the numerator and denominator
     /// by their greatest common divisor.
@@ -89,18 +83,15 @@ impl<I: Integral> Ratio<I> {
     /// ```rust
     /// use rmatrix_ks::number::instances::{int8::Int8, ratio::Ratio};
     ///
-    /// fn main() {
-    ///     let r1 = Ratio::of(Int8::of(8), Int8::of(4));
-    ///     let r2 = Ratio::of(Int8::of(2), Int8::of(1));
-    ///     assert_eq!(r1.refine(), r2);
-    /// }
+    /// let r1 = Ratio::of(Int8::of(8), Int8::of(4));
+    /// let r2 = Ratio::of(Int8::of(2), Int8::of(1));
+    /// assert_eq!(r1.refine(), r2);
     /// ```
     pub fn refine(self) -> Self {
         if self.is_zero() {
             Self::zero()
         } else {
-            let sign_number = if self.numerator.sign_number() == self.denominator.sign_number()
-            {
+            let sign_number = if self.numerator.sign_number() == self.denominator.sign_number() {
                 I::one()
             } else {
                 -I::one()
@@ -151,12 +142,10 @@ impl<I: Integral> One for Ratio<I> {
     ///     traits::one::One,
     /// };
     ///
-    /// fn main() {
-    ///     let r1 = Ratio::of(Int8::of(5), Int8::of(5));
-    ///     let r2 = Ratio::of(Int8::of(0), Int8::of(0));
-    ///     assert!(r1.is_one());
-    ///     assert!(r2.is_one());
-    /// }
+    /// let r1 = Ratio::of(Int8::of(5), Int8::of(5));
+    /// let r2 = Ratio::of(Int8::of(0), Int8::of(0));
+    /// assert!(r1.is_one());
+    /// assert!(r2.is_one());
     /// ```
     fn is_one(&self) -> bool { self.numerator == self.denominator }
 }
@@ -171,8 +160,7 @@ impl<I: Integral> std::cmp::PartialEq for Ratio<I> {
     fn eq(&self, rhs: &Self) -> bool {
         let refined_lhs = self.clone().refine();
         let refined_rhs = rhs.clone().refine();
-        refined_lhs.numerator == refined_rhs.numerator
-            && refined_lhs.denominator == refined_rhs.denominator
+        refined_lhs.numerator == refined_rhs.numerator && refined_lhs.denominator == refined_rhs.denominator
     }
 }
 
@@ -219,8 +207,7 @@ impl<I: Integral> std::ops::Add for Ratio<I> {
         let lhs_denominator = refined_lhs.denominator.to_integer();
         let rhs_numerator = refined_rhs.numerator.to_integer();
         let rhs_denominator = refined_rhs.denominator.to_integer();
-        let numerator =
-            lhs_numerator * rhs_denominator.clone() + rhs_numerator * lhs_denominator.clone();
+        let numerator = lhs_numerator * rhs_denominator.clone() + rhs_numerator * lhs_denominator.clone();
         let denominator = lhs_denominator * rhs_denominator;
         let ratio_sum = Rational::of(numerator, denominator).refine();
         Self::of(
@@ -272,7 +259,12 @@ impl<I: Integral> std::ops::Mul for Ratio<I> {
 impl<I: Integral> std::ops::Div for Ratio<I> {
     type Output = Self;
 
-    fn div(self, rhs: Self) -> Self::Output { self * rhs.reciprocal() }
+    fn div(self, rhs: Self) -> Self::Output {
+        Self::of(
+            self.numerator * rhs.denominator,
+            self.denominator * rhs.numerator,
+        )
+    }
 }
 
 /// Implement the concept of NUMBER for the ratio.
@@ -296,9 +288,7 @@ impl<I: Integral> Number for Ratio<I> {
         }
     }
 
-    fn from_integer(integer_number: Integer) -> Self {
-        Self::of(I::from_integer(integer_number), I::one())
-    }
+    fn from_integer(integer_number: Integer) -> Self { Self::of(I::from_integer(integer_number), I::one()) }
 }
 
 /// Implement the concept of Fractional for Ratio.
@@ -362,10 +352,8 @@ impl<I: Integral> std::str::FromStr for Ratio<I> {
         // Remove any leading and trailing whitespace characters from the string.
         let trimmed_s = s.trim();
         // Use regular expressions to validate the string.
-        let searcher = regex::Regex::new(
-            r"(?<numerator>([+-]?)([0-9_]+))([\s]*[%][\s]*)(?<denominator>([+-]?)([0-9_]+))",
-        )
-        .expect("Error[Ratio::from_str]: Should be a valid regular expression.");
+        let searcher = regex::Regex::new(r"(?<numerator>([+-]?)([0-9_]+))([\s]*[%][\s]*)(?<denominator>([+-]?)([0-9_]+))")
+            .expect("Error[Ratio::from_str]: Should be a valid regular expression.");
         if let Some(captures) = searcher.captures(trimmed_s) {
             let numerator_s = &captures["numerator"];
             let denominator_s = &captures["denominator"];
@@ -374,18 +362,12 @@ impl<I: Integral> std::str::FromStr for Ratio<I> {
             match (numerator, denominator) {
                 (Ok(n), Ok(d)) => Ok(Self::of(n, d)),
                 _ => {
-                    eprintln!(
-                        "Error[Ratio::from_str]: ({}) or ({}) is not a valid Integral literal.",
-                        numerator_s, denominator_s
-                    );
+                    eprintln!("Error[Ratio::from_str]: ({numerator_s}) or ({denominator_s}) is not a valid Integral literal.");
                     Err(())
                 }
             }
         } else {
-            eprintln!(
-                "Error[Ratio::from_str]: ({}) is not a valid Ratio literal.",
-                trimmed_s
-            );
+            eprintln!("Error[Ratio::from_str]: ({trimmed_s}) is not a valid Ratio literal.");
             Err(())
         }
     }

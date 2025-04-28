@@ -26,7 +26,7 @@ impl Int8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::int8::Int8;
     ///
-    /// fn main() { let _i = Int8::of(12); }
+    /// let _i = Int8::of(12);
     /// ```
     pub const fn of(num: i8) -> Self { Self { inner: num } }
 
@@ -37,15 +37,11 @@ impl Int8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::int8::Int8;
     ///
-    /// fn main() {
-    ///     let si = Int8::of_str("-23").unwrap();
-    ///     let i = Int8::of(-23);
-    ///     assert_eq!(si, i);
-    /// }
+    /// let si = Int8::of_str("-23").unwrap();
+    /// let i = Int8::of(-23);
+    /// assert_eq!(si, i);
     /// ```
-    pub fn of_str(int8_number: &str) -> Option<Self> {
-        std::str::FromStr::from_str(int8_number).ok()
-    }
+    pub fn of_str(int8_number: &str) -> Option<Self> { std::str::FromStr::from_str(int8_number).ok() }
 
     /// Return the digit at each position.
     ///
@@ -54,17 +50,15 @@ impl Int8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::int8::Int8;
     ///
-    /// fn main() {
-    ///     let i = Int8::of(125);
-    ///     let digits = i.digits();
-    ///     assert_eq!(digits, vec![1, 2, 5]);
-    /// }
+    /// let i = Int8::of(125);
+    /// let digits = i.digits();
+    /// assert_eq!(digits, vec![1, 2, 5]);
     /// ```
     pub fn digits(&self) -> Vec<u8> {
         let string_view = self.inner.to_string();
         string_view
             .chars()
-            .map(|digit: char| digit as u8 - '0' as u8)
+            .map(|digit: char| digit as u8 - b'0')
             .collect::<Vec<_>>()
     }
 
@@ -75,10 +69,8 @@ impl Int8 {
     /// ```rust
     /// use rmatrix_ks::number::instances::int8::Int8;
     ///
-    /// fn main() {
-    ///     let i = Int8::of(69);
-    ///     assert_eq!(i.raw(), 69);
-    /// }
+    /// let i = Int8::of(69);
+    /// assert_eq!(i.raw(), 69);
     /// ```
     pub fn raw(&self) -> i8 { self.inner }
 }
@@ -170,11 +162,9 @@ impl Number for Int8 {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let integer = Integer::of_str("-18");
-    ///     let int = integer.map(|i| Int8::from_integer(i));
-    ///     assert_eq!(int, Some(Int8::of(-18)));
-    /// }
+    /// let integer = Integer::of_str("-18");
+    /// let int = integer.map(|i| Int8::from_integer(i));
+    /// assert_eq!(int, Some(Int8::of(-18)));
     /// ```
     ///
     /// ## Panics
@@ -188,22 +178,17 @@ impl Number for Int8 {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let integer = Integer::of_str("12345678");
-    ///     // Panic occurs here.
-    ///     let _ = integer.map(|i| Int8::from_integer(i));
-    /// }
+    /// let integer = Integer::of_str("12345678");
+    /// // Panic occurs here.
+    /// let _ = integer.map(|i| Int8::from_integer(i));
     /// ```
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{:?}", integer_number)
+            let inner = format!("{integer_number:?}")
                 .parse::<i8>()
-                .expect(&format!(
-                    "Error[Int8::from_Integer]: ({}) should be a valid i8 number.",
-                    integer_number
-                ));
+                .unwrap_or_else(|_| panic!("Error[Int8::from_Integer]: ({integer_number}) should be a valid i8 number."));
             Self { inner }
         }
     }
@@ -243,25 +228,19 @@ impl Integral for Int8 {
     }
 
     fn to_integer(self) -> Integer {
-        Integer::of_str(&format!("{}", self)).expect(&format!(
-            "Error[Int8::to_integer]: ({}) should be a valid Integer.",
-            self
-        ))
+        Integer::of_str(&format!("{self}"))
+            .unwrap_or_else(|| panic!("Error[Int8::to_integer]: ({self}) should be a valid Integer."))
     }
 }
 
 /// Implement Display for Int8.
 impl std::fmt::Display for Int8 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.inner) }
 }
 
 /// Implement Debug for Int8.
 impl std::fmt::Debug for Int8 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:+}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:+}", self.inner) }
 }
 
 /// Implement FromStr for Int8.
@@ -273,10 +252,7 @@ impl std::str::FromStr for Int8 {
         if let Ok(num) = trimmed_s.parse::<i8>() {
             Ok(Self { inner: num })
         } else {
-            eprintln!(
-                "Error[Int8::from_str]: ({}) is not a valid Int8 literal.",
-                trimmed_s
-            );
+            eprintln!("Error[Int8::from_str]: ({trimmed_s}) is not a valid Int8 literal.");
             Err(())
         }
     }
@@ -300,10 +276,7 @@ impl UniformSampler for UniformI8 {
         )?))
     }
 
-    fn new_inclusive<B1, B2>(
-        low: B1,
-        high: B2,
-    ) -> Result<UniformI8, rand::distr::uniform::Error>
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Result<UniformI8, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
@@ -314,9 +287,7 @@ impl UniformSampler for UniformI8 {
         )?))
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        Self::X::of(self.0.sample(rng))
-    }
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X { Self::X::of(self.0.sample(rng)) }
 }
 
 /// Implement uniform sampling for int8 numbers.

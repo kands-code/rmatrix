@@ -3,6 +3,7 @@
 #![feature(doc_cfg)]
 #![feature(doc_auto_cfg)]
 #![feature(generic_const_exprs)]
+#![allow(clippy::type_complexity)] // for tuple return
 
 //! # rmatrix_ks
 //!

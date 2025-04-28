@@ -13,14 +13,7 @@ use rand::{
 
 use crate::number::{
     instances::{integer::Integer, ratio::Rational},
-    traits::{
-        floating::Floating,
-        fractional::Fractional,
-        number::Number,
-        one::One,
-        realfloat::RealFloat,
-        zero::Zero,
-    },
+    traits::{floating::Floating, fractional::Fractional, number::Number, one::One, realfloat::RealFloat, zero::Zero},
 };
 
 /// A Complex number is a Number composed of two RealFloat numbers.
@@ -40,7 +33,7 @@ impl<F: RealFloat> Complex<F> {
     /// ```rust,no_run
     /// use rmatrix_ks::number::instances::{complex::Complex, double::Double};
     ///
-    /// fn main() { let _c = Complex::of(Double::of(2.0), Double::of(1.0)); }
+    /// let _c = Complex::of(Double::of(2.0), Double::of(1.0));
     /// ```
     pub const fn of(real: F, imaginary: F) -> Self { Self { real, imaginary } }
 
@@ -54,15 +47,11 @@ impl<F: RealFloat> Complex<F> {
     /// ```rust
     /// use rmatrix_ks::number::instances::{complex::Complex, double::Double};
     ///
-    /// fn main() {
-    ///     let s = "2 :+ -1";
-    ///     let c = Complex::of(Double::of(2.0), Double::of(-1.0));
-    ///     assert_eq!(Complex::of_str(s), Some(c));
-    /// }
+    /// let s = "2 :+ -1";
+    /// let c = Complex::of(Double::of(2.0), Double::of(-1.0));
+    /// assert_eq!(Complex::of_str(s), Some(c));
     /// ```
-    pub fn of_str(complex_number: &str) -> Option<Self> {
-        std::str::FromStr::from_str(complex_number).ok()
-    }
+    pub fn of_str(complex_number: &str) -> Option<Self> { std::str::FromStr::from_str(complex_number).ok() }
 
     /// Obtain the imaginary unit.
     ///
@@ -74,12 +63,10 @@ impl<F: RealFloat> Complex<F> {
     ///     traits::one::One,
     /// };
     ///
-    /// fn main() {
-    ///     let a = Complex::<Float>::unit_i();
-    ///     let b = -Complex::unit_i();
-    ///     // i * (-i) = 1
-    ///     assert_eq!(a * b, Complex::one());
-    /// }
+    /// let a = Complex::<Float>::unit_i();
+    /// let b = -Complex::unit_i();
+    /// // i * (-i) = 1
+    /// assert_eq!(a * b, Complex::one());
     /// ```
     pub fn unit_i() -> Self {
         Complex {
@@ -95,11 +82,9 @@ impl<F: RealFloat> Complex<F> {
     /// ```rust
     /// use rmatrix_ks::number::instances::{complex::Complex, double::Double};
     ///
-    /// fn main() {
-    ///     let c = Complex::of(Double::of(2.0), Double::of(-1.0));
-    ///     let cc = Complex::of(Double::of(2.0), Double::of(1.0));
-    ///     assert_eq!(c.conjugate(), cc);
-    /// }
+    /// let c = Complex::of(Double::of(2.0), Double::of(-1.0));
+    /// let cc = Complex::of(Double::of(2.0), Double::of(1.0));
+    /// assert_eq!(c.conjugate(), cc);
     /// ```
     pub fn conjugate(self) -> Self {
         Self {
@@ -118,14 +103,10 @@ impl<F: RealFloat> Complex<F> {
     ///     traits::{floating::Floating, zero::Zero},
     /// };
     ///
-    /// fn main() {
-    ///     let c = Complex::of(Double::of(3.0), Double::of(-4.0));
-    ///     assert!((c.norm() - Double::of(5.0)).is_zero());
-    /// }
+    /// let c = Complex::of(Double::of(3.0), Double::of(-4.0));
+    /// assert!((c.norm() - Double::of(5.0)).is_zero());
     /// ```
-    pub fn norm(self) -> F {
-        (self.real.clone() * self.real + self.imaginary.clone() * self.imaginary).square_root()
-    }
+    pub fn norm(self) -> F { (self.real.clone() * self.real + self.imaginary.clone() * self.imaginary).square_root() }
 }
 
 /// Implement the concept of ZERO for the complex number.
@@ -141,11 +122,9 @@ impl<F: RealFloat> Zero for Complex<F> {
     ///     traits::zero::Zero,
     /// };
     ///
-    /// fn main() {
-    ///     let zc = Complex::<Double>::zero();
-    ///     let c = Complex::of(Double::zero(), Double::of(0.0));
-    ///     assert!((zc - c).is_zero());
-    /// }
+    /// let zc = Complex::<Double>::zero();
+    /// let c = Complex::of(Double::zero(), Double::of(0.0));
+    /// assert!((zc - c).is_zero());
     /// ```
     fn zero() -> Self {
         Self {
@@ -171,11 +150,9 @@ impl<F: RealFloat> Zero for Complex<F> {
     ///     traits::zero::Zero,
     /// };
     ///
-    /// fn main() {
-    ///     let c1 = Complex::<Double>::of(Double::of(3.0), Double::of(4.0));
-    ///     let c2 = Complex::of(Double::of(-3.0), Double::of(-4.0));
-    ///     assert!((c1 + c2).is_zero());
-    /// }
+    /// let c1 = Complex::<Double>::of(Double::of(3.0), Double::of(4.0));
+    /// let c2 = Complex::of(Double::of(-3.0), Double::of(-4.0));
+    /// assert!((c1 + c2).is_zero());
     /// ```
     fn is_zero(&self) -> bool { self.real.is_zero() && self.imaginary.is_zero() }
 }
@@ -192,11 +169,9 @@ impl<F: RealFloat> One for Complex<F> {
     ///     traits::{one::One, zero::Zero},
     /// };
     ///
-    /// fn main() {
-    ///     let one = Complex::<Double>::one();
-    ///     let c = Complex::of(Double::of(1.0), Double::zero());
-    ///     assert!((one - c).is_zero());
-    /// }
+    /// let one = Complex::<Double>::one();
+    /// let c = Complex::of(Double::of(1.0), Double::zero());
+    /// assert!((one - c).is_zero());
     /// ```
     fn one() -> Self {
         Self {
@@ -216,12 +191,10 @@ impl<F: RealFloat> One for Complex<F> {
     ///     traits::{one::One, zero::Zero},
     /// };
     ///
-    /// fn main() {
-    ///     let one = Complex::<Double>::one();
-    ///     let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
-    ///     let c2 = Complex::of(Double::of(3.0), Double::of(4.0));
-    ///     assert!(((c1 / c2) - one).is_zero());
-    /// }
+    /// let one = Complex::<Double>::one();
+    /// let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
+    /// let c2 = Complex::of(Double::of(3.0), Double::of(4.0));
+    /// assert!(((c1 / c2) - one).is_zero());
     /// ```
     fn is_one(&self) -> bool { self.real.is_one() && self.imaginary.is_zero() }
 }
@@ -246,11 +219,9 @@ impl<F: RealFloat> std::ops::Neg for Complex<F> {
     ///     traits::zero::Zero,
     /// };
     ///
-    /// fn main() {
-    ///     let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
-    ///     let c2 = Complex::of(Double::of(-3.0), Double::of(-4.0));
-    ///     assert!(((-c1) - c2).is_zero());
-    /// }
+    /// let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
+    /// let c2 = Complex::of(Double::of(-3.0), Double::of(-4.0));
+    /// assert!(((-c1) - c2).is_zero());
     /// ```
     fn neg(self) -> Self::Output {
         Self {
@@ -274,12 +245,10 @@ impl<F: RealFloat> std::ops::Add for Complex<F> {
     ///     traits::zero::Zero,
     /// };
     ///
-    /// fn main() {
-    ///     let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
-    ///     let c2 = Complex::of(Double::of(5.0), Double::of(-2.0));
-    ///     let e = Complex::of(Double::of(8.0), Double::of(2.0));
-    ///     assert!(((c1 + c2) - e).is_zero());
-    /// }
+    /// let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
+    /// let c2 = Complex::of(Double::of(5.0), Double::of(-2.0));
+    /// let e = Complex::of(Double::of(8.0), Double::of(2.0));
+    /// assert!(((c1 + c2) - e).is_zero());
     /// ```
     fn add(self, rhs: Self) -> Self::Output {
         Self {
@@ -303,12 +272,10 @@ impl<F: RealFloat> std::ops::Sub for Complex<F> {
     ///     traits::zero::Zero,
     /// };
     ///
-    /// fn main() {
-    ///     let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
-    ///     let c2 = Complex::of(Double::of(5.0), Double::of(-2.0));
-    ///     let e = Complex::of(Double::of(-2.0), Double::of(6.0));
-    ///     assert!(((c1 - c2) - e).is_zero());
-    /// }
+    /// let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
+    /// let c2 = Complex::of(Double::of(5.0), Double::of(-2.0));
+    /// let e = Complex::of(Double::of(-2.0), Double::of(6.0));
+    /// assert!(((c1 - c2) - e).is_zero());
     /// ```
     fn sub(self, rhs: Self) -> Self::Output {
         Self {
@@ -330,17 +297,14 @@ impl<F: RealFloat> std::ops::Mul for Complex<F> {
     ///     traits::zero::Zero,
     /// };
     ///
-    /// fn main() {
-    ///     let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
-    ///     let c2 = Complex::of(Double::of(5.0), Double::of(-2.0));
-    ///     let e = Complex::of(Double::of(23.0), Double::of(14.0));
-    ///     assert!(((c1 * c2) - e).is_zero());
-    /// }
+    /// let c1 = Complex::of(Double::of(3.0), Double::of(4.0));
+    /// let c2 = Complex::of(Double::of(5.0), Double::of(-2.0));
+    /// let e = Complex::of(Double::of(23.0), Double::of(14.0));
+    /// assert!(((c1 * c2) - e).is_zero());
     /// ```
     fn mul(self, rhs: Self) -> Self::Output {
         Self {
-            real: self.real.clone() * rhs.real.clone()
-                - self.imaginary.clone() * rhs.imaginary.clone(),
+            real: self.real.clone() * rhs.real.clone() - self.imaginary.clone() * rhs.imaginary.clone(),
             imaginary: self.real * rhs.imaginary + self.imaginary * rhs.real,
         }
     }
@@ -360,16 +324,13 @@ impl<F: RealFloat> std::ops::Div for Complex<F> {
     ///     traits::zero::Zero,
     /// };
     ///
-    /// fn main() {
-    ///     let c1 = Complex::of(Double::of(4.0), Double::of(2.0));
-    ///     let c2 = Complex::of(Double::of(1.0), Double::of(-3.0));
-    ///     let e = Complex::of(Double::of(-0.2), Double::of(1.4));
-    ///     assert!(((c1 / c2) - e).is_zero());
-    /// }
+    /// let c1 = Complex::of(Double::of(4.0), Double::of(2.0));
+    /// let c2 = Complex::of(Double::of(1.0), Double::of(-3.0));
+    /// let e = Complex::of(Double::of(-0.2), Double::of(1.4));
+    /// assert!(((c1 / c2) - e).is_zero());
     /// ```
     fn div(self, rhs: Self) -> Self::Output {
-        let denominator =
-            rhs.real.clone() * rhs.real.clone() + rhs.imaginary.clone() * rhs.imaginary.clone();
+        let denominator = rhs.real.clone() * rhs.real.clone() + rhs.imaginary.clone() * rhs.imaginary.clone();
         let numerator = self * rhs.conjugate();
         Self {
             real: numerator.real / denominator.clone(),
@@ -391,12 +352,10 @@ impl<F: RealFloat> Number for Complex<F> {
     ///     traits::{number::Number, zero::Zero},
     /// };
     ///
-    /// fn main() {
-    ///     let c = Complex::of(Double::of(4.0), Double::of(-3.0));
-    ///     let c_abs = c.absolute_value();
-    ///     assert!((c_abs.real - c.norm()).is_zero());
-    ///     assert!(c_abs.imaginary.is_zero());
-    /// }
+    /// let c = Complex::of(Double::of(4.0), Double::of(-3.0));
+    /// let c_abs = c.absolute_value();
+    /// assert!((c_abs.real - c.norm()).is_zero());
+    /// assert!(c_abs.imaginary.is_zero());
     /// ```
     fn absolute_value(&self) -> Self {
         Self {
@@ -419,13 +378,11 @@ impl<F: RealFloat> Number for Complex<F> {
     ///     traits::{number::Number, zero::Zero},
     /// };
     ///
-    /// fn main() {
-    ///     let z = Complex::<Double>::zero();
-    ///     let c = Complex::of(Double::of(4.0), Double::of(-3.0));
-    ///     let c_sign = Complex::of(Double::of(0.8), Double::of(-0.6));
-    ///     assert!(z.sign_number().is_zero());
-    ///     assert!((c.sign_number() - c_sign).is_zero());
-    /// }
+    /// let z = Complex::<Double>::zero();
+    /// let c = Complex::of(Double::of(4.0), Double::of(-3.0));
+    /// let c_sign = Complex::of(Double::of(0.8), Double::of(-0.6));
+    /// assert!(z.sign_number().is_zero());
+    /// assert!((c.sign_number() - c_sign).is_zero());
     /// ```
     fn sign_number(&self) -> Self {
         if self.is_zero() {
@@ -449,11 +406,9 @@ impl<F: RealFloat> Number for Complex<F> {
     ///     traits::{number::Number, zero::Zero},
     /// };
     ///
-    /// fn main() {
-    ///     let i1 = Integer::of_str("12345678910").unwrap();
-    ///     let c1 = Complex::<Double>::from_integer(i1);
-    ///     assert!((c1 - Complex::of(Double::of(12345678910.0), Double::zero())).is_zero());
-    /// }
+    /// let i1 = Integer::of_str("12345678910").unwrap();
+    /// let c1 = Complex::<Double>::from_integer(i1);
+    /// assert!((c1 - Complex::of(Double::of(12345678910.0), Double::zero())).is_zero());
     /// ```
     ///
     /// <div class="warning">
@@ -468,15 +423,13 @@ impl<F: RealFloat> Number for Complex<F> {
     ///     traits::{number::Number, zero::Zero},
     /// };
     ///
-    /// fn main() {
-    ///     let intnum = Integer::of_str("123456789101112131415161718192021222324252627").unwrap();
-    ///     let c = Complex::<Double>::from_integer(intnum);
-    ///     let real_c = Complex::<Double>::of(
-    ///         Double::of(123456789101112130000000000000000000000000000.0),
-    ///         Double::zero(),
-    ///     );
-    ///     assert!((c - real_c).is_zero());
-    /// }
+    /// let intnum = Integer::of_str("123456789101112131415161718192021222324252627").unwrap();
+    /// let c = Complex::<Double>::from_integer(intnum);
+    /// let real_c = Complex::<Double>::of(
+    ///     Double::of(123456789101112130000000000000000000000000000.0),
+    ///     Double::zero(),
+    /// );
+    /// assert!((c - real_c).is_zero());
     /// ```
     ///
     /// </div>
@@ -536,9 +489,7 @@ impl<F: RealFloat> Floating for Complex<F> {
             real: F::zero(),
             imaginary: F::one(),
         };
-        -i.clone()
-            * (i * self.clone() + (Self::one() - self.clone() * self).square_root())
-                .logarithmic()
+        -i.clone() * (i * self.clone() + (Self::one() - self.clone() * self).square_root()).logarithmic()
     }
 
     fn arc_cosine(self) -> Self {
@@ -546,9 +497,7 @@ impl<F: RealFloat> Floating for Complex<F> {
             real: F::zero(),
             imaginary: F::one(),
         };
-        -i.clone()
-            * (self.clone() + i * (Self::one() - self.clone() * self).square_root())
-                .logarithmic()
+        -i.clone() * (self.clone() + i * (Self::one() - self.clone() * self).square_root()).logarithmic()
     }
 
     fn arc_tangent(self) -> Self {
@@ -557,31 +506,20 @@ impl<F: RealFloat> Floating for Complex<F> {
             imaginary: F::one(),
         };
         let two = Self::one() + Self::one();
-        Self::one() / (two * i.clone())
-            * ((Self::one() + i.clone() * self.clone()) / (Self::one() - i * self))
-                .logarithmic()
+        Self::one() / (two * i.clone()) * ((Self::one() + i.clone() * self.clone()) / (Self::one() - i * self)).logarithmic()
     }
 
-    fn hyperbolic_sine(self) -> Self {
-        (self.clone().exponential() - (-self).exponential()) / (Self::one() + Self::one())
-    }
+    fn hyperbolic_sine(self) -> Self { (self.clone().exponential() - (-self).exponential()) / (Self::one() + Self::one()) }
 
-    fn hyperbolic_cosine(self) -> Self {
-        (self.clone().exponential() + (-self).exponential()) / (Self::one() + Self::one())
-    }
+    fn hyperbolic_cosine(self) -> Self { (self.clone().exponential() + (-self).exponential()) / (Self::one() + Self::one()) }
 
     fn hyperbolic_tangent(self) -> Self {
-        (Self::one() - (-self.clone() - self.clone()).exponential())
-            / (Self::one() + (-self.clone() - self).exponential())
+        (Self::one() - (-self.clone() - self.clone()).exponential()) / (Self::one() + (-self.clone() - self).exponential())
     }
 
-    fn arc_hyperbolic_sine(self) -> Self {
-        (self.clone() + (Self::one() + self.clone() * self).square_root()).logarithmic()
-    }
+    fn arc_hyperbolic_sine(self) -> Self { (self.clone() + (Self::one() + self.clone() * self).square_root()).logarithmic() }
 
-    fn arc_hyperbolic_cosine(self) -> Self {
-        (self.clone() + (self.clone() * self - Self::one()).square_root()).logarithmic()
-    }
+    fn arc_hyperbolic_cosine(self) -> Self { (self.clone() + (self.clone() * self - Self::one()).square_root()).logarithmic() }
 
     fn arc_hyperbolic_tangent(self) -> Self {
         Self::half() * ((Self::one() + self.clone()) / (Self::one() - self)).logarithmic()
@@ -598,8 +536,7 @@ impl<F: RealFloat> Fractional for Complex<F> {
     }
 
     fn reciprocal(self) -> Self {
-        let n = self.real.clone() * self.real.clone()
-            + self.imaginary.clone() * self.imaginary.clone();
+        let n = self.real.clone() * self.real.clone() + self.imaginary.clone() * self.imaginary.clone();
         Self {
             real: self.real / n.clone(),
             imaginary: -self.imaginary / n,
@@ -607,8 +544,7 @@ impl<F: RealFloat> Fractional for Complex<F> {
     }
 
     fn from_rational(rational_number: Rational) -> Self {
-        Self::from_integer(rational_number.numerator)
-            / Self::from_integer(rational_number.denominator)
+        Self::from_integer(rational_number.numerator) / Self::from_integer(rational_number.denominator)
     }
 }
 
@@ -625,14 +561,12 @@ impl<F: RealFloat> std::cmp::PartialOrd for Complex<F> {
     ///     traits::zero::Zero,
     /// };
     ///
-    /// fn main() {
-    ///     let c1 = Complex::of(Float::of(3.0), Float::zero());
-    ///     let c2 = Complex::of(Float::of(-2.0), Float::zero());
-    ///     let c3 = Complex::of(Float::of(2.0), Float::of(2.0));
+    /// let c1 = Complex::of(Float::of(3.0), Float::zero());
+    /// let c2 = Complex::of(Float::of(-2.0), Float::zero());
+    /// let c3 = Complex::of(Float::of(2.0), Float::of(2.0));
     ///
-    ///     assert_eq!(c1.partial_cmp(&c2), Some(std::cmp::Ordering::Greater));
-    ///     assert_eq!(c1.partial_cmp(&c3), None);
-    /// }
+    /// assert_eq!(c1.partial_cmp(&c2), Some(std::cmp::Ordering::Greater));
+    /// assert_eq!(c1.partial_cmp(&c3), None);
     /// ```
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.imaginary.is_zero() && other.imaginary.is_zero() {
@@ -645,16 +579,12 @@ impl<F: RealFloat> std::cmp::PartialOrd for Complex<F> {
 
 /// Implement Display for complex numbers.
 impl<F: RealFloat> std::fmt::Display for Complex<F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} :+ {}", self.real, self.imaginary)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{} :+ {}", self.real, self.imaginary) }
 }
 
 /// Implement Debug for complex numbers.
 impl<F: RealFloat> std::fmt::Debug for Complex<F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:+} :+ {:+}", self.real, self.imaginary)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:+} :+ {:+}", self.real, self.imaginary) }
 }
 
 /// Implement FromStr for complex numbers.
@@ -669,10 +599,7 @@ impl<F: RealFloat> std::str::FromStr for Complex<F> {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let trimmed_s = s.split(":+").map(|p| p.trim()).collect::<Vec<_>>();
         if trimmed_s.len() != 2 {
-            eprintln!(
-                "Error[Complex::from_str]: ({}) is not a valid Complex literal.",
-                s
-            );
+            eprintln!("Error[Complex::from_str]: ({s}) is not a valid Complex literal.");
             Err(())
         } else {
             let real = F::from_str(trimmed_s[0])?;
@@ -703,10 +630,7 @@ impl<F: RealFloat + SampleUniform> UniformSampler for UniformComplex<F> {
         ))
     }
 
-    fn new_inclusive<B1, B2>(
-        low: B1,
-        high: B2,
-    ) -> Result<UniformComplex<F>, rand::distr::uniform::Error>
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Result<UniformComplex<F>, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
@@ -720,9 +644,7 @@ impl<F: RealFloat + SampleUniform> UniformSampler for UniformComplex<F> {
         ))
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        Self::X::of(self.0.sample(rng), self.1.sample(rng))
-    }
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X { Self::X::of(self.0.sample(rng), self.1.sample(rng)) }
 }
 
 /// Implement uniform sampling for complex numbers.

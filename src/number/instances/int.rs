@@ -26,7 +26,7 @@ impl Int {
     /// ```rust
     /// use rmatrix_ks::number::instances::int::Int;
     ///
-    /// fn main() { let _i = Int::of(12); }
+    /// let _i = Int::of(12);
     /// ```
     pub const fn of(num: i32) -> Self { Self { inner: num } }
 
@@ -37,15 +37,11 @@ impl Int {
     /// ```rust
     /// use rmatrix_ks::number::instances::int::Int;
     ///
-    /// fn main() {
-    ///     let si = Int::of_str("23").unwrap();
-    ///     let i = Int::of(23);
-    ///     assert_eq!(si, i);
-    /// }
+    /// let si = Int::of_str("23").unwrap();
+    /// let i = Int::of(23);
+    /// assert_eq!(si, i);
     /// ```
-    pub fn of_str(int_number: &str) -> Option<Self> {
-        std::str::FromStr::from_str(int_number).ok()
-    }
+    pub fn of_str(int_number: &str) -> Option<Self> { std::str::FromStr::from_str(int_number).ok() }
 
     /// Return the digit at each position.
     ///
@@ -54,18 +50,16 @@ impl Int {
     /// ```rust
     /// use rmatrix_ks::number::instances::int::Int;
     ///
-    /// fn main() {
-    ///     let i = Int::of(125436);
-    ///     let digits = i.digits();
-    ///     assert_eq!(digits, vec![1, 2, 5, 4, 3, 6]);
-    /// }
+    /// let i = Int::of(125436);
+    /// let digits = i.digits();
+    /// assert_eq!(digits, vec![1, 2, 5, 4, 3, 6]);
     /// ```
     pub fn digits(&self) -> Vec<u8> {
         let string_view = self.inner.to_string();
         string_view
             .chars()
             .skip_while(|ch| !ch.is_ascii_digit())
-            .map(|digit: char| digit as u8 - '0' as u8)
+            .map(|digit: char| digit as u8 - b'0')
             .collect::<Vec<_>>()
     }
 
@@ -76,10 +70,8 @@ impl Int {
     /// ```rust
     /// use rmatrix_ks::number::instances::int::Int;
     ///
-    /// fn main() {
-    ///     let i = Int::of(69);
-    ///     assert_eq!(i.raw(), 69);
-    /// }
+    /// let i = Int::of(69);
+    /// assert_eq!(i.raw(), 69);
     /// ```
     pub fn raw(&self) -> i32 { self.inner }
 }
@@ -171,12 +163,10 @@ impl Number for Int {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let digits = (1..10).collect::<Vec<u8>>();
-    ///     let integer = Integer::of(true, &digits);
-    ///     let int = integer.map(|i| Int::from_integer(i));
-    ///     assert_eq!(int, Some(Int::of(123456789)));
-    /// }
+    /// let digits = (1..10).collect::<Vec<u8>>();
+    /// let integer = Integer::of(true, &digits);
+    /// let int = integer.map(|i| Int::from_integer(i));
+    /// assert_eq!(int, Some(Int::of(123456789)));
     /// ```
     ///
     /// ## Panics
@@ -190,22 +180,17 @@ impl Number for Int {
     ///     traits::number::Number,
     /// };
     ///
-    /// fn main() {
-    ///     let integer = Integer::of_str("12345678910111213141516");
-    ///     // Panic occurs here.
-    ///     let _ = integer.map(|i| Int::from_integer(i));
-    /// }
+    /// let integer = Integer::of_str("12345678910111213141516");
+    /// // Panic occurs here.
+    /// let _ = integer.map(|i| Int::from_integer(i));
     /// ```
     fn from_integer(integer_number: Integer) -> Self {
         if integer_number.is_zero() {
             Self::zero()
         } else {
-            let inner = format!("{:?}", integer_number)
+            let inner = format!("{integer_number:?}")
                 .parse::<i32>()
-                .expect(&format!(
-                    "Error[Int::from_Integer]: ({}) should be a valid i32 number.",
-                    integer_number
-                ));
+                .unwrap_or_else(|_| panic!("Error[Int::from_Integer]: ({integer_number}) should be a valid i32 number."));
             Self { inner }
         }
     }
@@ -245,25 +230,19 @@ impl Integral for Int {
     }
 
     fn to_integer(self) -> Integer {
-        Integer::of_str(&format!("{}", self)).expect(&format!(
-            "Error[Int::to_integer]: ({}) should be a valid Integer.",
-            self
-        ))
+        Integer::of_str(&format!("{self}"))
+            .unwrap_or_else(|| panic!("Error[Int::to_integer]: ({self}) should be a valid Integer."))
     }
 }
 
 /// Implement Display for Int.
 impl std::fmt::Display for Int {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.inner) }
 }
 
 /// Implement Debug for Int.
 impl std::fmt::Debug for Int {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:+}", self.inner)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:+}", self.inner) }
 }
 
 /// Implement FromStr for Int.
@@ -275,10 +254,7 @@ impl std::str::FromStr for Int {
         if let Ok(num) = trimmed_s.parse::<i32>() {
             Ok(Self { inner: num })
         } else {
-            eprintln!(
-                "Error[Int::from_str]: ({}) is not a valid Int literal.",
-                trimmed_s
-            );
+            eprintln!("Error[Int::from_str]: ({trimmed_s}) is not a valid Int literal.");
             Err(())
         }
     }
@@ -302,10 +278,7 @@ impl UniformSampler for UniformI32 {
         )?))
     }
 
-    fn new_inclusive<B1, B2>(
-        low: B1,
-        high: B2,
-    ) -> Result<UniformI32, rand::distr::uniform::Error>
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Result<UniformI32, rand::distr::uniform::Error>
     where
         B1: SampleBorrow<Self::X> + Sized,
         B2: SampleBorrow<Self::X> + Sized,
@@ -316,9 +289,7 @@ impl UniformSampler for UniformI32 {
         )?))
     }
 
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
-        Self::X::of(self.0.sample(rng))
-    }
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X { Self::X::of(self.0.sample(rng)) }
 }
 
 /// Implement uniform sampling for int numbers.
