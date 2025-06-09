@@ -637,9 +637,11 @@ where
         let mut p = Matrix::eyes();
         for column in 1..=E {
             for row in (column + 1..E).rev() {
-                let pi = transpose(&givens_rotation_matrix(&hessen, row + 1, column));
-                hessen = transpose(&pi) * hessen * pi.clone();
-                p = p * pi;
+                if !hessen[(row + 1, column)].is_zero() {
+                    let pi = transpose(&givens_rotation_matrix(&hessen, row + 1, column));
+                    hessen = transpose(&pi) * hessen * pi.clone();
+                    p = p * pi;
+                }
             }
         }
         (p, hessen)
