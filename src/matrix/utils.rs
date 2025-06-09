@@ -744,7 +744,7 @@ where
 /// assert!(
 ///     points_2d((1, 4), (1, 4), |r, c| r > c + 1)
 ///         .par_iter()
-///         .all(|&p| h[p].is_zero())
+///         .all(|&pi| h[pi].is_zero())
 /// );
 /// assert!(is_orthogonal_matrix(&p));
 /// // P . H . P^T == M
@@ -768,10 +768,12 @@ where
         let mut hessen = m.clone();
         let mut p = Matrix::eyes(m.row, m.column);
         for column in 1..=m.column {
-            for row in (column + 1..m.row).rev() {
-                let pi = transpose(&givens_rotation_matrix(&hessen, row + 1, column));
-                hessen = transpose(&pi) * hessen * pi.clone();
-                p = p * pi;
+            for row in (column + 1..m.edge()).rev() {
+                if !hessen[(row + 1, column)].is_zero() {
+                    let pi = transpose(&givens_rotation_matrix(&hessen, row + 1, column));
+                    hessen = transpose(&pi) * hessen * pi.clone();
+                    p = p * pi;
+                }
             }
         }
         (p, hessen)

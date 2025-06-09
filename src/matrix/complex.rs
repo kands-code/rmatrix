@@ -983,7 +983,7 @@ where
         for row in (column..m.row).rev() {
             if r[(row + 1, column)].is_zero() {
                 continue;
-            } else {
+            } else if !r[(row + 1, column)].is_zero() {
                 let rotation = givens_rotation_matrix(&r, row + 1, column);
                 r = rotation.clone() * r;
                 q = rotation * q;
@@ -1126,7 +1126,7 @@ where
 /// assert!(
 ///     points_2d((1, 4), (1, 4), |r, c| r > c + 1)
 ///         .par_iter()
-///         .all(|&p| h[p].is_zero())
+///         .all(|&pi| h[pi].is_zero())
 /// );
 /// assert!(is_unitary_matrix(&p));
 /// // P . H . P^H = M
@@ -1151,9 +1151,11 @@ where
         let mut p = Matrix::eyes(m.row, m.column);
         for column in 1..=m.edge() {
             for row in (column + 1..m.edge()).rev() {
-                let pi = conjugate_transpose(&givens_rotation_matrix(&hessen, row + 1, column));
-                hessen = conjugate_transpose(&pi) * hessen * pi.clone();
-                p = p * pi;
+                if !hessen[(row + 1, column)].is_zero() {
+                    let pi = conjugate_transpose(&givens_rotation_matrix(&hessen, row + 1, column));
+                    hessen = conjugate_transpose(&pi) * hessen * pi.clone();
+                    p = p * pi;
+                }
             }
         }
         (p, hessen)
