@@ -87,11 +87,11 @@ where
 /// let v1: VectorC<Int8, 3> = VectorC::of(&[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
 /// let v2: VectorC<Int8, 3> = VectorC::of(&[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
 /// assert_eq!(
-///     cross_product(v1, v2),
+///     cross_product(&v1, &v2),
 ///     VectorC::<Int8, 3>::of(&[Int8::of(-3), Int8::of(6), Int8::of(-3)]).unwrap()
 /// );
 /// ```
-pub fn cross_product<N>(v1: VectorC<N, 3>, v2: VectorC<N, 3>) -> VectorC<N, 3>
+pub fn cross_product<N>(v1: &VectorC<N, 3>, v2: &VectorC<N, 3>) -> VectorC<N, 3>
 where
     N: Number,
 {
