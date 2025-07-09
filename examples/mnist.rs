@@ -331,7 +331,7 @@ where
         w1 = w1 - grad_w1 * learn_rate.clone();
         b1 = b1 - grad_b1 * learn_rate.clone();
 
-        if (p + 1) % 10 == 0 {
+        if (p + 1).is_multiple_of(10) {
             learn_rate = learn_rate * nine_over_ten.clone();
         }
 
