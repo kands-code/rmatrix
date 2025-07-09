@@ -179,11 +179,11 @@ where
 /// let v1 = column_vector::<Int8>(3, &[Int8::of(1), Int8::of(2), Int8::of(3)]).unwrap();
 /// let v2 = column_vector::<Int8>(3, &[Int8::of(4), Int8::of(5), Int8::of(6)]).unwrap();
 /// assert_eq!(
-///     cross_product(v1, v2),
+///     cross_product(&v1, &v2),
 ///     column_vector::<Int8>(3, &[Int8::of(-3), Int8::of(6), Int8::of(-3)]).unwrap()
 /// );
 /// ```
-pub fn cross_product<N>(v1: Matrix<N>, v2: Matrix<N>) -> Matrix<N>
+pub fn cross_product<N>(v1: &Matrix<N>, v2: &Matrix<N>) -> Matrix<N>
 where
     N: Number,
 {
