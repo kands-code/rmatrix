@@ -58,16 +58,7 @@ pub trait Floating: Fractional {
     fn arc_hyperbolic_tangent(self) -> Self;
 
     /// Power function, pow(x, a).
-    fn power(self, exponents: Self) -> Self {
-        // preven NAN
-        if self.is_one() || exponents.is_zero() {
-            Self::one()
-        } else if self.is_zero() {
-            Self::zero()
-        } else {
-            (self.logarithmic() * exponents).exponential()
-        }
-    }
+    fn power(self, exponents: Self) -> Self;
 
     /// Logarithm function with base a, log(a, x).
     fn logarithmic_base(self, base: Self) -> Self { self.logarithmic() / base.logarithmic() }
