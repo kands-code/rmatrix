@@ -368,6 +368,12 @@ impl Floating for Float {
             inner: self.inner.atanh(),
         }
     }
+
+    fn power(self, exponents: Self) -> Self {
+        Self {
+            inner: self.inner.powf(exponents.inner),
+        }
+    }
 }
 
 /// Implement the concept of Fractional for Float.

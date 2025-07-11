@@ -375,6 +375,12 @@ impl Floating for Double {
             inner: self.inner.atanh(),
         }
     }
+
+    fn power(self, exponents: Self) -> Self {
+        Self {
+            inner: self.inner.powf(exponents.inner),
+        }
+    }
 }
 
 /// Implement the concept of Fractional for Double.

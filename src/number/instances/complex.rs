@@ -524,6 +524,8 @@ impl<F: RealFloat> Floating for Complex<F> {
     fn arc_hyperbolic_tangent(self) -> Self {
         Self::half() * ((Self::one() + self.clone()) / (Self::one() - self)).logarithmic()
     }
+
+    fn power(self, exponents: Self) -> Self { (self.logarithmic() * exponents).exponential() }
 }
 
 /// Implement the concept of Fractional for complex numbers.
