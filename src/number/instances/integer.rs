@@ -342,12 +342,16 @@ impl std::ops::Mul for Integer {
                     product_layers[idx][loc + idx] = digit * p;
                 }
             }
-            let mut product = vec![0u8; expect_capacity];
-            let mut carry = 0u8;
+            let mut product = vec![10u8; expect_capacity];
+            let mut carry = 0u16;
             for idx in 0usize..expect_capacity {
-                let factor = product_layers.iter().map(|layer| layer[idx]).sum::<u8>() + carry;
-                product[idx] = factor % 10u8;
-                carry = factor / 10u8;
+                let factor = product_layers
+                    .iter()
+                    .map(|layer| layer[idx] as u16)
+                    .sum::<u16>()
+                    + carry;
+                product[idx] = (factor % 10u16) as u8;
+                carry = factor / 10u16;
             }
             product.reverse();
             Self::of(self.sign == rhs.sign, &product)
