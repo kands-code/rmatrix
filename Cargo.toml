@@ -4,7 +4,7 @@ authors = ["Kevin Stephen <qarks@icloud.com>"]
 version = "1.0.3"
 resolver = "3"
 edition = "2024"
-rust-version = "1.92"
+rust-version = "1.90"
 license = "AGPL-3.0-or-later"
 description = "matrix and some algebra in Rust"
 readme = "README.md"
@@ -25,7 +25,7 @@ crate-type = ["lib", "dylib"]
 
 [dependencies]
 # for pattern validate
-regex = "^1.11.3"
+regex = "^1.12.2"
 # for random matrix and random number
 rand = "^0.9.2"
 # for optimize
